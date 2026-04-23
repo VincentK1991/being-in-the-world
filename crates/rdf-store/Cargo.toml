@@ -1,0 +1,24 @@
+[package]
+name = "rdf-store"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rdf-model = { path = "../rdf-model" }
+redb.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+proptest.workspace = true
+tempfile = "3.15.0"
+
+[[bench]]
+name = "mem_store_load"
+harness = false

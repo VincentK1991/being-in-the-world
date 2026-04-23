@@ -1,0 +1,2 @@
+@prefix : <urn:test:> .
+:manifest :contains :case1 .

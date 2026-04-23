@@ -1,0 +1,2 @@
+@prefix ex: <http://example.com/> .
+_:a ex:p _:b .

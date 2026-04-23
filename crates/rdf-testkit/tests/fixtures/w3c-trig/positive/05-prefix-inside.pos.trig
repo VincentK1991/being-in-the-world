@@ -1,0 +1,4 @@
+@prefix ex: <http://example.com/> .
+ex:g {
+  ex:s ex:p "hello"@en .
+}

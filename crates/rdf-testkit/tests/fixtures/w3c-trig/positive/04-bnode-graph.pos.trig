@@ -1,0 +1,3 @@
+_:g {
+  _:s <http://example.com/p> _:o .
+}

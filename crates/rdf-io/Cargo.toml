@@ -1,0 +1,19 @@
+[package]
+name = "rdf-io"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rdf-model = { path = "../rdf-model" }
+thiserror.workspace = true
+logos.workspace = true
+winnow.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

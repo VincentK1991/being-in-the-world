@@ -1,0 +1,3 @@
+<http://example.com/g> {
+  <http://example.com/s> <http://example.com/p> "o"
+}

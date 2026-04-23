@@ -1,0 +1,29 @@
+[package]
+name = "rdf-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "rdftool"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+rdf-io = { path = "../rdf-io" }
+rdf-model = { path = "../rdf-model" }
+rdf-store = { path = "../rdf-store" }
+rdf-testkit = { path = "../rdf-testkit" }
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+assert_cmd.workspace = true
+insta.workspace = true
+predicates.workspace = true

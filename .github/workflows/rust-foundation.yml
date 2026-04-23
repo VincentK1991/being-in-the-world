@@ -1,0 +1,41 @@
+name: Rust Foundation CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@cargo-deny
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Compiler check
+        run: cargo check --workspace --all-targets
+
+      - name: Lint
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Tests
+        run: cargo nextest run --workspace --all-targets
+
+      - name: Dependency policy
+        run: cargo deny check
