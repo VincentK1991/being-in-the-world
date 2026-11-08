@@ -56,11 +56,15 @@ The suite runs two ways:
 
 Each run goes through the same HTTP adapters that inference jobs use.
 
-| Suite | owlrl sidecar | Jena sidecar with standard RDFS rules |
-|---|---|---|
-| RDF 1.1 Semantics, `rdf-mt` (48) | 14 pass, 10 fail, 24 not run | 14 pass, 10 fail, 24 not run |
-| SPARQL 1.1 entailment regimes (70) | 6 pass, 64 not run | 32 pass, 4 fail, 34 not run |
-| OWL 2 RL-profile test cases (126 checks over 91 tests) | 39 pass, 10 fail, 77 not run | no OWL profile |
+| Suite | owlrl, core profiles | owlrl, full profiles (ADR 0020) | native `owl2rl-v1` | Jena with RDFS rules |
+|---|---|---|---|---|
+| RDF 1.1 Semantics, `rdf-mt` (48) | 14 pass, 10 fail | 17 pass, 7 fail | no RDFS profile | 14 pass, 10 fail |
+| SPARQL 1.1 entailment regimes (70) | 6 pass | 41 pass, 3 fail | 36 pass, 3 fail | 32 pass, 4 fail |
+| OWL 2 RL-profile test cases (126 checks over 91 tests) | 39 pass, 10 fail | 97 pass, 18 fail | **98 pass, 17 fail** | no OWL profile |
+
+The full-profile and native columns come from ADR 0020. The analysis below was written for the
+core profiles. For how the full profile and the native engine close those gaps, see
+[owl-coverage.md](owl-coverage.md).
 
 ### Why cases fail inside the profiles we run
 

@@ -14,13 +14,69 @@ use serde_json::{Value, json};
 use std::{collections::BTreeSet, sync::Arc, time::Duration};
 
 mod explain;
+pub mod owl2rl;
 
 pub fn registry() -> Result<ReasonerRegistry> {
     let mut registry = ReasonerRegistry::default();
     registry.register("owlrl", HttpReasonerFactory)?;
     registry.register("jena-rules", HttpReasonerFactory)?;
     registry.register("sparql-rules", SparqlFactory)?;
+    registry.register("owlrl-native", NativeFactory)?;
     Ok(registry)
+}
+/// OWL 2 RL evaluated in process (`owl2rl.rs`): no sidecar, and every deduction can be explained.
+pub struct NativeFactory;
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NativeConfig {
+    #[serde(default = "timeout")]
+    cancel_after_seconds: u64,
+    #[serde(default = "limit")]
+    max_triples: usize,
+}
+pub struct NativeOwlRl(owl2rl::Limits);
+impl NativeOwlRl {
+    pub const PROFILE: &'static str = "owl2rl-v1";
+    pub fn new(cancel_after_seconds: u64, max_triples: usize) -> Self {
+        Self(owl2rl::Limits {
+            max_derived: max_triples,
+            timeout: Duration::from_secs(cancel_after_seconds),
+        })
+    }
+}
+impl ReasonerFactory for NativeFactory {
+    fn create(&self, config: &Value) -> Result<Arc<dyn Reasoner>> {
+        let config: NativeConfig = serde_json::from_value(config.clone())?;
+        ensure!(
+            (1..=60).contains(&config.cancel_after_seconds)
+                && (1..=200_000).contains(&config.max_triples),
+            "invalid OWL 2 RL limits"
+        );
+        Ok(Arc::new(NativeOwlRl::new(config.cancel_after_seconds, config.max_triples)))
+    }
+}
+impl Reasoner for NativeOwlRl {
+    fn identity(&self) -> Result<Value> {
+        Ok(json!({"engine": "rdftool-owl2rl", "adapter": env!("CARGO_PKG_VERSION"), "protocol": 2,
+                  "profiles": [Self::PROFILE], "rules": "OWL 2 RL/RDF tables 4-7 and 9; no datatype rules",
+                  "axiomatic_triples": "scoped", "justifications": true}))
+    }
+    fn infer(&self, profile: &str, ntriples: &str) -> Result<(String, Value)> {
+        ensure!(profile == Self::PROFILE, "unsupported OWL 2 RL profile");
+        ensure!(ntriples.len() <= 16 * 1024 * 1024, "source exceeds 16 MiB");
+        let (derived, _) = owl2rl::infer(ntriples, &self.0)?;
+        Ok((derived, self.identity()?))
+    }
+    fn explain(
+        &self,
+        profile: &str,
+        ntriples: &str,
+        rules: &[String],
+        target: &str,
+    ) -> Result<Option<Vec<Value>>> {
+        ensure!(profile == Self::PROFILE && rules.is_empty(), "unsupported OWL 2 RL profile");
+        owl2rl::explain(ntriples, &self.0, target).map(Some)
+    }
 }
 pub struct SparqlFactory;
 #[derive(Deserialize)]

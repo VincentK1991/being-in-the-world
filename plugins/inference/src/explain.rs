@@ -113,22 +113,45 @@ impl Inference {
         };
         let mut described = Vec::new();
         for derivation in derivations {
-            let lines: Vec<String> = derivation["premises"]
-                .as_array()
-                .map(|all| all.iter().filter_map(|p| p.as_str().map(str::to_owned)).collect())
-                .unwrap_or_default();
-            let mut premises = Vec::new();
-            for line in lines {
-                premises.push(self.trace(context, job, &fetched, &line, depth, walk)?);
-            }
             let mut entry = derivation.clone();
-            entry["premises"] = Value::Array(premises);
+            entry["premises"] =
+                self.trace_all(context, job, &fetched, &derivation["premises"], depth, walk)?;
             described.push(entry);
         }
         Ok(json!({
             "job": job.name, "graph": graph, "profile": job.profile, "state": state, "supported": true,
             "stale": state != "ready", "derivations": described,
         }))
+    }
+
+    /// Premises are N-Triples lines, or, from a provider that runs to a fixpoint, objects for
+    /// premises the same job deduced first (`triple`, `rule`, nested `premises`). Lines are traced
+    /// to the graphs and inputs they come from; objects are kept, with their own premises traced.
+    fn trace_all(
+        &self,
+        context: &dyn ReadContext,
+        job: &Job,
+        fetched: &[super::Fetched],
+        premises: &Value,
+        depth: usize,
+        walk: &mut Walk,
+    ) -> Result<Value> {
+        let mut traced = Vec::new();
+        for premise in premises.as_array().into_iter().flatten() {
+            if let Some(line) = premise.as_str() {
+                traced.push(self.trace(context, job, fetched, line, depth, walk)?);
+            } else {
+                let mut entry = json!({"triple": premise["triple"], "deduced_in_job": {"rule": premise["rule"]}});
+                if premise["truncated"] == true {
+                    entry["deduced_in_job"]["truncated"] = json!(true);
+                } else {
+                    entry["deduced_in_job"]["premises"] =
+                        self.trace_all(context, job, fetched, &premise["premises"], depth, walk)?;
+                }
+                traced.push(entry);
+            }
+        }
+        Ok(Value::Array(traced))
     }
 
     /// Where one premise comes from.

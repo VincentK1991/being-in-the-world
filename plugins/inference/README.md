@@ -125,6 +125,7 @@ Conformance (W3C OWL 2 RL tests, RDF 1.1 Semantics, SPARQL entailment regimes; s
 |---|---|---|---|
 | `owlrl-core-v1` | 59 | 20 | 165 |
 | `owlrl-full-v1` / `rdfs-v2` | 155 | 28 | 61 |
+| native `owl2rl-v1` (below; no RDFS profile) | 134 | 20 | 90 |
 
 The remaining failures are mostly beyond rule-based OWL 2 RL, for example `differentFrom` by
 contradiction or conclusions that a class expression exists. `docs/owl-coverage.md` lists each one.
@@ -202,6 +203,33 @@ npm test --prefix scripts/ui -- --inference
 The browser test requires a current built binary, Studio assets and Playwright.
 See [ADR 0006](../../docs/adr/0006-inference-derived-graphs.md) and
 [local validation](../../docs/runbook/2026-11-02-inference-validation.md).
+
+## Native OWL 2 RL provider
+
+The `owlrl-native` provider computes OWL 2 RL in process, with no sidecar. Its profile is
+`owl2rl-v1`.
+
+```json
+"providers": {"native": {"kind": "owlrl-native", "config": {"cancel_after_seconds": 30, "max_triples": 200000}}},
+"jobs": [{"name": "acme-native", "provider": "native", "profile": "owl2rl-v1", "source_graphs": ["..."]}]
+```
+
+- **Rules:** the W3C OWL 2 RL/RDF tables for equality, properties, classes, class axioms and
+  schema, run to a fixpoint. The datatype rules are not implemented.
+- **Output policy:** the same as `owlrl-full-v1`.
+- **Agreement with owlrl:** it reaches the same OWL conclusions, apart from owlrl's extra RDFS
+  layer (`p a rdf:Property`, `C a rdfs:Class`).
+- **Speed:** a 60,000-triple closure takes 0.16 s, against owlrl's 42.8 s.
+- **Clashes:** each clash names its `rule` and lists its `premises`. Two different values of a
+  functional or max-1 property are a clash when they share a datatype and differ in value.
+- **Explanations:** it is the one OWL provider that can explain, described next.
+
+`explain` on a native job returns the rule (`prp-dom`, `cax-sco`, ...), its text and the
+premises. A premise the job itself deduced first appears as
+`{"triple": ..., "deduced_in_job": {"rule": ..., "premises": [...]}}`, explained in turn down to
+triples marked `asserted_in` or `outside_input`. A proof is limited to 12 levels and 200
+deduced premises; anything cut off is marked `truncated`. Each triple keeps the first
+justification found; others may exist.
 
 ## Additional rule providers
 
@@ -293,7 +321,7 @@ that assert it.
 
 - The explanation is computed by re-running the rules over what the job reads now, so a job that is out of date says
   `stale: true` and its trail may differ from what was published.
-- Only SPARQL rule jobs can name the rule and premises. OWL-RL and Jena jobs answer `supported: false` with the graphs they
-  read, because those sidecars return conclusions without justifications.
+- SPARQL rule jobs and native OWL 2 RL jobs name the rule and premises. Jobs on the OWL-RL and Jena sidecars answer
+  `supported: false` with the graphs they read, because those sidecars return conclusions without justifications.
 - Premises that depend on property paths, `GRAPH` blocks or blank nodes are marked `incomplete` or left untraced.
 - One call makes at most 400 premise lookups (`truncated` is set when it stops early).

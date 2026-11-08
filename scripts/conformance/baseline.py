@@ -2,7 +2,7 @@
 """Run a W3C conformance suite and hold it to a committed baseline.
 
   baseline.py rdf|sparql --engine oxigraph|database [--update]
-  baseline.py entailment --reasoner owlrl|owlrl-full|jena-rdfs [--update]   (needs `just inference` sidecars)
+  baseline.py entailment --reasoner owlrl|owlrl-full|jena-rdfs|owlrl-native [--update]   (needs `just inference` sidecars)
 
 The baseline (tests/conformance/<suite>-<engine>.json) lists every case that does not pass, with
 its status and a cause. A run fails when a case gets worse (a regression) and also when a listed
@@ -28,7 +28,7 @@ SUITES = {
     'entailment': ['rdf/rdf11/rdf-mt/manifest.ttl', 'sparql/sparql11/entailment/manifest.ttl', OWL2],
 }
 SUITE = None
-REASONERS = {'owlrl': 'http://127.0.0.1:18082', 'owlrl-full': 'http://127.0.0.1:18082', 'jena-rdfs': 'http://127.0.0.1:18083'}
+REASONERS = {'owlrl': 'http://127.0.0.1:18082', 'owlrl-full': 'http://127.0.0.1:18082', 'jena-rdfs': 'http://127.0.0.1:18083', 'owlrl-native': None}
 RULES = [
     (lambda c: c['status'] == 'unsupported' and re.match(r'(Protocol|GraphStoreProtocol|ServiceDescription)Test', c['detail']), 'needs-http-runner'),
     (lambda c: c['status'] == 'unsupported' and 'entailment regime' in c['detail'] and SUITE == 'sparql', 'needs-reasoner'),
@@ -97,7 +97,9 @@ def main():
         digest = hashlib.sha256(OWL2.read_bytes()).hexdigest() if OWL2.exists() else 'missing'
         if digest != pinned_owl2():
             sys.exit(f'{OWL2.relative_to(ROOT)} is {digest}, expected {pinned_owl2()}: run scripts/conformance.sh')
-        variant, options = args.reasoner, ['--engine', args.engine, '--reasoner', f'{args.reasoner}={REASONERS[args.reasoner]}']
+        endpoint = REASONERS[args.reasoner]
+        spec = f'{args.reasoner}={endpoint}' if endpoint else args.reasoner
+        variant, options = args.reasoner, ['--engine', args.engine, '--reasoner', spec]
     else:
         variant, options = args.engine, ['--engine', args.engine]
     path = ROOT / f'tests/conformance/{args.suite}-{variant}.json'

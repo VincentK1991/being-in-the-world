@@ -351,24 +351,24 @@ impl Suite {
                 let regimes =
                     terms(manifest, regime)?.iter().map(Term::to_string).collect::<Vec<_>>();
                 let has = |name: &str| regimes.iter().any(|r| r == &format!("<{ENT}{name}>"));
-                let regime = if has("RDFS") {
-                    Some(Regime::Rdfs)
-                } else if has("OWL-RDF-Based") {
-                    Some(Regime::OwlRl)
-                } else {
-                    None
-                };
-                let Some((reasoning, regime)) = self.reasoning.as_ref().zip(regime) else {
+                // The expected answer holds under every listed regime: use the first one offered.
+                let listed: Vec<Regime> = [("RDFS", Regime::Rdfs), ("OWL-RDF-Based", Regime::OwlRl)]
+                    .into_iter()
+                    .filter(|(name, _)| has(name))
+                    .map(|(_, regime)| regime)
+                    .collect();
+                let Some(reasoning) = self.reasoning.as_ref().filter(|_| !listed.is_empty()) else {
                     return Ok(Outcome::Unsupported(format!(
                         "entailment regime {} needs a reasoner for RDFS or OWL-RDF-Based",
                         regimes.join(" ")
                     )));
                 };
-                if !reasoning.supports(regime) {
+                let Some(regime) = listed.iter().copied().find(|r| reasoning.supports(*r)) else {
                     return Ok(Outcome::Unsupported(format!(
-                        "reasoner offers no {regime:?} profile"
+                        "reasoner offers no {:?} profile",
+                        listed[0]
                     )));
-                }
+                };
                 // Materialise the default graph's closure, then answer the query over it.
                 let default = data
                     .store()
@@ -472,6 +472,9 @@ impl Suite {
             return Ok(Outcome::Unsupported(format!(
                 "{regime} entailment: no matching profile (only RDFS is offered; using it would over-entail)"
             )));
+        }
+        if !reasoning.supports(Regime::Rdfs) {
+            return Ok(Outcome::Unsupported("reasoner offers no Rdfs profile".into()));
         }
         let datatypes = match one(manifest, entry, &format!("{MF}recognizedDatatypes")) {
             Ok(list) => terms(manifest, list)?,

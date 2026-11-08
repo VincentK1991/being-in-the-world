@@ -8,6 +8,23 @@ Measured on 2026-11-08 against three suites:
 
 All runs go through the product's own reasoner adapters. How the suites run, and the baselines that hold them, are described in [conformance.md](conformance.md) and ADR 0018.
 
+## Status, 2026-11-08: steps 1–4 implemented (ADR 0020)
+
+| Step | Done |
+|---|---|
+| 1. Full OWL 2 RL | Profiles `owlrl-full-v1` and `rdfs-v2`. OWL 2 RL tests 39 → 97 passing, all entailment suites 59 → 155. |
+| 2. Inconsistency as a result | Clashes reported with the terms involved, the last good output kept, cascades blocked, and rule tests can expect a clash. |
+| 3. Scoped axioms | Part of the v2 profiles, which add +3 RDF Semantics and +4 SPARQL entailment cases, with reflexive `sameAs` kept. |
+| 4. Native engine | `owlrl-native`. 98 OWL 2 RL checks (one more than owlrl: `Keys-006`), about 270× faster on 60k triples, and explanations with nested proofs. Clashes name their rule and premises. |
+
+Still open:
+
+- step 5, a DL reasoner (only if class-level questions are needed);
+- datatype reasoning;
+- `differentFrom` by contradiction and structural conclusions, which are beyond OWL 2 RL.
+
+The rest of this document is the analysis as it was before the work.
+
 ## Summary
 
 - **Our profile restriction is the main gap.**

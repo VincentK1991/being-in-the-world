@@ -239,6 +239,26 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
     finally:
         post(f'{store}/update', clash.replace('INSERT DATA', 'DELETE DATA'), 'application/sparql-update')
     check('removing the clash and rebuilding makes the job ready again', inf('acme-full', 'rebuild')[1].get('state') == 'ready' and 'clashes' not in inf('acme-full')[1])
+    # The in-process OWL 2 RL engine: no sidecar, the same OWL conclusions, and explanations.
+    native = inf('acme-native', 'rebuild')[1]
+    check('the native OWL 2 RL job rebuilds', native.get('state') == 'ready', native)
+    graph_lines = lambda job: {f"{value(r, 's')} {value(r, 'p')} {value(r, 'o')}" for r in rows(sparql('', f'SELECT ?s ?p ?o WHERE {{ GRAPH <urn:rdftool:derived:inference:{job}> {{ ?s ?p ?o }} }}')[1])}
+    native_lines, full_lines = graph_lines('acme-native'), graph_lines('acme-full')
+    check('every native deduction is also made by owlrl (owlrl adds its RDFS layer on top)', native_lines and native_lines <= full_lines, sorted(native_lines - full_lines)[:3])
+    reserve = '<https://myinsurancecompany.linked.data.world/d/omg-pc-database/ClaimAmount-1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://data.world/schema/insurance/LossReserve> .'
+    # The range of hasLossReserve and the domain of lossReserveAmount both type it; the first found is kept.
+    why = op('', 'inference', 'explain', {'triple': reserve, 'job': 'acme-native'})[1]
+    first = (why.get('explanations') or [{}])[0]
+    derivation = (first.get('derivations') or [{}])[0]
+    check('a native deduction is explained by its OWL 2 RL rule, down to asserted triples', first.get('supported') is True and derivation.get('rule') in ('prp-rng', 'prp-dom') and any(p.get('asserted_in') for p in derivation.get('premises', [])), why)
+    try:
+        post(f'{store}/update', clash, 'application/sparql-update')
+        result = inf('acme-native', 'rebuild')[1]
+        named = (result.get('clashes') or [{}])[0]
+        check('a native clash names the rule and the triples that clash', result.get('state') == 'inconsistent' and named.get('rule') == 'cax-dw' and len(named.get('premises', [])) == 3, result)
+    finally:
+        post(f'{store}/update', clash.replace('INSERT DATA', 'DELETE DATA'), 'application/sparql-update')
+    check('and recovers once the clash is removed', inf('acme-native', 'rebuild')[1].get('state') == 'ready')
 
     # Explanations: why a triple was deduced, traced through chained jobs and outside inputs.
     base = 'https://myinsurancecompany.linked.data.world/d/omg-pc-database/'

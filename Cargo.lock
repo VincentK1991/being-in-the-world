@@ -2006,6 +2006,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "rdf-engine",
+ "rdf-inference-providers",
  "rdf-io",
  "rdf-plugin-catalog",
  "rdf-plugin-custom-properties",

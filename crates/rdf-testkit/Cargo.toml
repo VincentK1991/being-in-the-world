@@ -17,6 +17,7 @@ url = "2"
 rdf-io = { path = "../rdf-io" }
 rdf-engine = { path = "../rdf-engine" }
 rdf-plugin-inference = { path = "../../plugins/inference" }
+rdf-inference-providers = { path = "../../plugins/inference-providers" }
 serde_json.workspace = true
 rdf-plugin-catalog = { path = "../../plugins/catalog" }
 rdf-plugin-custom-properties = { path = "../../plugins/custom-properties" }

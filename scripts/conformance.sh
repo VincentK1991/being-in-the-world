@@ -29,7 +29,9 @@ done
 python3 scripts/conformance/baseline.py rdf
 python3 scripts/conformance/baseline.py sparql --engine oxigraph
 python3 scripts/conformance/baseline.py sparql --engine database
-# Entailment (RDF 1.1 Semantics, SPARQL entailment regimes, OWL 2 RL) needs the reasoner sidecars.
+# Entailment (RDF 1.1 Semantics, SPARQL entailment regimes, OWL 2 RL). The native OWL 2 RL engine runs in
+# process; the others need the reasoner sidecars.
+python3 scripts/conformance/baseline.py entailment --reasoner owlrl-native
 if [[ "${CONFORMANCE_REASONERS:-0}" == 1 ]]; then
   python3 scripts/conformance/baseline.py entailment --reasoner owlrl
   python3 scripts/conformance/baseline.py entailment --reasoner owlrl-full
