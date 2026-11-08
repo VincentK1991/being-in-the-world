@@ -322,6 +322,7 @@ impl Inference {
         job: &Job,
         fingerprint: &str,
         status: &mut Value,
+        check_inputs: bool,
     ) -> Result<()> {
         let Some(attempt) = status.as_object_mut().and_then(|s| s.remove("attempt")) else {
             return Ok(());
@@ -332,6 +333,9 @@ impl Inference {
         let token = context.snapshot(&job.source_graphs)?.token;
         let inputs = if job.inputs.is_empty() {
             json!([])
+        } else if !check_inputs {
+            // Not re-read: trust the record for the inputs and compare only the store's sources.
+            attempt["inputs"].clone()
         } else {
             match fetch_inputs(job) {
                 Ok(now) => input_digests(&now),
@@ -497,7 +501,7 @@ impl Inference {
         let mut ran = Vec::new();
         let not_ready = |name: &str| -> Result<bool> {
             let job = self.job(name).context("unknown inference job")?;
-            Ok(self.status(context, job, &mut std::collections::BTreeMap::new())?["state"]
+            Ok(self.status(context, job, &mut std::collections::BTreeMap::new(), true)?["state"]
                 != "ready")
         };
         let attempt = |name: &str, forced: bool| -> Result<Option<Value>> {
@@ -567,11 +571,14 @@ impl Inference {
         Ok(result)
     }
     /// The job's own state, then whether anything it reads is out of date. `memo` avoids asking twice.
+    /// With `inputs` false, outside inputs (virtual graph, federation) are not re-read, which can
+    /// take seconds each; the result then says `inputs_checked: false`.
     fn status(
         &self,
         context: &dyn ReadContext,
         job: &Job,
         memo: &mut std::collections::BTreeMap<String, Value>,
+        inputs: bool,
     ) -> Result<Value> {
         if let Some(known) = memo.get(&job.name) {
             return Ok(known.clone());
@@ -585,7 +592,10 @@ impl Inference {
             status["state"] = json!("stale");
         }
         // Outside data is not part of the store's source token, so re-read it and compare digests.
-        if status["state"] == "ready" && !job.inputs.is_empty() {
+        if !inputs && !job.inputs.is_empty() {
+            status["inputs_checked"] = json!(false);
+        }
+        if inputs && status["state"] == "ready" && !job.inputs.is_empty() {
             match fetch_inputs(job) {
                 Ok(now) => {
                     let recorded = &status["metadata"]["inputs"];
@@ -616,7 +626,7 @@ impl Inference {
         let mut waiting = Vec::new();
         for dependency in &dependencies {
             let upstream = self.job(dependency).context("unknown inference job")?;
-            if self.status(context, upstream, memo)?["state"] != "ready" {
+            if self.status(context, upstream, memo, inputs)?["state"] != "ready" {
                 waiting.push(*dependency);
             }
         }
@@ -627,7 +637,7 @@ impl Inference {
             status["stale_upstream"] = json!(waiting);
         }
         status["depends_on"] = json!(dependencies);
-        self.mark_inconsistent(context, job, &fingerprint, &mut status)?;
+        self.mark_inconsistent(context, job, &fingerprint, &mut status, inputs)?;
         memo.insert(job.name.clone(), status.clone());
         Ok(status)
     }
@@ -668,14 +678,14 @@ impl Inference {
                 .into_iter()
                 .map(|name| {
                     let target = self.job(&name).context("unknown inference job")?;
-                    let status = self.status(context, target, &mut memo)?;
+                    let status = self.status(context, target, &mut memo, true)?;
                     Ok(json!({"job": name, "state": status["state"], "depends_on": status["depends_on"]}))
                 })
                 .collect()
         };
         let upstream = describe(self.upstream(&job.name))?;
         let downstream = describe(self.downstream(&job.name))?;
-        let own = self.status(context, job, &mut std::collections::BTreeMap::new())?;
+        let own = self.status(context, job, &mut std::collections::BTreeMap::new(), true)?;
         let names = |entries: &[Value]| -> Vec<String> {
             entries.iter().filter_map(|entry| entry["job"].as_str().map(str::to_owned)).collect()
         };
@@ -724,12 +734,19 @@ impl Plugin for Inference {
         let cascade = object.get("cascade").map(|value| value.as_str().unwrap_or_default());
         ensure!(
             (object.contains_key("job")
-                || (matches!(operation, "test" | "status") && object.is_empty()))
-                && object
-                    .keys()
-                    .all(|key| key == "job" || (key == "cascade" && operation == "rebuild")),
-            "expected only a job argument (and cascade for rebuild)"
+                || (operation == "test" && object.is_empty())
+                || (operation == "status" && object.keys().all(|key| key == "inputs")))
+                && object.keys().all(|key| {
+                    key == "job"
+                        || (key == "cascade" && operation == "rebuild")
+                        || (key == "inputs" && operation == "status")
+                }),
+            "expected only a job argument (and cascade for rebuild, inputs for status)"
         );
+        let inputs = match object.get("inputs") {
+            None => true,
+            Some(value) => value.as_bool().context("inputs must be true or false")?,
+        };
         ensure!(
             matches!(cascade, None | Some("upstream" | "downstream" | "both")),
             "cascade must be upstream, downstream or both"
@@ -738,12 +755,13 @@ impl Plugin for Inference {
             return self.test_all();
         }
         if operation == "status" && !object.contains_key("job") {
+            // `{}` re-reads every outside input; `{"inputs": false}` is the quick overview.
             // Every job at once, dependencies first, sharing one memo so each is computed once.
             let mut memo = std::collections::BTreeMap::new();
             let mut all = Vec::new();
             for name in &self.order {
                 let job = self.job(name).context("unknown inference job")?;
-                let mut status = self.status(context, job, &mut memo)?;
+                let mut status = self.status(context, job, &mut memo, inputs)?;
                 status["job"] = json!(name);
                 all.push(status);
             }
@@ -760,7 +778,7 @@ impl Plugin for Inference {
                     .map_err(|_| anyhow::anyhow!("inference rebuild already running"))?;
                 self.rebuild_with_cascade(context, job, cascade)
             }
-            "status" => self.status(context, job, &mut std::collections::BTreeMap::new()),
+            "status" => self.status(context, job, &mut std::collections::BTreeMap::new(), inputs),
             "lineage" => self.lineage(context, job),
             _ => bail!("unknown inference operation"),
         }

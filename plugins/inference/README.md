@@ -107,6 +107,10 @@ Two operations exist mainly for the panel:
 - `jobs` (`{}`) lists every job: provider, profile, sources, inputs, dependencies, test count, and
   whether its reasoner `explains`. No reasoner is called.
 - `status` with `{}` returns every job's state in one call, computing each upstream state once.
+  Re-reading a job's outside inputs to see whether they changed can take seconds; for a federated
+  input it can take as long as the federation timeout. `"inputs": false` (with or without `job`)
+  skips that, and such jobs say `inputs_checked: false`. The panel's overview uses it, and checks
+  the inputs of the selected job only.
 
 The page is exercised against the deployed stack by
 `node scripts/ui/inference-deployed.mjs` (set `PLAYWRIGHT_MODULE` if Playwright is installed

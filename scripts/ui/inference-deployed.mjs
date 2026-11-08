@@ -26,8 +26,9 @@ try {
   const rows = await table.locator('tbody tr').count();
   check('the panel lists every job with a state', rows === 10);
 
-  const idle = () => page.waitForFunction(() => !document.querySelector('[aria-label="Inference jobs"]')?.textContent?.includes('Working…'));
-  const status = text => panel.getByRole('status').filter({ hasText: text }).first().waitFor();
+  // Rebuilds and cascades on a CI machine can take a while.
+  const idle = () => page.waitForFunction(() => !document.querySelector('[aria-label="Inference jobs"]')?.textContent?.includes('Working…'), null, { timeout: 120000 });
+  const status = text => panel.getByRole('status').filter({ hasText: text }).first().waitFor({ timeout: 120000 });
   const pick = async name => { await table.getByRole('button', { name, exact: true }).click(); await panel.getByRole('region', { name: `Job ${name}` }).waitFor().catch(() => {}); };
   const job = name => panel.getByLabel(`Job ${name}`);
   const row = name => table.locator('tbody tr').filter({ has: page.getByRole('button', { name, exact: true }) });

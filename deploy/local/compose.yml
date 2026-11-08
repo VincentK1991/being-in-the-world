@@ -1,12 +1,15 @@
 name: rdf-local
-# Docker Desktop / WSL deployment. Only loopback host ports are published.
+# Docker Desktop / WSL deployment. Only loopback host ports are published (RDF_PUBLISH_HOST=0.0.0.0
+# is for throwaway Linux CI runners, where containers cannot reach the host's loopback).
 # Internal relays preserve the engine and provider loopback-only policy.
 services:
   backend:
     build:
       context: ../..
       dockerfile: deploy/local/backend.Dockerfile
-    ports: ["127.0.0.1:7878:7878"]
+    ports: ["${RDF_PUBLISH_HOST:-127.0.0.1}:7878:7878"]
+    # Docker Desktop resolves host.docker.internal by itself; plain Linux (CI) needs the mapping.
+    extra_hosts: ["host.docker.internal:host-gateway"]
     command: ["--inference-config", "/config/inference.json", "--semantic-config", "/config/semantic.json", "gateway", "--db", "/data/db", "--default-dataset", "default", "--tenant-config-dir", "/config/tenants", "--bind", "127.0.0.1:7879"]
     volumes:
       - rdf-data:/data
@@ -21,7 +24,7 @@ services:
     build:
       context: ../..
       dockerfile: deploy/local/ui.Dockerfile
-    ports: ["127.0.0.1:4321:4321"]
+    ports: ["${RDF_PUBLISH_HOST:-127.0.0.1}:4321:4321"]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4321/health"]

@@ -9,7 +9,7 @@ interface Job {
 interface Clash { message: string; terms?: string[]; rule?: string; premises?: string[] }
 interface Status {
   state: string; triples?: number; clashes?: Clash[]; inconsistent_since?: number;
-  stale_upstream?: string[]; stale_inputs?: string[]; input_error?: string;
+  stale_upstream?: string[]; stale_inputs?: string[]; input_error?: string; inputs_checked?: boolean;
 }
 interface Step { job: string; action: string; blocked_by?: string }
 interface Rebuilt { state: string; triples?: number; clashes?: Clash[]; blocked_by?: string; cascade?: { steps: Step[] } }
@@ -118,9 +118,15 @@ export default function InferencePanel() {
   const job = jobs.find(j => j.name === name), status = states[name];
 
   async function loadStates() {
-    // One call for every job: the server limits concurrent operations.
-    const result = await invoke<{ jobs: (Status & { job: string })[] }>('status', {});
+    // One call for every job (the server limits concurrent operations), without re-reading outside
+    // inputs, which can take seconds each. `checkInputs` does that for the selected job.
+    const result = await invoke<{ jobs: (Status & { job: string })[] }>('status', { inputs: false });
     setStates(Object.fromEntries(result.jobs.map(s => [s.job, s])));
+  }
+  async function checkInputs(selected: Job) {
+    if (!selected.inputs.length) return;
+    const full = await invoke<Status>('status', { job: selected.name });
+    setStates(current => ({ ...current, [selected.name]: full }));
   }
   async function loadTriples(selected: Job, withReflexive = reflexive) {
     // The graph name comes from the plugin and is built from a validated job name.
@@ -136,7 +142,10 @@ export default function InferencePanel() {
   }, []);
   useEffect(() => {
     setRebuilt(null); setTests(null); setWhy(null); setAsked(''); setNotice(''); setRows([]);
-    if (job) loadTriples(job).catch(e => setError(failure(e)));
+    if (job) {
+      loadTriples(job).catch(e => setError(failure(e)));
+      checkInputs(job).catch(e => setError(failure(e)));
+    }
   }, [name, jobs.length]);
 
   async function act(work: () => Promise<void>) {
@@ -151,7 +160,7 @@ export default function InferencePanel() {
       : result.state === 'blocked' ? `Not rebuilt: upstream job ${result.blocked_by} is inconsistent.`
       : `Rebuilt ${name}: ${result.triples ?? 0} triples.`);
     await loadStates();
-    if (job) await loadTriples(job);
+    if (job) { await checkInputs(job); await loadTriples(job); }
   });
   const runTests = () => act(async () => {
     const result = await invoke<{ passed: boolean; results: TestResult[] }>('test', { job: name });
@@ -191,6 +200,7 @@ export default function InferencePanel() {
         {status?.stale_upstream && status.stale_upstream.length > 0 && <><dt className="text-slate-500">Waiting on</dt><dd>{status.stale_upstream.join(', ')}</dd></>}
         {status?.stale_inputs && <><dt className="text-slate-500">Changed inputs</dt><dd>{status.stale_inputs.join(', ')}</dd></>}
         {status?.input_error && <><dt className="text-slate-500">Input error</dt><dd className="text-red-800">{status.input_error}</dd></>}
+        {status?.inputs_checked === false && <><dt className="text-slate-500">Outside inputs</dt><dd className="text-slate-600">Not re-read yet, so a change there would not show. Checking…</dd></>}
       </dl>
       {status?.clashes && <div><h4 className="mb-2 text-sm font-semibold">What clashed</h4><ClashList clashes={status.clashes} /></div>}
 
@@ -202,7 +212,7 @@ export default function InferencePanel() {
             <option value="downstream">jobs that read it after</option><option value="both">both</option>
           </select></label>
         {job.tests > 0 && <button className="btn" disabled={busy} onClick={() => void runTests()}>Run {job.tests} rule test{job.tests === 1 ? '' : 's'}</button>}
-        <button className="btn" disabled={busy} onClick={() => void act(async () => { await loadStates(); await loadTriples(job); })}>Refresh</button>
+        <button className="btn" disabled={busy} onClick={() => void act(async () => { await loadStates(); await checkInputs(job); await loadTriples(job); })}>Refresh</button>
         {busy && <span className="text-sm text-slate-500" role="status">Working…</span>}
       </div>
 

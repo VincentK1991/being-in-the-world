@@ -2,7 +2,7 @@ name: rdf-jena-rules
 services:
   jena:
     build: .
-    ports: ["127.0.0.1:18083:8083"]
+    ports: ["${RDF_PUBLISH_HOST:-127.0.0.1}:18083:8083"]
     mem_limit: 640m
     cpus: 2
     restart: unless-stopped

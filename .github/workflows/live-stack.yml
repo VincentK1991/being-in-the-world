@@ -1,0 +1,47 @@
+name: Live stack
+
+# The whole local stack from nothing: sidecars, seeds, backend and Studio, then the live suites
+# (rule tests, federation/inference end to end, the Studio inference panel, W3C conformance with
+# reasoners). Nightly and on demand; scripts/ci/live-stack.sh does the work.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'
+
+jobs:
+  live-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      # Containers on a Linux runner reach the host only through host-gateway, not its loopback.
+      RDF_PUBLISH_HOST: 0.0.0.0
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: sudo apt-get update && sudo apt-get install -y clang libclang-dev cmake pkg-config
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install rdflib==7.6.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Playwright for the Studio check
+        run: |
+          npm ci --prefix scripts/ui
+          npx --prefix scripts/ui playwright install --with-deps chromium
+      - name: Start, seed and test the stack
+        run: bash scripts/ci/live-stack.sh
+      - name: Collect container logs
+        if: always()
+        run: bash scripts/ci/live-stack.sh logs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-stack
+          path: |
+            target/ci-logs
+            target/ui
+            target/conformance-*.json

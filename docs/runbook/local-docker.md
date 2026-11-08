@@ -64,9 +64,14 @@ The core engine's non-loopback bind and outbound-query restrictions are unchange
 
 Docker Desktop's host networking was tested and was not reachable from this WSL
 terminal; explicit published ports are required here. This Compose configuration
-uses Docker Desktop's host gateway behavior. Native Linux Docker would require
-an adapted sidecar network configuration; simply adding `host-gateway` is not a
-guarantee that loopback-published sidecars become reachable.
+uses Docker Desktop's host gateway behavior.
+
+On native Linux Docker, `host-gateway` alone is not enough, because loopback-published ports are
+not reachable through the bridge gateway. Every Compose file publishes on
+`${RDF_PUBLISH_HOST:-127.0.0.1}`, and the backend maps `host.docker.internal` to `host-gateway`.
+The nightly CI job sets `RDF_PUBLISH_HOST=0.0.0.0` on its throwaway runner (see
+`2026-11-08-live-stack-ci.md`). Locally the default stays loopback. From WSL, environment
+variables reach Docker Desktop's CLI only through `WSLENV`.
 
 The Nginx upstream uses Docker DNS with periodic resolution so backend recreation
 does not require rebuilding the UI. A 300-second proxy read timeout is a transport

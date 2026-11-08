@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: rdf
       POSTGRES_PASSWORD: rdf-local-only
       POSTGRES_DB: acme
-    ports: ["127.0.0.1:15432:5432"]
+    ports: ["${RDF_PUBLISH_HOST:-127.0.0.1}:15432:5432"]
     volumes: ["pg-data:/var/lib/postgresql/data"]
     restart: unless-stopped
     healthcheck:
@@ -20,14 +20,14 @@ services:
     build: ./ontop
     depends_on:
       postgres: { condition: service_healthy }
-    ports: ["127.0.0.1:18090:8080"]
+    ports: ["${RDF_PUBLISH_HOST:-127.0.0.1}:18090:8080"]
     restart: unless-stopped
   federation:
     build: ./comunica
     environment:
       FEDERATION_DEBUG: ${FEDERATION_DEBUG:-0}
     depends_on: [ontop]
-    ports: ["127.0.0.1:18095:8095"]
+    ports: ["${RDF_PUBLISH_HOST:-127.0.0.1}:18095:8095"]
     extra_hosts: ["host.docker.internal:host-gateway"]
     restart: unless-stopped
 volumes:

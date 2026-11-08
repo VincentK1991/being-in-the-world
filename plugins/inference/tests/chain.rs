@@ -201,5 +201,19 @@ fn jobs_and_status_for_all_list_every_job_in_rebuild_order() -> Result<()> {
         .filter_map(|s| Some((s["job"].as_str()?, s["state"].as_str()?)))
         .collect();
     assert_eq!(states, [("animals", "ready"), ("living", "missing")]);
+    let quick = run(&db, "status", json!({"inputs": false}))?;
+    assert_eq!(
+        quick["jobs"][0]["state"], "ready",
+        "skipping input checks changes nothing without inputs"
+    );
+    assert!(
+        quick["jobs"][0].get("inputs_checked").is_none(),
+        "only jobs with outside inputs say so"
+    );
+    assert!(run(&db, "status", json!({"inputs": "no"})).is_err());
+    assert!(
+        run(&db, "rebuild", json!({"job": "animals", "inputs": false})).is_err(),
+        "inputs is a status option"
+    );
     Ok(())
 }
