@@ -60,7 +60,7 @@ def main():
     mapping = re.sub(r'"myinsurancecompany\.omg-pc-database\.([^"]+)"', r'"\1"', mapping)
     out = ROOT / 'sidecars/federation/ontop/mapping.ttl'; out.write_text(mapping)
     # The ontology lets Ontop answer subclass/range questions over the live rows (query-time reasoning).
-    ontology = ROOT / 'sidecars/federation/ontop/ontology.ttl'; ontology.write_text(fetch(f'{RAW}/ontology/insurance.ttl'))
+    ontology = ROOT / 'sidecars/federation/ontop/ontology.ttl'; ontology.write_text(fetch(f'{RAW}/ontology/insurance.ttl') + '\n' + (ROOT / 'sidecars/federation/ontop/ontology-local.ttl').read_text())
     print(f'loaded {len([s for s in script if s.startswith("CREATE TABLE")])} tables; wrote {out.relative_to(ROOT)} and {ontology.relative_to(ROOT)}')
 
 main()

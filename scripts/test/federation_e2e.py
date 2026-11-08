@@ -144,8 +144,16 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
     live_derived, stored_derived = types('urn:rdftool:derived:inference:acme-live'), types('urn:rdftool:derived:inference:acme')
     ontop_types, asserted_types = virtual_types(), types('urn:rdftool:examples:acme-insurance')
     live, stored = live_derived | ontop_types, stored_derived | asserted_types
+    # ontology-local.ttl adds Reserve/Payment superclasses that only Ontop knows; the stored copy uses the upstream ontology.
+    live = {(s_, t) for s_, t in live if t not in (INS + 'Reserve', INS + 'Payment')}
     _, reserves = op('', 'virtual-graph', 'query', {'query': 'PREFIX ins: <http://data.world/schema/insurance/> SELECT ?x WHERE { ?x a ins:LossReserve }'})
     check('Ontop infers LossReserve from the ontology at query time, with nothing stored', len(reserves['results']['bindings']) == 2, reserves)
+    ins = 'PREFIX ins: <http://data.world/schema/insurance/> '
+    vq = lambda q: op('', 'virtual-graph', 'query', {'query': ins + q})[1]['results']['bindings']
+    reserves_up = {value(r, 'x') for r in vq('SELECT ?x WHERE { ?x a ins:Reserve }')}
+    check('Ontop applies subClassOf: loss and expense reserves are both Reserves', len(reserves_up) == 4 and {value(r, 'x') for r in vq('SELECT ?x WHERE { ?x a ins:LossReserve }')} < reserves_up, reserves_up)
+    check('Ontop applies subClassOf to payments without a job', len({value(r, 'x') for r in vq('SELECT ?x WHERE { ?x a ins:Payment }')}) == 4)
+    check('Ontop applies subPropertyOf: hasLossReserve and hasExpenseReserve answer hasReserve', len(vq('SELECT ?c ?a WHERE { ?c ins:hasReserve ?a }')) == 4)
     check('Ontop reasoning plus OWL-RL over live rows equals OWL-RL over the stored copy', live and live == stored, (len(live), len(stored), sorted(live ^ stored)[:5]))
     check('OWL-RL adds only what Ontop did not already entail', live_derived and not (live_derived & ontop_types), sorted(live_derived & ontop_types)[:3])
     risk = {(value(r, 'policy').rsplit('/', 1)[-1], value(r, 'n')) for r in rows(sparql('', 'PREFIX rsk: <https://risk.example.org/vocab#> SELECT ?policy ?n WHERE { GRAPH <urn:rdftool:derived:inference:portfolio-risk> { ?policy rsk:highSeverityClaims ?n } }')[1])}

@@ -25,6 +25,11 @@ job derives 40; the other 9 come from Ontop. The correct equivalence is between 
 equal the stored copy's asserted plus derived types (81 each, checked in the e2e script and shown by the workspace query
 "Where each inferred type comes from when reading live").
 
+Subclass and subproperty reasoning is tested too. The upstream ontology has no links among the amount classes, so
+`sidecars/federation/ontop/ontology-local.ttl` (appended by the seed script) adds `Reserve` and `Payment` superclasses and
+an `ins:hasReserve` superproperty. Ontop then answers `?x a ins:Reserve` (4 amounts, from 2 loss + 2 expense reserves),
+`?x a ins:Payment` (4) and `?c ins:hasReserve ?a` (4) from Postgres rows with nothing stored. These extra types exist only
+in Ontop, so the closure parity check leaves `Reserve` and `Payment` out.
+
 Limits: Ontop reasons in the OWL 2 QL fragment only (ranges, domains, subclass and subproperty), so OWL-RL rules beyond
-that still need a job. The ACME ontology happens to have no subclass links among the amount classes, so only range-based
-typing is demonstrated.
+that still need a job.

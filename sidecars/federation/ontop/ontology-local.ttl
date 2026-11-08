@@ -1,0 +1,17 @@
+# Local additions to the upstream ACME ontology (appended by scripts/seed/acme_postgres.py).
+# The upstream file has no subclass or subproperty links among the amount classes, so Ontop's
+# query-time subclass reasoning (OWL 2 QL) had nothing to do. These axioms give it something to prove.
+@prefix in:   <http://data.world/schema/insurance/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+in:Reserve a owl:Class ; rdfs:label "Reserve" .
+in:Payment a owl:Class ; rdfs:label "Payment" .
+in:LossReserve    rdfs:subClassOf in:Reserve .
+in:ExpenseReserve rdfs:subClassOf in:Reserve .
+in:LossPayment    rdfs:subClassOf in:Payment .
+in:ExpensePayment rdfs:subClassOf in:Payment .
+
+in:hasReserve a owl:ObjectProperty ; rdfs:label "has reserve" .
+in:hasLossReserve    rdfs:subPropertyOf in:hasReserve .
+in:hasExpenseReserve rdfs:subPropertyOf in:hasReserve .
