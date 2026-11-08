@@ -1,0 +1,27 @@
+name: Extended validation
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 6 * * 1'
+jobs:
+  conformance-and-benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: sudo apt-get update && sudo apt-get install -y clang libclang-dev cmake pkg-config
+      - run: bash scripts/conformance.sh
+      - run: bash scripts/jena-differential.sh
+      - run: cargo run --locked --release -p rdf-store --example persistent_benchmark -- 100000 > target/benchmark-100k.json
+      - run: cargo run --locked --release -p rdf-store --example persistent_benchmark -- 1000000 > target/benchmark-1m.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-results
+          path: |
+            target/conformance-*.json
+            target/benchmark-*.json

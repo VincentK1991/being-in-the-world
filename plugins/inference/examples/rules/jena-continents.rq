@@ -1,0 +1,1 @@
+SELECT ?person ?continent WHERE { GRAPH <urn:rdftool:derived:inference:work-jena> { ?person <https://example.org/worksOnContinent> ?continent } } ORDER BY ?person

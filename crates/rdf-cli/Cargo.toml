@@ -14,6 +14,19 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
+rdf-inference-providers = { path = "../../plugins/inference-providers" }
+rdf-plugin-inference = { path = "../../plugins/inference" }
+rdf-embedding-api = { path = "../../crates/rdf-embedding-api" }
+rdf-embedding-providers = { path = "../../plugins/embedding-providers" }
+serde_json.workspace = true
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
+rdf-server = { path = "../rdf-server" }
+rdf-engine = { path = "../rdf-engine" }
+rdf-plugin-dataset-summary = { path = "../../plugins/dataset-summary" }
+rdf-plugin-custom-properties = { path = "../../plugins/custom-properties" }
+rdf-plugin-semantic-search = { path = "../../plugins/semantic-search" }
+rdf-plugin-federation = { path = "../../plugins/federation" }
+rdf-plugin-catalog = { path = "../../plugins/catalog" }
 anyhow.workspace = true
 clap.workspace = true
 rdf-io = { path = "../rdf-io" }
@@ -24,6 +37,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 [dev-dependencies]
+tempfile = "3.15.0"
 assert_cmd.workspace = true
 insta.workspace = true
 predicates.workspace = true

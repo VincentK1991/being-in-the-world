@@ -1,0 +1,1 @@
+ASK { GRAPH <urn:rdftool:derived:inference:vehicles> { <https://example.org/secret> a <https://example.org/Vehicle> } }

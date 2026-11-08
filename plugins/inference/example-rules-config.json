@@ -1,0 +1,68 @@
+{
+  "providers": {
+    "sparql": {
+      "kind": "sparql-rules",
+      "config": {
+        "cancel_after_seconds": 30,
+        "max_triples": 200000
+      }
+    },
+    "jena": {
+      "kind": "jena-rules",
+      "config": {
+        "endpoint": "http://127.0.0.1:18083"
+      }
+    },
+    "owlrl": {
+      "kind": "owlrl",
+      "config": {
+        "endpoint": "http://127.0.0.1:18082"
+      }
+    }
+  },
+  "jobs": [
+    {
+      "name": "work-sparql",
+      "provider": "sparql",
+      "profile": "sparql-construct-once-v1",
+      "source_graphs": [
+        "urn:rules:data"
+      ],
+      "rules": [
+        "PREFIX ex: <https://example.org/>\nCONSTRUCT { ?person ex:worksInCountry ?country } WHERE { ?person ex:worksFor ?company . ?company ex:locatedIn ?country }",
+        "PREFIX ex: <https://example.org/>\nCONSTRUCT { ?person ex:worksOnContinent ?continent } WHERE { ?person ex:worksInCountry ?country . ?country ex:onContinent ?continent }"
+      ]
+    },
+    {
+      "name": "totals",
+      "provider": "sparql",
+      "profile": "sparql-construct-once-v1",
+      "source_graphs": [
+        "urn:rules:data"
+      ],
+      "rules": [
+        "PREFIX ex: <https://example.org/>\nCONSTRUCT { ?line ex:total ?total } WHERE { ?line ex:unitPrice ?price ; ex:quantity ?quantity . BIND(?price * ?quantity AS ?total) FILTER(?total > 10) }"
+      ]
+    },
+    {
+      "name": "work-jena",
+      "provider": "jena",
+      "profile": "jena-forward-v1",
+      "source_graphs": [
+        "urn:rules:data"
+      ],
+      "rules": [
+        "[worksIn: (?person <https://example.org/worksFor> ?company) (?company <https://example.org/locatedIn> ?country) -> (?person <https://example.org/worksInCountry> ?country)]\n[continent: (?person <https://example.org/worksInCountry> ?country) (?country <https://example.org/onContinent> ?continent) -> (?person <https://example.org/worksOnContinent> ?continent)]"
+      ]
+    },
+    {
+      "name": "vehicles",
+      "provider": "owlrl",
+      "profile": "owlrl-core-v1",
+      "source_graphs": [
+        "urn:example:data",
+        "urn:example:ontology"
+      ]
+    }
+  ]
+}

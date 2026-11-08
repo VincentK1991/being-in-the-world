@@ -1,0 +1,2 @@
+[worksIn: (?person <https://example.org/worksFor> ?company) (?company <https://example.org/locatedIn> ?country) -> (?person <https://example.org/worksInCountry> ?country)]
+[continent: (?person <https://example.org/worksInCountry> ?country) (?country <https://example.org/onContinent> ?continent) -> (?person <https://example.org/worksOnContinent> ?continent)]

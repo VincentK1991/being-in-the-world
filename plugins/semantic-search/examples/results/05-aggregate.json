@@ -1,0 +1,1 @@
+{"head":{"vars":["category","hits","bestScore"]},"results":{"bindings":[{"category":{"type":"literal","value":"transport"},"hits":{"type":"literal","value":"3","datatype":"http://www.w3.org/2001/XMLSchema#integer"},"bestScore":{"type":"literal","value":"0.6885705","datatype":"http://www.w3.org/2001/XMLSchema#double"}}]}}

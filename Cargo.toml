@@ -1,15 +1,20 @@
 [workspace]
-members = ["crates/*"]
+members = ["crates/rdf-model", "crates/rdf-io", "crates/rdf-store", "crates/rdf-cli", "crates/rdf-server", "crates/rdf-testkit", "crates/rdf-engine", "crates/rdf-plugin-api", "plugins/dataset-summary", "plugins/custom-properties", "plugins/semantic-search", "crates/rdf-embedding-api", "plugins/embedding-providers", "plugins/inference", "plugins/inference-providers", "plugins/federation", "plugins/catalog"]
+exclude = ["crates/sparql-syntax", "crates/sparql-eval", "crates/sparql-opt", "crates/rdf-reasoner", "crates/rdf-vec"]
 resolver = "2"
 
 [workspace.package]
 authors = ["RDF Store Contributors"]
 edition = "2024"
 license = "Apache-2.0"
-rust-version = "1.85"
+rust-version = "1.93"
 version = "0.1.0"
 
 [workspace.dependencies]
+oxigraph = { version = "=0.5.13", default-features = false, features = ["rocksdb"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+fs2 = "0.4"
 anyhow = "1.0.100"
 assert_cmd = "2.0.16"
 axum = "0.8.1"

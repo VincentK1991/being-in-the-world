@@ -1,0 +1,2 @@
+PREFIX : <urn:example:>
+ASK { :alice :knows/:name "Bob" }

@@ -1,0 +1,2 @@
+PREFIX : <urn:example:>
+SELECT ?name ?age WHERE { ?person :name ?name OPTIONAL { ?person :age ?age FILTER(?age > 20) } }

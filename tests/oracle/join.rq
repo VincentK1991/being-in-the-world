@@ -1,0 +1,2 @@
+PREFIX : <urn:example:>
+SELECT ?name WHERE { :alice :knows ?person . ?person :name ?name } ORDER BY ?name

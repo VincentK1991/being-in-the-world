@@ -1,0 +1,10 @@
+.git
+apps/studio/node_modules
+apps/studio/dist
+apps/studio/.astro
+scripts/ui/node_modules
+**/__pycache__
+target/*
+!target/debug
+target/debug/*
+!target/debug/rdftool

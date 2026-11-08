@@ -1,0 +1,19 @@
+[package]
+name = "rdf-inference-providers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+[lints]
+workspace = true
+[dependencies]
+rdf-plugin-inference = { path = "../inference" }
+rdf-store = { path = "../../crates/rdf-store" }
+spargebra = "=0.4.8"
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+[dev-dependencies]
+rdf-engine = { path = "../../crates/rdf-engine" }
+rdf-plugin-api = { path = "../../crates/rdf-plugin-api" }
+tempfile = "3.15.0"

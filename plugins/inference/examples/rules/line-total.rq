@@ -1,0 +1,2 @@
+PREFIX ex: <https://example.org/>
+CONSTRUCT { ?line ex:total ?total } WHERE { ?line ex:unitPrice ?price ; ex:quantity ?quantity . BIND(?price * ?quantity AS ?total) FILTER(?total > 10) }

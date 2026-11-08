@@ -1,0 +1,1 @@
+{"head":{"vars":["line","total"]},"results":{"bindings":[{"line":{"type":"uri","value":"https://example.org/line1"},"total":{"type":"literal","value":"21","datatype":"http://www.w3.org/2001/XMLSchema#integer"}}]}}

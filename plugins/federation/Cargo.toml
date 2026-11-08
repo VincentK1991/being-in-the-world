@@ -1,0 +1,19 @@
+[package]
+name = "rdf-plugin-federation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+[lints]
+workspace = true
+[dependencies]
+rdf-plugin-api = { path = "../../crates/rdf-plugin-api" }
+spargebra = "=0.4.8"
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+oxiri.workspace = true
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+[dev-dependencies]
+rdf-engine = { path = "../../crates/rdf-engine" }
+tempfile = "3.15.0"

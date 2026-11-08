@@ -1,0 +1,1 @@
+SELECT ?person ?country WHERE { GRAPH <urn:rdftool:derived:inference:work-sparql> { ?person <https://example.org/worksInCountry> ?country } } ORDER BY ?person

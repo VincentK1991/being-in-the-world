@@ -19,6 +19,9 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      - name: Native storage build dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang libclang-dev cmake pkg-config
+
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
 
@@ -28,6 +31,18 @@ jobs:
       - name: Format
         run: cargo fmt --all --check
 
+      - name: Studio runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+
+      - name: Studio check and build
+        run: |
+          npm ci --prefix apps/studio
+          npm run check --prefix apps/studio
+          npm run build --prefix apps/studio
+          npm audit --prefix apps/studio
+
       - name: Compiler check
         run: cargo check --workspace --all-targets
 
@@ -36,6 +51,14 @@ jobs:
 
       - name: Tests
         run: cargo nextest run --workspace --all-targets
+
+      - name: Browser behavior tests
+        run: |
+          cargo build --locked -p rdf-cli
+          npm ci --prefix scripts/ui
+          cd scripts/ui
+          npx playwright install --with-deps chromium
+          npm test
 
       - name: Dependency policy
         run: cargo deny check

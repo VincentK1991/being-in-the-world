@@ -1,0 +1,14 @@
+@prefix ex: <https://example.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+ex:car a ex:Vehicle ; rdfs:label "Electric car" ; ex:price 32000 ; ex:category "transport" ;
+  rdfs:comment "An electric automobile stores power in rechargeable batteries.", "Electric motors propel this road vehicle." .
+ex:bike a ex:Vehicle ; rdfs:label "Commuter bicycle" ; ex:price 800 ; ex:category "transport" ;
+  rdfs:comment "A pedal powered bicycle for commuting around the city without fuel." .
+ex:bus a ex:Vehicle ; rdfs:label "Electric city bus" ; ex:price 180000 ; ex:category "transport" ;
+  rdfs:comment "A battery powered city bus carries passengers on public transit routes." .
+ex:bread rdfs:label "Bread recipe" ; ex:category "cooking" ;
+  rdfs:comment "A recipe for baking bread with flour and yeast." .
+ex:soup rdfs:label "Vegetable soup" ; ex:category "cooking" ;
+  rdfs:comment "Simmer carrots, potatoes and onions in broth to make a warming vegetable soup." .
+ex:stars rdfs:label "Galaxies" ; ex:category "astronomy" ;
+  rdfs:comment "Distant galaxies contain stars and cosmic dust." .

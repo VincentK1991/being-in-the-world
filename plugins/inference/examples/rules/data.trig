@@ -1,0 +1,9 @@
+@prefix ex: <https://example.org/> .
+<urn:rules:data> {
+  ex:alice ex:worksFor ex:acme . ex:acme ex:locatedIn ex:France .
+  ex:bob ex:worksFor ex:beta . ex:beta ex:locatedIn ex:USA .
+  ex:France ex:onContinent ex:Europe . ex:USA ex:onContinent ex:NorthAmerica .
+  ex:line1 ex:unitPrice 7 ; ex:quantity 3 .
+  ex:line2 ex:unitPrice 2 ; ex:quantity 4 .
+}
+<urn:rules:excluded> { ex:secret ex:worksFor ex:acme . }

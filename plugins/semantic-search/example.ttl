@@ -1,0 +1,6 @@
+@prefix ex: <https://example.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ex:car rdfs:comment "An electric automobile stores power in rechargeable batteries." .
+ex:bread rdfs:comment "A recipe for baking bread with flour and yeast." .
+ex:stars rdfs:comment "Distant galaxies contain stars and cosmic dust." .

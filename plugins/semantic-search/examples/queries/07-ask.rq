@@ -1,0 +1,7 @@
+PREFIX search: <urn:rdftool:search:>
+PREFIX ex: <https://example.org/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+ASK {
+  (?subject ?score) search:subjects ("descriptions" "battery powered vehicles" 3) .
+  ?subject a ex:Vehicle . FILTER(?score > 0.5)
+}

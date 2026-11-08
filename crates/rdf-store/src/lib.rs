@@ -386,6 +386,10 @@ fn index_iter<'a>(
     Box::new(index.range(lower..=upper).map(|(_, canonical)| canonical))
 }
 
+pub mod comparison;
+pub mod engine;
+mod policy;
 mod redb_store;
+pub use oxigraph;
 
 pub use redb_store::RedbQuadStorage;

@@ -1,0 +1,1 @@
+{"head":{"vars":["person","country"]},"results":{"bindings":[{"person":{"type":"uri","value":"https://example.org/alice"},"country":{"type":"uri","value":"https://example.org/France"}},{"person":{"type":"uri","value":"https://example.org/bob"},"country":{"type":"uri","value":"https://example.org/USA"}}]}}

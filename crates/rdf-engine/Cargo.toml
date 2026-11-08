@@ -1,0 +1,20 @@
+[package]
+name = "rdf-engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+[lints]
+workspace = true
+[dependencies]
+sha2 = "0.10.9"
+spargebra = "=0.4.8"
+rdf-store = { path = "../rdf-store" }
+rdf-plugin-api = { path = "../rdf-plugin-api" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+[dev-dependencies]
+rdf-plugin-custom-properties = { path = "../../plugins/custom-properties" }
+rdf-plugin-dataset-summary = { path = "../../plugins/dataset-summary" }
+rdf-plugin-catalog = { path = "../../plugins/catalog" }

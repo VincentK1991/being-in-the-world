@@ -1,0 +1,2 @@
+<https://example.org/bread> <http://www.w3.org/2000/01/rdf-schema#label> "Bread recipe" ;
+	<https://example.org/semanticScore> "0.76633406"^^<http://www.w3.org/2001/XMLSchema#double> .

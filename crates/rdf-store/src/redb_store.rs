@@ -21,6 +21,35 @@ const DOSPG_TABLE: TableDefinition<&[u8], &[u8]> = TableDefinition::new("d_ospg"
 const META_NEXT_DATASET_ID: &str = "next_dataset_id";
 const DEFAULT_GRAPH_ID: u64 = 0;
 
+/// Export from a locked, read-only source snapshot. redb may write metadata on
+/// open, so only the disposable copy is passed to redb's Database API.
+pub fn export_legacy(path: &Path) -> anyhow::Result<Vec<(String, Vec<Quad>)>> {
+    use fs2::FileExt;
+    let mut source = std::fs::File::open(path)?;
+    source.try_lock_exclusive()?;
+    let temp = tempfile::tempdir()?;
+    let copy = temp.path().join("legacy.redb");
+    let mut target = std::fs::File::create(&copy)?;
+    std::io::copy(&mut source, &mut target)?;
+    target.sync_all()?;
+    let db = Database::open(&copy)?;
+    let tx = db.begin_read()?;
+    let catalog = tx.open_table(DATASET_BY_NAME_TABLE)?;
+    let mut result = Vec::new();
+    for entry in catalog.iter()? {
+        let (name, id) = entry?;
+        let mut quads = Vec::new();
+        let table = tx.open_table(DSPOG_TABLE)?;
+        let (lower, upper) = range_for_dataset_prefix(id.value(), [None; 4]);
+        for entry in table.range(lower.as_slice()..=upper.as_slice())? {
+            let (_, value) = entry?;
+            quads.push(decode_quad_from_ids(&tx, id.value(), decode_ids(value.value())?)?);
+        }
+        result.push((name.value().to_owned(), quads));
+    }
+    Ok(result)
+}
+
 #[derive(Debug)]
 pub struct RedbQuadStorage {
     db: Database,

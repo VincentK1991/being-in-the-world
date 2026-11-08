@@ -1,0 +1,9 @@
+PREFIX search: <urn:rdftool:search:>
+PREFIX ex: <https://example.org/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?intent ?label ?score WHERE {
+  { (?subject ?score) search:subjects ("descriptions" "battery powered vehicles" 1) . BIND("travel" AS ?intent) }
+  UNION
+  { (?subject ?score) search:subjects ("descriptions" "baking homemade bread" 1) . BIND("cooking" AS ?intent) }
+  ?subject rdfs:label ?label .
+} ORDER BY ?intent

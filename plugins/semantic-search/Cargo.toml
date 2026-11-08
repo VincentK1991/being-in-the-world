@@ -1,0 +1,22 @@
+[package]
+name = "rdf-plugin-semantic-search"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+[lints]
+workspace = true
+[dependencies]
+rdf-embedding-api = { path = "../../crates/rdf-embedding-api" }
+rdf-plugin-api = { path = "../../crates/rdf-plugin-api" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+sha2 = "0.10.9"
+uuid.workspace = true
+oxiri.workspace = true
+[dev-dependencies]
+rdf-embedding-providers = { path = "../embedding-providers" }
+rdf-engine = { path = "../../crates/rdf-engine" }
+tempfile = "3.15.0"

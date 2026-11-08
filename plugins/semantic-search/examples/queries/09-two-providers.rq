@@ -1,0 +1,8 @@
+PREFIX search: <urn:rdftool:search:>
+PREFIX ex: <https://example.org/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?provider ?subject ?score WHERE {
+  { (?subject ?score) search:subjects ("descriptions" "battery powered vehicles" 2) . BIND("local" AS ?provider) }
+  UNION
+  { (?subject ?score) search:subjects ("descriptions_openai" "battery powered vehicles" 2) . BIND("openai" AS ?provider) }
+} ORDER BY ?provider DESC(?score)

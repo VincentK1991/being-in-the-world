@@ -1,0 +1,8 @@
+PREFIX search: <urn:rdftool:search:>
+PREFIX ex: <https://example.org/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?category (COUNT(?subject) AS ?hits) (MAX(?score) AS ?bestScore) WHERE {
+  (?subject ?score) search:subjects ("descriptions" "battery powered vehicles" 6) .
+  ?subject ex:category ?category .
+  FILTER(?score > 0.2)
+} GROUP BY ?category ORDER BY DESC(?bestScore)

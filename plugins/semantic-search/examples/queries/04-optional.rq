@@ -1,0 +1,8 @@
+PREFIX search: <urn:rdftool:search:>
+PREFIX ex: <https://example.org/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?label ?price ?score WHERE {
+  (?subject ?score) search:subjects ("descriptions" "warm food for dinner" 3) .
+  ?subject rdfs:label ?label .
+  OPTIONAL { ?subject ex:price ?price }
+} ORDER BY DESC(?score)

@@ -2,6 +2,5 @@
 source: crates/rdf-cli/tests/cli_snapshots.rs
 expression: stdout
 ---
-dump: source=tests/fixtures/phase3/basic.ttl format=nquads quads=2
-<http://example.com/alice> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.com/Person> .
 <http://example.com/alice> <http://example.com/name> "Alice" .
+<http://example.com/alice> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.com/Person> .

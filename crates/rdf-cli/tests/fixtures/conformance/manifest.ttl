@@ -1,0 +1,5 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+<> mf:entries ( <#positive> <#negative> ) .
+<#positive> a rdft:TestNTriplesPositiveSyntax ; mf:action <../w3c-ntriples/positive/01-simple.pos.nt> .
+<#negative> a rdft:TestNTriplesNegativeSyntax ; mf:action <../w3c-ntriples/negative/01-missing-dot.neg.nt> .

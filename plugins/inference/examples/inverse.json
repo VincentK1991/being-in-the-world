@@ -1,0 +1,1 @@
+{"head":{"vars":["parent","child"]},"results":{"bindings":[{"parent":{"type":"uri","value":"https://example.org/bob"},"child":{"type":"uri","value":"https://example.org/alice"}}]}}

@@ -1,0 +1,2 @@
+PREFIX ex: <https://example.org/>
+CONSTRUCT { ?person ex:worksInCountry ?country } WHERE { ?person ex:worksFor ?company . ?company ex:locatedIn ?country }

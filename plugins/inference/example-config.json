@@ -1,0 +1,8 @@
+{
+  "endpoint": "http://127.0.0.1:18082",
+  "jobs": [{
+    "name": "vehicles",
+    "profile": "owlrl-core-v1",
+    "source_graphs": ["urn:example:data", "urn:example:ontology"]
+  }]
+}

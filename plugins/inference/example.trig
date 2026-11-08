@@ -1,0 +1,16 @@
+@prefix ex: <https://example.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+<urn:example:ontology> {
+  ex:ElectricCar rdfs:subClassOf ex:Vehicle .
+  ex:Vehicle rdfs:subClassOf ex:Asset .
+  ex:hasParent owl:inverseOf ex:hasChild .
+  ex:locatedIn a owl:TransitiveProperty .
+}
+<urn:example:data> {
+  ex:car1 a ex:ElectricCar .
+  ex:alice ex:hasParent ex:bob .
+  ex:office ex:locatedIn ex:city .
+  ex:city ex:locatedIn ex:country .
+}
+<urn:example:excluded> { ex:secret a ex:ElectricCar . }

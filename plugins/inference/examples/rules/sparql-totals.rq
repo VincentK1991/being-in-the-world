@@ -1,0 +1,1 @@
+SELECT ?line ?total WHERE { GRAPH <urn:rdftool:derived:inference:totals> { ?line <https://example.org/total> ?total } }

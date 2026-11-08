@@ -1,0 +1,4 @@
+@prefix : <urn:example:> .
+:alice :knows :bob, :carol .
+:bob :name "Bob" ; :age 30 .
+:carol :name "Carol" .

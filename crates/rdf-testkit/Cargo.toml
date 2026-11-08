@@ -10,4 +10,8 @@ authors.workspace = true
 workspace = true
 
 [dependencies]
+anyhow.workspace = true
+serde.workspace = true
+rdf-store = { path = "../rdf-store" }
+url = "2"
 rdf-io = { path = "../rdf-io" }

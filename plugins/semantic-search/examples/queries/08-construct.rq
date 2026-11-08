@@ -1,0 +1,7 @@
+PREFIX search: <urn:rdftool:search:>
+PREFIX ex: <https://example.org/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+CONSTRUCT { ?subject ex:semanticScore ?score ; rdfs:label ?label } WHERE {
+  (?subject ?score) search:subjects ("descriptions" "baking homemade bread" 1) .
+  ?subject rdfs:label ?label .
+}

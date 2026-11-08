@@ -1,0 +1,1 @@
+SELECT ?parent ?child WHERE { GRAPH <urn:rdftool:derived:inference:vehicles> { ?parent <https://example.org/hasChild> ?child } }

@@ -1,0 +1,2 @@
+PREFIX : <urn:example:>
+SELECT (COUNT(?person) AS ?count) WHERE { :alice :knows ?person }
