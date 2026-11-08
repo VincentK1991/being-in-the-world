@@ -176,6 +176,12 @@ enum Command {
         manifest: PathBuf,
         #[arg(long, default_value = "fresh")]
         source: String,
+        /// `oxigraph` evaluates with Oxigraph directly; `database` goes through rdf-engine.
+        #[arg(long, default_value = "oxigraph")]
+        engine: String,
+        /// Run entailment cases through a reasoner: `owlrl=<url>` or `jena-rdfs=<url>`.
+        #[arg(long)]
+        reasoner: Option<String>,
     },
     SmokeSuite {
         #[arg(long)]
@@ -564,9 +570,16 @@ fn run(
             }
             println!("equal");
         }
-        Command::TestSuite { manifest, source } => {
+        Command::TestSuite { manifest, source, engine, reasoner } => {
             ensure!(source == "fresh", "test-suite requires --source fresh");
-            let report = rdf_testkit::conformance::run(&manifest)?;
+            let engine = match engine.as_str() {
+                "oxigraph" => rdf_testkit::conformance::Engine::Oxigraph,
+                "database" => rdf_testkit::conformance::Engine::Database,
+                other => bail!("unknown engine {other}: expected oxigraph or database"),
+            };
+            let reasoning =
+                reasoner.as_deref().map(rdf_testkit::entailment::Reasoning::parse).transpose()?;
+            let report = rdf_testkit::conformance::run_reasoning(&manifest, engine, reasoning)?;
             println!("{}", serde_json::to_string_pretty(&report)?);
             ensure!(report.failed == 0, "conformance failures");
         }

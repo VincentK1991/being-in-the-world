@@ -1,0 +1,1002 @@
+{
+ "suite": "entailment",
+ "variant": "jena-rdfs",
+ "rdf_tests_revision": "d01b141c65ddf8e5b615256f264111118bdb2134",
+ "totals": {
+  "failed": 14,
+  "passed": 46,
+  "unsupported": 184
+ },
+ "expected": {
+  "<http://owl.semanticweb.org/id/Chain2trans#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/Chain2trans#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/DisjointClasses-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/DisjointClasses-2D001#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/DisjointClasses-2D002#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/DisjointClasses-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/DisjointClasses-2D003#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddifferent-2Dindividuals-2D2-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddifferent-2Dindividuals-2D2-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddifferent-2Dindividuals-2D3-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddifferent-2Dindividuals-2D3-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddisjoint-2Dclasses-2D2-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddisjoint-2Dclasses-2D2-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddisjoint-2Dclasses-2D3-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddisjoint-2Dclasses-2D3-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddomain-2Drange-2Dsimple-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dequivalent-2Dclasses-2D2-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dequivalent-2Dclasses-2D2-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dequivalent-2Dclasses-2D3-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dequivalent-2Dclasses-2D3-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dno-2Dbuiltin-2Dprefixes-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dontology-2Dannotation-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dpropertychain-2D2-2Dannotated-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dpropertychain-2D2-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dsame-2Dindividual-2D2-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dsame-2Dindividual-2D2-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dsame-2Dindividual-2D3-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/Functionality-2Dclash#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DAnnotationAnnotations-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DAsymmetricProperty-2D001#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DAxiomAnnotations-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointDataProperties-2D001#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointDataProperties-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointDataProperties-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointObjectProperties-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointObjectProperties-2D001#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointObjectProperties-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointObjectProperties-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DIrreflexiveProperty-2D001#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D003#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D004#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D004#NegativeEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D005#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D006#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DNegativeDataPropertyAssertion-2D001#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DNegativeObjectPropertyAssertion-2D001#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2D001#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D003#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D004#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D004#NegativeEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectQCR-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectQCR-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DReflexiveProperty-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DReflexiveProperty-2D001#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Danonymous-2Dindividual#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Drules-2Dfp-2DdifferentFrom#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Drules-2Dfp-2DdifferentFrom#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Drules-2Difp-2DdifferentFrom#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Drules-2Difp-2DdifferentFrom#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Dvalid-2Doneof#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Dvalid-2Drightside-2Dallvaluesfrom#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/Plus-2Dminus-2D0-2Dplus-2Ddisjointness#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/String-2Dinteger-2Dclash#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DAnnotationProperty-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DAnnotationProperty-2D004#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D003#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D004#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D004#NegativeEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D005#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D005#NegativeEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D005-2DDirect#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D005-2DDirect#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.26-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.26-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.26-2D005#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.26-2D010#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.26-2D010#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.5-2D005#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.5-2D005#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D006#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D006#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D007#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D007#NegativeEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D008#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D008#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D009#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D009#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D011#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D011#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DNothing-2D001#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DbackwardCompatibleWith-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Ddescription-2Dlogic-2D101#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Ddescription-2Dlogic-2D103#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Ddescription-2Dlogic-2D104#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdifferentFrom-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdifferentFrom-2D001#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D004#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D005#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D006#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D007#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D008#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D009#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D003#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D008#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D008#NegativeEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D008-2DDirect#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D008-2DDirect#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentProperty-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentProperty-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentProperty-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentProperty-2D003#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Dimports-2D011#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Dimports-2D011#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Dmiscellaneous-2D303#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DsameAs-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DsameAs-2D001#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#d-ent-01>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/D> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#lang>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q1-rdfs>": {
+   "status": "failed",
+   "cause": "axiomatic-triples-disabled",
+   "detail": "query result mismatch: missing: _:c14n1 <urn:binding:c> <http://example.org/Student> | _:c14n1 <urn:result:row> \"\" ; unexpected: "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q1>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q3>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q4>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent10>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent3>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent4>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent5>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent6>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent7>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent8>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent9>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#plainLit>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf01>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf02>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf03>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs05>": {
+   "status": "failed",
+   "cause": "axiomatic-triples-disabled",
+   "detail": "query result mismatch: missing: _:c14n1 <urn:binding:c> <http://example.org/x/d> | _:c14n1 <urn:binding:x> <http://example.org/x/x> | _:c14n1 <urn:result:row> \"\" ; unexpected: "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif01>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif03>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif04>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif06>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple1>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple3>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple4>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple5>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple6>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple7>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple8>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-02>": {
+   "status": "failed",
+   "cause": "axiomatic-triples-disabled",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:c> <http://example.org/x/c> | _:c14n0 <urn:binding:x> <http://example.org/x/x> | _:c14n0 <urn:result:row> \"\" ; unexpected: "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-03>": {
+   "status": "failed",
+   "cause": "axiomatic-triples-disabled",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:c> <http://example.org/x/c> | _:c14n0 <urn:binding:x> <http://example.org/x/x> | _:c14n0 <urn:result:row> \"\" ; unexpected: "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-10>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-11>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-12>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-13>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "reasoner offers no OwlRl profile"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-non-well-formed-literal-2>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#integer>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-range-clash>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#integer>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-semantic-equivalence-between-datatypes>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-semantic-equivalence-within-type-1>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-semantic-equivalence-within-type-2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-test008>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-test009>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-test010>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#integer>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-infinity>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-round-different>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-round-same>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-zero>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-infinity>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-round-different>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-round-same>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-zero>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#literal-type>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdf-charmod-uris-test003>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdf-charmod-uris-test004>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-seq-representation-test002>": {
+   "status": "failed",
+   "cause": "axiomatic-triples-disabled",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/1999/02/22-rdf-syntax-ns#_1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#ContainerMembershipProperty>"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-seq-representation-test003>": {
+   "status": "failed",
+   "cause": "axiomatic-triples-disabled",
+   "detail": "conclusion not entailed; unmatched: <http://example.org/a> <http://www.w3.org/2000/01/rdf-schema#member> <http://example.org/b>"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-seq-representation-test004>": {
+   "status": "failed",
+   "cause": "axiomatic-triples-disabled",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/1999/02/22-rdf-syntax-ns#_1> <http://www.w3.org/2000/01/rdf-schema#subPropertyOf> <http://www.w3.org/2000/01/rdf-schema#member>"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-xmllang-test007a>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-xmllang-test007b>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-xmllang-test007c>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfs-entailment-test001>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfs-entailment-test002>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#statement-entailment-test001>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#statement-entailment-test002>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#statement-entailment-test004>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#tex-01-language-tag-case-1>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#tex-01-language-tag-case-2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#xmlsch-02-whitespace-facet-2>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#int>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#xmlsch-02-whitespace-facet-4>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#int>)"
+  }
+ }
+}

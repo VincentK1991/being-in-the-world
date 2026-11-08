@@ -60,6 +60,14 @@ federation:
     python3 scripts/seed/federation_demo.py
 
 # Run every inference job's rule tests (needs `just dev`, and the OWL-RL and Jena sidecars for those jobs).
+# W3C conformance: syntax suites, SPARQL evaluation and entailment, each held to tests/conformance/.
+conformance:
+    CONFORMANCE_REASONERS=1 bash scripts/conformance.sh
+
+# Rewrite a conformance baseline after a deliberate change, e.g. `just conformance-update sparql --engine database`.
+conformance-update *args:
+    python3 scripts/conformance/baseline.py {{args}} --update
+
 rule-tests:
     python3 scripts/test/rule_tests.py
 

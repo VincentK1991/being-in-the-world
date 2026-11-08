@@ -14,7 +14,12 @@ jobs:
           distribution: temurin
           java-version: '17'
       - run: sudo apt-get update && sudo apt-get install -y clang libclang-dev cmake pkg-config
+      - run: |
+          docker compose -f sidecars/inference/compose.yml up -d --build --wait
+          docker compose -f sidecars/jena-rules/compose.yml up -d --build --wait
       - run: bash scripts/conformance.sh
+        env:
+          CONFORMANCE_REASONERS: '1'
       - run: bash scripts/jena-differential.sh
       - run: cargo run --locked --release -p rdf-store --example persistent_benchmark -- 100000 > target/benchmark-100k.json
       - run: cargo run --locked --release -p rdf-store --example persistent_benchmark -- 1000000 > target/benchmark-1m.json

@@ -1,0 +1,1048 @@
+{
+ "suite": "sparql",
+ "variant": "database",
+ "rdf_tests_revision": "d01b141c65ddf8e5b615256f264111118bdb2134",
+ "totals": {
+  "failed": 47,
+  "passed": 949,
+  "unsupported": 138,
+  "value-only": 22
+ },
+ "expected": {
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/distinct/manifest#distinct-1>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:v> \"+1\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n1 <urn:binding:v> \"1\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n2 <urn:bindin"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/distinct/manifest#distinct-9>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n10 <urn:binding:v> \"01\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n10 <urn:result:row> \"\" | _:c14n11 <urn:binding:v> \"+1.0\"^^<http://www.w3.org/2001/XMLS"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/distinct/manifest#no-distinct-1>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:v> \"1.3e0\"^^<http://www.w3.org/2001/XMLSchema#float> | _:c14n1 <urn:binding:v> \"+1\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n10 <urn:bind"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/distinct/manifest#no-distinct-9>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:v> \"1.3e0\"^^<http://www.w3.org/2001/XMLSchema#float> | _:c14n10 <urn:binding:v> \"+1\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n11 <urn:bin"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/expr-builtin/manifest#case-insensitive-booleans>": {
+   "status": "failed",
+   "cause": "oxigraph-parser",
+   "detail": "error at 2:23: expected ENCODE_FOR_URI"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/expr-builtin/manifest#dawg-str-1>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n3 <urn:binding:v> \"1\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n3 <urn:binding:x> <http://example.org/things#xi1> ; unexpected: _:c14n3 <urn:binding:v> "
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/expr-builtin/manifest#dawg-str-2>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:v> \"1\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n0 <urn:binding:x> <http://example.org/things#xi3> | _:c14n0 <urn:result:row> \"\" ; unexpe"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/expr-builtin/manifest#sameTerm-eq>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n1 <urn:binding:v1> _:c14n9 | _:c14n1 <urn:binding:v2> _:c14n9 | _:c14n1 <urn:binding:x1> <http://example.org/things#xb> | _:c14n1 <urn:binding:x2> <http://example"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/expr-builtin/manifest#sameTerm-not-eq>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n10 <urn:binding:v1> \"1\"^^<http://www.w3.org/2001/XMLSchema#double> | _:c14n10 <urn:binding:v2> \"1\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n10 <urn:bin"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/expr-builtin/manifest#sameTerm-simple>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n1 <urn:binding:v1> _:c14n9 | _:c14n1 <urn:binding:v2> _:c14n9 | _:c14n1 <urn:binding:x1> <http://example.org/things#xb> | _:c14n1 <urn:binding:x2> <http://example"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/expr-equals/manifest#eq-graph-1>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n1 <urn:binding:x> <http://example.org/things#xi2> ; unexpected: _:c14n1 <urn:binding:x> <http://example.org/things#xi3> | _:c14n2 <urn:binding:x> <http://example."
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/expr-equals/manifest#eq-graph-2>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:x> <http://example.org/things#xd1> ; unexpected: _:c14n0 <urn:binding:x> <http://example.org/things#xd3> | _:c14n1 <urn:binding:x> <http://example."
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/graph/manifest#graph-nested-2>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2026-10",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:g1> <https://w3c.github.io/rdf-tests/sparql/sparql10/graph/data-nested-g2.ttl> | _:c14n0 <urn:binding:o> <http://example.com/o> | _:c14n0 <urn:bind"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/graph/manifest#graph-nested-3>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2026-10",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:g> <https://w3c.github.io/rdf-tests/sparql/sparql10/graph/data-nested-g1.ttl> | _:c14n1 <urn:binding:g> <https://w3c.github.io/rdf-tests/sparql/spa"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/graph/manifest#graph-optional>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2025-10",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:g> <https://w3c.github.io/rdf-tests/sparql/sparql10/graph/data-optional.ttl> | _:c14n0 <urn:binding:s> <http://example/s2> ; unexpected: _:c14n0 <u"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/graph/manifest#graph-variable-scope>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2025-09",
+   "detail": "query result mismatch: missing:  ; unexpected: _:c14n0 <urn:binding:g> <https://w3c.github.io/rdf-tests/sparql/sparql10/graph/data-g2.ttl> | _:c14n0 <urn:result:row> \"\" | _:c14n1 <urn:binding:g> <http"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/open-world/manifest#date-2>": {
+   "status": "failed",
+   "cause": "oxigraph-untriaged",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:v> \"2001-01-01Z\"^^<http://www.w3.org/2001/XMLSchema#date> | _:c14n0 <urn:binding:x> <http://example/d5> | _:c14n1 <urn:binding:v> \"2001-01-01\"^^<ht"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/open-world/manifest#date-3>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n2 <urn:binding:v> \"2006-08-23+00:00\"^^<http://www.w3.org/2001/XMLSchema#date> ; unexpected: _:c14n2 <urn:binding:v> \"2006-08-23Z\"^^<http://www.w3.org/2001/XMLSche"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/open-world/manifest#open-eq-01>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing:  ; unexpected: _:c14n0 <urn:binding:x> <http://example/ns#z2> | _:c14n0 <urn:result:row> \"\" | _:c14n1 <urn:binding:x> <http://example/ns#z1> | _:c14n1 <urn:result:row> "
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/open-world/manifest#open-eq-03>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n1 <urn:binding:v> \"01\"^^<http://www.w3.org/2001/XMLSchema#integer> ; unexpected: _:c14n1 <urn:binding:v> \"1\"^^<http://www.w3.org/2001/XMLSchema#integer>"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/open-world/manifest#open-eq-04>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:v> \"02\"^^<http://www.w3.org/2001/XMLSchema#integer> ; unexpected: _:c14n0 <urn:binding:v> \"2\"^^<http://www.w3.org/2001/XMLSchema#integer>"
+  },
+  "<http://www.w3.org/2001/sw/DataAccess/tests/data-r2/syntax-sparql3/manifest#syn-bad-26>": {
+   "status": "failed",
+   "cause": "oxigraph-parser",
+   "detail": "syntax expectation mismatch"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-avg-02>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n1 <urn:binding:avg> \"2.0E-1\"^^<http://www.w3.org/2001/XMLSchema#double> | _:c14n1 <urn:binding:s> <http://www.example.org/mixed2> | _:c14n2 <urn:binding:avg> \"2.0\""
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-empty-group-count-graph>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2025-10",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:c> \"0\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n0 <urn:binding:g> <https://w3c.github.io/rdf-tests/sparql/sparql11/aggregates/singleton."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-err-02>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:avg> \"2.0\"^^<http://www.w3.org/2001/XMLSchema#decimal> | _:c14n0 <urn:binding:g> <http://example.com/data/#y> | _:c14n1 <urn:binding:avg> \"2.5E0\"^^<"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-groupconcat-04>": {
+   "status": "failed",
+   "cause": "oxigraph-group-concat-keeps-language",
+   "detail": "query result mismatch: missing: boolean:true ; unexpected: boolean:false"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-groupconcat-06>": {
+   "status": "failed",
+   "cause": "oxigraph-group-concat-keeps-language",
+   "detail": "query result mismatch: missing: boolean:true ; unexpected: boolean:false"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-max-01>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:max> \"3.0E4\"^^<http://www.w3.org/2001/XMLSchema#double> ; unexpected: _:c14n0 <urn:binding:max> \"30000\"^^<http://www.w3.org/2001/XMLSchema#double>"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-max-02>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:max> \"3.0E4\"^^<http://www.w3.org/2001/XMLSchema#double> | _:c14n0 <urn:binding:s> <http://www.example.org/doubles> | _:c14n1 <urn:binding:max> \"3\"^^"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-max-distinct>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n2 <urn:binding:max> \"2.0E3\"^^<http://www.w3.org/2001/XMLSchema#double> ; unexpected: _:c14n2 <urn:binding:max> \"2000\"^^<http://www.w3.org/2001/XMLSchema#double>"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-min-01>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:min> \"1.0\"^^<http://www.w3.org/2001/XMLSchema#decimal> ; unexpected: _:c14n0 <urn:binding:min> \"1\"^^<http://www.w3.org/2001/XMLSchema#decimal>"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-min-02>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:min> \"2.0E-1\"^^<http://www.w3.org/2001/XMLSchema#double> | _:c14n0 <urn:binding:s> <http://www.example.org/mixed2> | _:c14n1 <urn:binding:min> \"1.0\""
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-min-distinct>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:min> \"1.0\"^^<http://www.w3.org/2001/XMLSchema#decimal> | _:c14n0 <urn:binding:s> <http://www.example.org/decimals> | _:c14n2 <urn:binding:min> \"1.0E"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/aggregates/manifest#agg-sum-02>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:s> <http://www.example.org/mixed2> | _:c14n0 <urn:binding:sum> \"4.0E-1\"^^<http://www.w3.org/2001/XMLSchema#double> | _:c14n1 <urn:binding:s> <http:/"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/bindings/manifest#graph-from-named-1>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2026-10",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:g> <http://example.org/g1> | _:c14n1 <urn:binding:g> <http://example.org/g1> | _:c14n1 <urn:binding:x> \"2\"^^<http://www.w3.org/2001/XMLSchema#integ"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/bindings/manifest#graph-from-named-2>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2026-10",
+   "detail": "query result mismatch: missing:  ; unexpected: _:c14n1 <urn:binding:g> <http://example.org/unknown> | _:c14n1 <urn:binding:x> \"1\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n1 <urn:result:row>"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/bindings/manifest#graph-from-named-3>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2026-10",
+   "detail": "query result mismatch: missing:  ; unexpected: _:c14n1 <urn:binding:x> \"3\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n1 <urn:result:row> \"\" | _:c14n2 <urn:binding:x> \"2\"^^<http://www.w3.org/2"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/bindings/manifest#graph-no-var>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2026-10",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:g> <https://w3c.github.io/rdf-tests/sparql/sparql11/bindings/data02.ttl> | _:c14n1 <urn:binding:g> <https://w3c.github.io/rdf-tests/sparql/sparql11"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/bindings/manifest#graph>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2025-10",
+   "detail": "query result mismatch: missing: _:c14n1 <urn:binding:g> <https://w3c.github.io/rdf-tests/sparql/sparql11/bindings/data02.ttl> | _:c14n2 <urn:binding:g> <https://w3c.github.io/rdf-tests/sparql/sparql11"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/bindings/manifest#values-construct-group-by>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2026-10",
+   "detail": "error at 9:1: expected [_]"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/cast/manifest#cast-bool>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n10 <urn:binding:a> <http://example.org/s10> | _:c14n10 <urn:binding:v> \"1E0\" | _:c14n11 <urn:binding:a> <http://example.org/s09> | _:c14n11 <urn:binding:boolean> \""
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/cast/manifest#cast-decimal>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:a> <http://example.org/b03> | _:c14n0 <urn:binding:decimal> \"0.0\"^^<http://www.w3.org/2001/XMLSchema#decimal> | _:c14n0 <urn:binding:v> \"0\"^^<http:/"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/cast/manifest#cast-double>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n1 <urn:binding:a> <http://example.org/s07> | _:c14n1 <urn:binding:double> \"0E0\"^^<http://www.w3.org/2001/XMLSchema#double> | _:c14n1 <urn:binding:v> \"0E1\" | _:c14n"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/cast/manifest#cast-float>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:a> <http://example.org/s11> | _:c14n0 <urn:binding:float> \"13\"^^<http://www.w3.org/2001/XMLSchema#float> | _:c14n0 <urn:binding:v> \"13\" | _:c14n1 <u"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/cast/manifest#cast-int>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n1 <urn:binding:a> <http://example.org/b01> | _:c14n1 <urn:binding:v> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> | _:c14n10 <urn:binding:a> <http://example."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/cast/manifest#cast-string>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n0 <urn:binding:a> <http://example.org/n10> | _:c14n0 <urn:binding:string> \"1\" | _:c14n0 <urn:binding:v> \"1E0\"^^<http://www.w3.org/2001/XMLSchema#float> | _:c14n1 <"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/csv-tsv-res/manifest#csv03>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: http://example.org/s6\u001fhttp://example.org/p6\u001f1.0E6 ; unexpected: http://example.org/s6\u001fhttp://example.org/p6\u001f1000000"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/csv-tsv-res/manifest#csv04>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: http://example.org/s6\u001fhttp://example.org/p6\u001f1.0E6 ; unexpected: http://example.org/s6\u001fhttp://example.org/p6\u001f1000000"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/csv-tsv-res/manifest#tsv03>": {
+   "status": "failed",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:o> \"1.0e6\"^^<http://www.w3.org/2001/XMLSchema#double> | _:c14n0 <urn:binding:p> <http://example.org/p6> | _:c14n0 <urn:binding:s> <http://example.o"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind01>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind02>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind03>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind04>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind05>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind06>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind07>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind08>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#d-ent-01>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/D> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#lang>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#owlds01>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> needs a reason"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#owlds02>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q1-rdfs>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q1>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q2>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q3>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q4>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q5>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent10>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent2>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent3>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent4>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent5>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent6>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent7>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent8>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent9>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#plainLit>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf01>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf02>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf03>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf04>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs01>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs02>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs03>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs04>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs05>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs06>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs07>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs08>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs09>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs10>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs11>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs12>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs13>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif01>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif03>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif04>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif06>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple1>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple2>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple3>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple4>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple5>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple6>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple7>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple8>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-01>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-02>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> needs a reason"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-03>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/D> needs a reason"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-04>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDF> <http://www.w3.org/ns/entailment/RDFS> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-05>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDF> <http://www.w3.org/ns/entailment/RDFS> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-06>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-07>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-08>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-09>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> <http://www.w3.org/ns/entailment/RDFS> <http://www.w3.org/ns/entailment/RDF> <http://www."
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-10>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-11>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-12>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-13>": {
+   "status": "unsupported",
+   "cause": "needs-reasoner",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> <http://www.w3.org/ns/entailment/OWL-RDF-Based> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/functions/manifest#bnode01>": {
+   "status": "failed",
+   "cause": "oxigraph-untriaged",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:b2> _:c14n9 | _:c14n1 <urn:binding:b1> _:c14n6 | _:c14n1 <urn:binding:b2> _:c14n6 | _:c14n2 <urn:binding:b1> _:c14n7 ; unexpected: _:c14n0 <urn:bin"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/functions/manifest#coalesce01>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n1 <urn:binding:cx> \"0\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n1 <urn:binding:div> \"-2\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n2 <urn:bind"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/functions/manifest#plus-1-corrected>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n3 <urn:binding:x> \"1\" | _:c14n4 <urn:binding:sum> \"3.0\"^^<http://www.w3.org/2001/XMLSchema#decimal> | _:c14n4 <urn:binding:x> \"1.0\"^^<http://www.w3.org/2001/XMLSch"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/functions/manifest#plus-2-corrected>": {
+   "status": "value-only",
+   "cause": "oxigraph-canonical-lexical-forms",
+   "detail": "lexical forms differ: missing: _:c14n3 <urn:binding:x> \"1\" | _:c14n4 <urn:binding:x> \"1.0\"^^<http://www.w3.org/2001/XMLSchema#decimal> ; unexpected: _:c14n3 <urn:binding:x> \"1\"^^<http://www.w3.org/200"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#delete__existing_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#delete__nonexistent_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#get_of_delete__existing_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#get_of_post__after_noop>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#get_of_post__create__new_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#get_of_post__existing_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#get_of_post__multipart_formdata>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#get_of_put__default_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#get_of_put__graph_already_in_store>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#get_of_put__initial_state>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#head_existing_direct>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#head_existing_indirect>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#head_non_existing_indirect>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#head_on_a_nonexisting_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#head_on_an_existing_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#post__create__new_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#post__existing_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#post__multipart_formdata>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#post_get_new_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#post_get_post_get_direct>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#post_get_post_get_indirect>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#put__default_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#put__graph_already_in_store>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#put__initial_state>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#put_delete_get_delete_direct>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#put_delete_get_delete_indirect>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#put_get_default>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#put_get_repeat_direct>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#put_get_repeat_indirect>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#put_get_uri_pct_encoded_indirect>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/http-rdf-update/manifest#put_get_uri_pct_encoded_twice>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "GraphStoreProtocolTest: needs an HTTP graph store runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/negation/manifest#graph-minus>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2025-10",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:a> <http://example/a> | _:c14n0 <urn:result:row> \"\" ; unexpected: "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/property-path/manifest#zero_or_more_set_end>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2025-12",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:o> <http://example/s> | _:c14n0 <urn:result:row> \"\" ; unexpected: "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/property-path/manifest#zero_or_more_set_start>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2025-12",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:s> <http://example/o> | _:c14n0 <urn:result:row> \"\" ; unexpected: "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/property-path/manifest#zero_or_one_set_end>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2025-12",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:o> <http://example/s> | _:c14n0 <urn:result:row> \"\" ; unexpected: "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/property-path/manifest#zero_or_one_set_start>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2025-12",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:s> <http://example/o> | _:c14n0 <urn:result:row> \"\" ; unexpected: "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_multiple_queries>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_multiple_updates>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_query_method>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_query_missing_direct_type>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_query_missing_form_type>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_query_non_utf8>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_query_syntax>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_query_wrong_media_type>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_update_dataset_conflict>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_update_get>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_update_missing_form_type>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_update_non_utf8>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_update_syntax>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#bad_update_wrong_media_type>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_content_type_ask>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_content_type_construct>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_content_type_describe>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_content_type_select>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_dataset_default_graphs_get>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_dataset_default_graphs_post>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_dataset_full>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_dataset_named_graphs_get>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_dataset_named_graphs_post>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_get>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_multiple_dataset>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_post_direct>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#query_post_form>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#update_base_uri>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#update_dataset_default_graph>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#update_dataset_default_graphs>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#update_dataset_full>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#update_dataset_named_graphs>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#update_post_direct>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/protocol/manifest#update_post_form>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ProtocolTest: needs an HTTP protocol runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/service-description/manifest#conforms-to-schema>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ServiceDescriptionTest: needs an HTTP service description runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/service-description/manifest#has-endpoint-triple>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ServiceDescriptionTest: needs an HTTP service description runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/service-description/manifest#returns-rdf>": {
+   "status": "unsupported",
+   "cause": "needs-http-runner",
+   "detail": "ServiceDescriptionTest: needs an HTTP service description runner"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/service/manifest#service1>": {
+   "status": "failed",
+   "cause": "policy-local-only",
+   "detail": "SERVICE is disabled in the local-only profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/service/manifest#service2>": {
+   "status": "failed",
+   "cause": "policy-local-only",
+   "detail": "SERVICE is disabled in the local-only profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/service/manifest#service3>": {
+   "status": "failed",
+   "cause": "policy-local-only",
+   "detail": "SERVICE is disabled in the local-only profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/service/manifest#service4a>": {
+   "status": "failed",
+   "cause": "policy-local-only",
+   "detail": "SERVICE is disabled in the local-only profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/service/manifest#service5>": {
+   "status": "failed",
+   "cause": "policy-local-only",
+   "detail": "SERVICE is disabled in the local-only profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/service/manifest#service6>": {
+   "status": "failed",
+   "cause": "policy-local-only",
+   "detail": "SERVICE is disabled in the local-only profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/service/manifest#service7>": {
+   "status": "failed",
+   "cause": "policy-local-only",
+   "detail": "SERVICE is disabled in the local-only profile"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/subquery/manifest#subquery15>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2026-10",
+   "detail": "query result mismatch: missing: _:c14n1 <urn:binding:x> \"2\"^^<http://www.w3.org/2001/XMLSchema#integer> | _:c14n1 <urn:result:row> \"\" ; unexpected: "
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/subquery/manifest#subquery16>": {
+   "status": "failed",
+   "cause": "w3c-test-added-2026-10",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:o> <http://example.com/o2> | _:c14n0 <urn:binding:s> <http://example.com/s2> | _:c14n1 <urn:binding:o> <http://example.com/o2> | _:c14n1 <urn:bindi"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/update-silent/manifest#load-into-silent>": {
+   "status": "failed",
+   "cause": "policy-local-only",
+   "detail": "LOAD is disabled in the local-only profile; use ingest"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/update-silent/manifest#load-silent>": {
+   "status": "failed",
+   "cause": "policy-local-only",
+   "detail": "LOAD is disabled in the local-only profile; use ingest"
+  }
+ }
+}

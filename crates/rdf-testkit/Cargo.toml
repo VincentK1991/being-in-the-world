@@ -15,3 +15,10 @@ serde.workspace = true
 rdf-store = { path = "../rdf-store" }
 url = "2"
 rdf-io = { path = "../rdf-io" }
+rdf-engine = { path = "../rdf-engine" }
+rdf-plugin-inference = { path = "../../plugins/inference" }
+serde_json.workspace = true
+rdf-plugin-catalog = { path = "../../plugins/catalog" }
+rdf-plugin-custom-properties = { path = "../../plugins/custom-properties" }
+rdf-plugin-dataset-summary = { path = "../../plugins/dataset-summary" }
+spargebra = "=0.4.8"

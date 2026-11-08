@@ -1,0 +1,21 @@
+{
+ "suite": "rdf",
+ "variant": "oxigraph",
+ "rdf_tests_revision": "d01b141c65ddf8e5b615256f264111118bdb2134",
+ "totals": {
+  "failed": 2,
+  "passed": 991
+ },
+ "expected": {
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-xml/manifest.ttl#xml-canon-test001>": {
+   "status": "failed",
+   "cause": "oxigraph-no-xml-literal-canonicalisation",
+   "detail": "RDF evaluation mismatch"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-xml/manifest.ttl#xml-canon-test002>": {
+   "status": "failed",
+   "cause": "oxigraph-no-xml-literal-canonicalisation",
+   "detail": "RDF evaluation mismatch"
+  }
+ }
+}

@@ -1,0 +1,937 @@
+{
+ "suite": "entailment",
+ "variant": "owlrl",
+ "rdf_tests_revision": "d01b141c65ddf8e5b615256f264111118bdb2134",
+ "totals": {
+  "failed": 20,
+  "passed": 59,
+  "unsupported": 165
+ },
+ "expected": {
+  "<http://owl.semanticweb.org/id/Chain2trans#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#propertyChainAxiom"
+  },
+  "<http://owl.semanticweb.org/id/Chain2trans#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#propertyChainAxiom"
+  },
+  "<http://owl.semanticweb.org/id/DisjointClasses-2D001#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-full-structural-conclusion",
+   "detail": "conclusion not entailed; unmatched: _:ab1b3b2dc363f0cf59f94a120b8c1926 <http://www.w3.org/2002/07/owl#complementOf> <http://example.org/Girl>"
+  },
+  "<http://owl.semanticweb.org/id/DisjointClasses-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AllDisjointClasses"
+  },
+  "<http://owl.semanticweb.org/id/DisjointClasses-2D003#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#members"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddifferent-2Dindividuals-2D2-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#annotatedTarget"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddifferent-2Dindividuals-2D3-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AllDifferent"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddifferent-2Dindividuals-2D3-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#members"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddisjoint-2Dclasses-2D2-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#annotatedTarget"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddisjoint-2Dclasses-2D3-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AllDisjointClasses"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Ddisjoint-2Dclasses-2D3-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AllDisjointClasses"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dequivalent-2Dclasses-2D2-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Axiom"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dequivalent-2Dclasses-2D3-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Axiom"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dontology-2Dannotation-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#annotatedSource"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dpropertychain-2D2-2Dannotated-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#annotatedSource"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dpropertychain-2D2-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#propertyChainAxiom"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dsame-2Dindividual-2D2-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Axiom"
+  },
+  "<http://owl.semanticweb.org/id/FS2RDF-2Dsame-2Dindividual-2D3-2Dannotation-2Dar#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#annotatedTarget"
+  },
+  "<http://owl.semanticweb.org/id/Functionality-2Dclash#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-functional-syntax-only",
+   "detail": "premise given in functional syntax only"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DAnnotationAnnotations-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#annotatedTarget"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DAsymmetricProperty-2D001#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AsymmetricProperty"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DAxiomAnnotations-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Axiom"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointDataProperties-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#members"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointDataProperties-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#members"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointObjectProperties-2D001#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-rl-derives-no-differentFrom",
+   "detail": "conclusion not entailed; unmatched: <http://example.org/Peter> <http://www.w3.org/2002/07/owl#differentFrom> <http://example.org/Lois>"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointObjectProperties-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#members"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointObjectProperties-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#members"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DIrreflexiveProperty-2D001#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#IrreflexiveProperty"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#hasKey"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D003#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#hasKey"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D004#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#hasKey"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D004#NegativeEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#hasKey"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D005#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#hasKey"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D006#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#hasKey"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DNegativeDataPropertyAssertion-2D001#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#NegativePropertyAssertion"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DNegativeObjectPropertyAssertion-2D001#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#NegativePropertyAssertion"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#propertyChainAxiom"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2D001#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#propertyChainAxiom"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-functional-syntax-only",
+   "detail": "premise given in functional syntax only"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "owl-functional-syntax-only",
+   "detail": "premise given in functional syntax only"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#propertyChainAxiom"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D003#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#propertyChainAxiom"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D004#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#propertyChainAxiom"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D004#NegativeEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#propertyChainAxiom"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectQCR-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#maxQualifiedCardinality"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectQCR-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Restriction"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DReflexiveProperty-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#ReflexiveProperty"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DReflexiveProperty-2D001#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#ReflexiveProperty"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Drules-2Dfp-2DdifferentFrom#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-rl-derives-no-differentFrom",
+   "detail": "conclusion not entailed; unmatched: <http://owl2.test/rules/Y1> <http://www.w3.org/2002/07/owl#differentFrom> <http://owl2.test/rules/Y2>"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Drules-2Difp-2DdifferentFrom#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-rl-derives-no-differentFrom",
+   "detail": "conclusion not entailed; unmatched: <http://owl2.test/rules/X1> <http://www.w3.org/2002/07/owl#differentFrom> <http://owl2.test/rules/X2>"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Dvalid-2Doneof#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#oneOf"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Dvalid-2Drightside-2Dallvaluesfrom#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Restriction"
+  },
+  "<http://owl.semanticweb.org/id/Plus-2Dminus-2D0-2Dplus-2Ddisjointness#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-functional-syntax-only",
+   "detail": "premise given in functional syntax only"
+  },
+  "<http://owl.semanticweb.org/id/String-2Dinteger-2Dclash#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-functional-syntax-only",
+   "detail": "premise given in functional syntax only"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DAnnotationProperty-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AnnotationProperty"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DAnnotationProperty-2D004#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AnnotationProperty"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D005-2DDirect#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-direct-semantics-only",
+   "detail": "Direct Semantics only: OWL 2 RL rules implement the RDF-Based Semantics"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D005-2DDirect#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "owl-direct-semantics-only",
+   "detail": "Direct Semantics only: OWL 2 RL rules implement the RDF-Based Semantics"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.26-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#intersectionOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.26-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#intersectionOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.26-2D005#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#intersectionOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.26-2D010#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-full-structural-conclusion",
+   "detail": "conclusion not entailed; unmatched: _:n <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Restriction> | _:n <http://www.w3.org/2002/07/owl#onProperty> <http://www.w3.or"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.5-2D005#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-full-structural-conclusion",
+   "detail": "conclusion not entailed; unmatched: _:d22497cf459b80592c21cd5b121994ff <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/1999/02/22-rdf-syntax-ns#List> | _:d22497cf459b80592c21cd5b1"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D006#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/2002/03owlt/I5.8/premises006#p> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#short>"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D008#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/2002/03owlt/I5.8/premises008#p> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#unsignedShort>"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D009#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/2002/03owlt/I5.8/premises009#p> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#short>"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DbackwardCompatibleWith-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#backwardCompatibleWith"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Ddescription-2Dlogic-2D101#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#complementOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Ddescription-2Dlogic-2D103#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#complementOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Ddescription-2Dlogic-2D104#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#complementOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdifferentFrom-2D001#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-rl-derives-no-differentFrom",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/2002/03owlt/differentFrom/premises001#b> <http://www.w3.org/2002/07/owl#differentFrom> <http://www.w3.org/2002/03owlt/differentFrom/premises001#a"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D003#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#intersectionOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D004#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#intersectionOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D005#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#intersectionOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D006#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#intersectionOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D007#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#intersectionOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D008#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#intersectionOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdisjointWith-2D009#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#intersectionOf"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D008#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AnnotationProperty"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D008#NegativeEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AnnotationProperty"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D008-2DDirect#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-direct-semantics-only",
+   "detail": "Direct Semantics only: OWL 2 RL rules implement the RDF-Based Semantics"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D008-2DDirect#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "owl-direct-semantics-only",
+   "detail": "Direct Semantics only: OWL 2 RL rules implement the RDF-Based Semantics"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Dimports-2D011#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-imports",
+   "detail": "uses owl:imports; the reasoner fetches nothing"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Dimports-2D011#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "owl-imports",
+   "detail": "uses owl:imports; the reasoner fetches nothing"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Dmiscellaneous-2D303#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AnnotationProperty"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DsameAs-2D001#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AnnotationProperty"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DsameAs-2D001#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#AnnotationProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind01>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#DatatypeProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind02>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#DatatypeProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind03>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Ontology"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind04>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#DatatypeProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind05>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Ontology"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind06>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Ontology"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind07>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#DatatypeProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind08>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#DatatypeProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#d-ent-01>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/D> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#owlds01>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Class"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#owlds02>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#NamedIndividual"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q1-rdfs>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#NamedIndividual"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q1>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#onProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q3>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q4>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#someValuesFrom"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q5>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#NamedIndividual"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent10>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent2>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#ObjectProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent3>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent4>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent5>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent6>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent7>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent8>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent9>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf01>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf02>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf03>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf04>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Class"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs01>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Ontology"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs02>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#ObjectProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs04>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Class"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs05>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Class"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs06>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Class"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs07>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Class"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs08>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#DatatypeProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs09>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Ontology"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs10>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#ObjectProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs11>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#ObjectProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs13>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#DatatypeProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif01>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif03>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif04>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif06>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple1>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple3>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple4>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple5>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple6>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple7>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple8>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-01>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Ontology"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-02>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Class"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-03>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#someValuesFrom"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-04>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#DatatypeProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-05>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#NamedIndividual"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-06>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#NamedIndividual"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-07>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#ObjectProperty"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-08>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#NamedIndividual"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-09>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Thing"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-11>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#minCardinality"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-12>": {
+   "status": "unsupported",
+   "cause": "outside-declared-profile",
+   "detail": "outside the reasoner profile: reasoner returned 422 Unprocessable Entity: unsupported OWL term: http://www.w3.org/2002/07/owl#Restriction"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-non-well-formed-literal-2>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#integer>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-range-clash>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#integer>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-semantic-equivalence-between-datatypes>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-semantic-equivalence-within-type-1>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-semantic-equivalence-within-type-2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-test008>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-test009>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-test010>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#integer>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-infinity>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-round-different>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-round-same>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-zero>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-infinity>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-round-different>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-round-same>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-zero>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#literal-type>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdf-charmod-uris-test003>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdf-charmod-uris-test004>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-seq-representation-test002>": {
+   "status": "failed",
+   "cause": "axiomatic-triples-disabled",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/1999/02/22-rdf-syntax-ns#_1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#ContainerMembershipProperty>"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-seq-representation-test003>": {
+   "status": "failed",
+   "cause": "axiomatic-triples-disabled",
+   "detail": "conclusion not entailed; unmatched: <http://example.org/a> <http://www.w3.org/2000/01/rdf-schema#member> <http://example.org/b>"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-seq-representation-test004>": {
+   "status": "failed",
+   "cause": "axiomatic-triples-disabled",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/1999/02/22-rdf-syntax-ns#_1> <http://www.w3.org/2000/01/rdf-schema#subPropertyOf> <http://www.w3.org/2000/01/rdf-schema#member>"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-xmllang-test007a>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-xmllang-test007b>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-xmllang-test007c>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfs-entailment-test001>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfs-entailment-test002>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#statement-entailment-test001>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#statement-entailment-test002>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#statement-entailment-test004>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#tex-01-language-tag-case-1>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#tex-01-language-tag-case-2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#xmlsch-02-whitespace-facet-2>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#int>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#xmlsch-02-whitespace-facet-4>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#int>)"
+  }
+ }
+}
