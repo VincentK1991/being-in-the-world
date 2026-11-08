@@ -35,6 +35,12 @@ pub trait ReadContext {
     fn derived_status(&self, _name: &str) -> Result<Value> {
         anyhow::bail!("derived graph status unavailable")
     }
+    /// Keep a note about the last attempt that did not publish (an inconsistent input, say) next
+    /// to the derived graph's record, or clear it with `None`. `derived_status` returns it as
+    /// `attempt`; a later `publish` clears it. The derived graph itself is never touched.
+    fn record_attempt(&self, _name: &str, _attempt: Option<Value>) -> Result<()> {
+        anyhow::bail!("attempt records unavailable")
+    }
 }
 
 /// Implementations must be thread-safe. Native plugins are trusted application code.

@@ -229,23 +229,45 @@ impl V {
     }
 }
 
+/// Triples added in the last round, indexed by predicate.
+struct Delta {
+    all: Vec<T>,
+    by_p: HashMap<Id, Vec<(Id, Id)>>,
+}
+impl Delta {
+    fn new(all: Vec<T>) -> Self {
+        let mut by_p: HashMap<Id, Vec<(Id, Id)>> = HashMap::new();
+        for &(s, p, o) in &all {
+            by_p.entry(p).or_default().push((s, o));
+        }
+        Delta { all, by_p }
+    }
+    fn pairs(&self, p: Id) -> &[(Id, Id)] {
+        self.by_p.get(&p).map_or(&[], Vec::as_slice)
+    }
+}
 /// One round's findings before they are added.
 #[derive(Default)]
 struct Round {
     new: Vec<(T, Why)>,
+    /// Conclusions already proposed this round, so each is justified (and allocated) once.
+    pending: HashSet<T>,
     clashes: Vec<Clash>,
 }
 impl Round {
     fn add(&mut self, g: &Graph, t: T, rule: &'static str, premises: Vec<T>) {
-        if !g.has(t) {
-            self.new.push((t, Why { rule, premises }));
+        self.add_with(g, t, rule, || premises);
+    }
+    /// Like `add`, but the premises are only built for a conclusion that is actually new.
+    fn add_with(&mut self, g: &Graph, t: T, rule: &'static str, premises: impl FnOnce() -> Vec<T>) {
+        if !g.has(t) && self.pending.insert(t) {
+            self.new.push((t, Why { rule, premises: premises() }));
         }
     }
     fn clash(&mut self, rule: &'static str, message: String, premises: Vec<T>) {
         self.clashes.push(Clash { rule, message, premises });
     }
 }
-
 pub struct Closure {
     terms: Terms,
     graph: Graph,
@@ -277,6 +299,8 @@ impl Closure {
         let mut closure =
             Closure { terms, graph, input, why: HashMap::new(), clashes: Vec::new(), v };
         closure.reflexive_equality();
+        // Semi-naive: the hot rules only join triples new in the last round (all of them at first).
+        let mut delta = Delta::new(closure.graph.set.iter().copied().collect());
         let started = Instant::now();
         loop {
             ensure!(
@@ -284,28 +308,29 @@ impl Closure {
                 "reasoning exceeded {} seconds",
                 timeout.as_secs()
             );
-            let round = closure.round();
+            let round = closure.round(&delta);
             closure.clashes.extend(round.clashes);
             if closure.clashes.len() >= MAX_CLASHES {
                 break;
             }
-            let mut added = false;
+            let mut added = Vec::new();
             for (t, why) in round.new {
                 if closure.terms.literal(t.0) {
                     continue;
                 }
                 if closure.graph.insert(t) {
                     closure.why.insert(t, why);
-                    added = true;
+                    added.push(t);
                 }
             }
             ensure!(
                 closure.why.len() <= max_derived,
                 "derived output exceeds {max_derived} triples"
             );
-            if !added {
+            if added.is_empty() {
                 break;
             }
+            delta = Delta::new(added);
         }
         Ok(closure)
     }
@@ -352,14 +377,143 @@ impl Closure {
         self.instances(c).to_vec()
     }
 
-    fn round(&self) -> Round {
+    fn round(&self, delta: &Delta) -> Round {
         let mut r = Round::default();
+        self.incremental(delta, &mut r);
         self.equality(&mut r);
         self.properties(&mut r);
         self.classes(&mut r);
         self.class_axioms(&mut r);
         self.schema(&mut r);
         r
+    }
+
+    /// The rules that dominate on large inputs, evaluated semi-naively: a conclusion is only
+    /// looked for where at least one premise is new since the last round. In naive evaluation,
+    /// a combination of older triples was already tried a round earlier, so nothing is missed.
+    /// eq-sym, eq-trans, eq-rep-s/p/o, prp-dom, prp-rng, prp-spo1, prp-trp, cax-sco, scm-sco, scm-spo.
+    fn incremental(&self, d: &Delta, r: &mut Round) {
+        let (g, v) = (&self.graph, &self.v);
+        // A new sameAs fact: what holds of one side now holds of the other.
+        for &(x, y) in d.pairs(v.same) {
+            if x == y {
+                continue;
+            }
+            let same = (x, v.same, y);
+            r.add_with(g, (y, v.same, x), "eq-sym", || vec![same]);
+            for &z in g.objects(y, v.same) {
+                if z != x && z != y {
+                    r.add_with(g, (x, v.same, z), "eq-trans", || vec![same, (y, v.same, z)]);
+                }
+            }
+            for &w in g.subjects(v.same, x) {
+                if w != x && w != y {
+                    r.add_with(g, (w, v.same, y), "eq-trans", || vec![(w, v.same, x), same]);
+                }
+            }
+            for &(p, o) in g.about(x) {
+                if p != v.same {
+                    r.add_with(g, (y, p, o), "eq-rep-s", || vec![same, (x, p, o)]);
+                }
+            }
+            for &(s, o) in g.pairs(x) {
+                r.add_with(g, (s, y, o), "eq-rep-p", || vec![same, (s, x, o)]);
+            }
+            for &(s, p) in g.mentioning(x) {
+                if p != v.same {
+                    r.add_with(g, (s, p, y), "eq-rep-o", || vec![same, (s, p, x)]);
+                }
+            }
+        }
+        // A new fact, joined with the schema and equalities already known.
+        for &t in &d.all {
+            let (s, p, o) = t;
+            if p != v.same {
+                for &s2 in g.objects(s, v.same) {
+                    if s2 != s {
+                        r.add_with(g, (s2, p, o), "eq-rep-s", || vec![(s, v.same, s2), t]);
+                    }
+                }
+                for &o2 in g.objects(o, v.same) {
+                    if o2 != o {
+                        r.add_with(g, (s, p, o2), "eq-rep-o", || vec![(o, v.same, o2), t]);
+                    }
+                }
+            }
+            for &p2 in g.objects(p, v.same) {
+                if p2 != p {
+                    r.add_with(g, (s, p2, o), "eq-rep-p", || vec![(p, v.same, p2), t]);
+                }
+            }
+            for &c in g.objects(p, v.domain) {
+                r.add_with(g, (s, v.ty, c), "prp-dom", || vec![(p, v.domain, c), t]);
+            }
+            for &c in g.objects(p, v.range) {
+                r.add_with(g, (o, v.ty, c), "prp-rng", || vec![(p, v.range, c), t]);
+            }
+            for &p2 in g.objects(p, v.sub_prop) {
+                r.add_with(g, (s, p2, o), "prp-spo1", || vec![(p, v.sub_prop, p2), t]);
+            }
+            if p == v.ty {
+                for &c2 in g.objects(o, v.sub_class) {
+                    r.add_with(g, (s, v.ty, c2), "cax-sco", || vec![(o, v.sub_class, c2), t]);
+                }
+            }
+            let declared = (p, v.ty, v.transitive);
+            if g.has(declared) {
+                for &z in g.objects(o, p) {
+                    r.add_with(g, (s, p, z), "prp-trp", || vec![declared, t, (o, p, z)]);
+                }
+                for &w in g.subjects(p, s) {
+                    r.add_with(g, (w, p, o), "prp-trp", || vec![declared, (w, p, s), t]);
+                }
+            }
+            for (relation, rule) in [(v.sub_class, "scm-sco"), (v.sub_prop, "scm-spo")] {
+                if p == relation {
+                    for &c in g.objects(o, relation) {
+                        r.add_with(g, (s, relation, c), rule, || vec![t, (o, relation, c)]);
+                    }
+                    for &a in g.subjects(relation, s) {
+                        r.add_with(g, (a, relation, o), rule, || vec![(a, relation, s), t]);
+                    }
+                }
+            }
+        }
+        // A new schema fact, applied to everything already known.
+        for &(p, c) in d.pairs(v.domain) {
+            for &(x, y) in g.pairs(p) {
+                r.add_with(g, (x, v.ty, c), "prp-dom", || vec![(p, v.domain, c), (x, p, y)]);
+            }
+        }
+        for &(p, c) in d.pairs(v.range) {
+            for &(x, y) in g.pairs(p) {
+                r.add_with(g, (y, v.ty, c), "prp-rng", || vec![(p, v.range, c), (x, p, y)]);
+            }
+        }
+        for &(p1, p2) in d.pairs(v.sub_prop) {
+            for &(x, y) in g.pairs(p1) {
+                r.add_with(g, (x, p2, y), "prp-spo1", || vec![(p1, v.sub_prop, p2), (x, p1, y)]);
+            }
+        }
+        for &(c1, c2) in d.pairs(v.sub_class) {
+            for &x in self.instances(c1) {
+                r.add_with(g, (x, v.ty, c2), "cax-sco", || {
+                    vec![(c1, v.sub_class, c2), (x, v.ty, c1)]
+                });
+            }
+        }
+        for &(p, kind) in d.pairs(v.ty) {
+            if kind == v.transitive {
+                let declared = (p, v.ty, v.transitive);
+                for &(x, y) in g.pairs(p) {
+                    for &z in g.objects(y, p) {
+                        r.add_with(g, (x, p, z), "prp-trp", || {
+                            vec![declared, (x, p, y), (y, p, z)]
+                        });
+                    }
+                }
+            }
+        }
     }
 
     fn equality(&self, r: &mut Round) {
@@ -369,25 +523,6 @@ impl Closure {
                 continue;
             }
             let same = (x, v.same, y);
-            r.add(g, (y, v.same, x), "eq-sym", vec![same]);
-            for &z in g.objects(y, v.same) {
-                if z != x {
-                    r.add(g, (x, v.same, z), "eq-trans", vec![same, (y, v.same, z)]);
-                }
-            }
-            for &(p, o) in g.about(x) {
-                if p != v.same {
-                    r.add(g, (y, p, o), "eq-rep-s", vec![same, (x, p, o)]);
-                }
-            }
-            for &(s, o) in g.pairs(x) {
-                r.add(g, (s, y, o), "eq-rep-p", vec![same, (s, x, o)]);
-            }
-            for &(s, p) in g.mentioning(x) {
-                if p != v.same {
-                    r.add(g, (s, p, y), "eq-rep-o", vec![same, (s, p, x)]);
-                }
-            }
             if g.has((x, v.different, y)) {
                 r.clash(
                     "eq-diff1",
@@ -432,16 +567,6 @@ impl Closure {
 
     fn properties(&self, r: &mut Round) {
         let (g, v) = (&self.graph, &self.v);
-        for &(p, c) in g.pairs(v.domain) {
-            for &(x, y) in g.pairs(p) {
-                r.add(g, (x, v.ty, c), "prp-dom", vec![(p, v.domain, c), (x, p, y)]);
-            }
-        }
-        for &(p, c) in g.pairs(v.range) {
-            for &(x, y) in g.pairs(p) {
-                r.add(g, (y, v.ty, c), "prp-rng", vec![(p, v.range, c), (x, p, y)]);
-            }
-        }
         for &p in self.instances(v.functional) {
             let declared = (p, v.ty, v.functional);
             for &(x, _) in g.pairs(p) {
@@ -526,23 +651,6 @@ impl Closure {
                         vec![(p, v.ty, v.asymmetric), (x, p, y), (y, p, x)],
                     );
                 }
-            }
-        }
-        for &p in self.instances(v.transitive) {
-            for &(x, y) in g.pairs(p) {
-                for &z in g.objects(y, p) {
-                    r.add(
-                        g,
-                        (x, p, z),
-                        "prp-trp",
-                        vec![(p, v.ty, v.transitive), (x, p, y), (y, p, z)],
-                    );
-                }
-            }
-        }
-        for &(p1, p2) in g.pairs(v.sub_prop) {
-            for &(x, y) in g.pairs(p1) {
-                r.add(g, (x, p2, y), "prp-spo1", vec![(p1, v.sub_prop, p2), (x, p1, y)]);
             }
         }
         for &(p, list) in g.pairs(v.chain) {
@@ -960,11 +1068,6 @@ impl Closure {
 
     fn class_axioms(&self, r: &mut Round) {
         let (g, v) = (&self.graph, &self.v);
-        for &(c1, c2) in g.pairs(v.sub_class) {
-            for &x in self.instances(c1) {
-                r.add(g, (x, v.ty, c2), "cax-sco", vec![(c1, v.sub_class, c2), (x, v.ty, c1)]);
-            }
-        }
         for &(c1, c2) in g.pairs(v.eq_class) {
             for &x in self.instances(c1) {
                 r.add(g, (x, v.ty, c2), "cax-eqc1", vec![(c1, v.eq_class, c2), (x, v.ty, c1)]);
@@ -1034,13 +1137,6 @@ impl Closure {
             for &p in self.instances(kind) {
                 r.add(g, (p, v.sub_prop, p), rule, vec![(p, v.ty, kind)]);
                 r.add(g, (p, v.eq_prop, p), rule, vec![(p, v.ty, kind)]);
-            }
-        }
-        for (relation, rule) in [(v.sub_class, "scm-sco"), (v.sub_prop, "scm-spo")] {
-            for &(a, b) in g.pairs(relation) {
-                for &c in g.objects(b, relation) {
-                    r.add(g, (a, relation, c), rule, vec![(a, relation, b), (b, relation, c)]);
-                }
             }
         }
         for (equivalent, sub, rule1, rule2) in [

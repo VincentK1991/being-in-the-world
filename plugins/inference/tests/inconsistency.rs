@@ -36,15 +36,16 @@ impl Reasoner for Strict {
         Ok((out.join("\n"), self.identity()?))
     }
 }
+fn config() -> Result<Config> {
+    Ok(serde_json::from_value(json!({"endpoint": "http://127.0.0.1:1", "jobs": [
+        {"name": "animals", "profile": "strict", "source_graphs": ["urn:data"],
+         "tests": [{"name": "dog and cat clash", "given": "<urn:a> a <urn:Dog>, <urn:Cat> .", "inconsistent": true},
+                   {"name": "a dog is fine", "given": "<urn:a> a <urn:Dog> .", "inconsistent": true}]},
+        {"name": "downstream", "profile": "strict", "source_graphs": ["urn:rdftool:derived:inference:animals"]}
+    ]}))?)
+}
 fn database() -> Result<Database> {
-    let config: Config = serde_json::from_value(
-        json!({"endpoint": "http://127.0.0.1:1", "jobs": [
-            {"name": "animals", "profile": "strict", "source_graphs": ["urn:data"],
-             "tests": [{"name": "dog and cat clash", "given": "<urn:a> a <urn:Dog>, <urn:Cat> .", "inconsistent": true},
-                       {"name": "a dog is fine", "given": "<urn:a> a <urn:Dog> .", "inconsistent": true}]},
-            {"name": "downstream", "profile": "strict", "source_graphs": ["urn:rdftool:derived:inference:animals"]}
-        ]}),
-    )?;
+    let config = config()?;
     let mut db = Database::memory()?;
     db.update("INSERT DATA { GRAPH <urn:data> { <urn:rex> a <urn:Dog> } }")?;
     db.register(Inference::with_reasoner(config, Arc::new(Strict))?)?;
@@ -106,5 +107,26 @@ fn a_rule_test_can_expect_an_inconsistency() -> Result<()> {
     assert_eq!(results[0]["passed"], true);
     assert_eq!(results[0]["inconsistent"], true);
     assert_eq!(results[1]["passed"], false, "consistent data fails an inconsistency test");
+    Ok(())
+}
+
+#[test]
+fn the_clash_record_survives_a_restart_and_a_successful_rebuild_clears_it() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    {
+        let mut db = Database::open(dir.path(), "default", true)?;
+        db.register(Inference::with_reasoner(config()?, Arc::new(Strict))?)?;
+        db.update("INSERT DATA { GRAPH <urn:data> { <urn:rex> a <urn:Dog> , <urn:Cat> } }")?;
+        assert_eq!(run(&db, "rebuild", json!({"job": "animals"}))?["state"], "inconsistent");
+    }
+    let mut reopened = Database::open(dir.path(), "default", false)?;
+    reopened.register(Inference::with_reasoner(config()?, Arc::new(Strict))?)?;
+    let status = run(&reopened, "status", json!({"job": "animals"}))?;
+    assert_eq!(status["state"], "inconsistent", "{status}");
+    assert!(status.get("attempt").is_none(), "the raw record is not exposed");
+    reopened.update("DELETE DATA { GRAPH <urn:data> { <urn:rex> a <urn:Cat> } }")?;
+    assert_eq!(run(&reopened, "rebuild", json!({"job": "animals"}))?["state"], "ready");
+    let meta = "ASK { GRAPH <urn:rdftool:derived:inference:animals:metadata> { ?s <urn:rdftool:attempt> ?o } }";
+    assert_eq!(reopened.query_json(meta)?["boolean"], false, "publishing cleared the record");
     Ok(())
 }

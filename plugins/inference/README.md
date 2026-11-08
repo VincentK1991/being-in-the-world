@@ -43,6 +43,18 @@ Library applications can also register the plugin against an in-memory database.
 }
 ```
 
+That is the original single-sidecar form. For OWL, the recommended setup needs no sidecar at
+all: the native OWL 2 RL provider (see [Native OWL 2 RL provider](#native-owl-2-rl-provider)),
+which the bundled ACME jobs use.
+
+```json
+{
+  "providers": {"native": {"kind": "owlrl-native", "config": {}}},
+  "jobs": [{"name": "vehicles", "provider": "native", "profile": "owl2rl-v1",
+            "source_graphs": ["urn:example:data", "urn:example:ontology"]}]
+}
+```
+
 Each job explicitly merges its selected asserted/ontology graphs for reasoning.
 Use `"default"` to select the default graph. Unselected graphs do not participate.
 A source may be another job's output graph (`urn:rdftool:derived:inference:<job>`), which chains the jobs;
@@ -137,8 +149,9 @@ Both add axiomatic triples, scoped:
 - Nothing is said that holds of every resource (`x a rdfs:Resource`, `x a owl:Thing`).
 - Reflexive `owl:sameAs` stays, because queries that walk `sameAs` chains rely on it.
 
-On the ACME data, `owlrl-full-v1` derives 393 triples against `owlrl-core-v1`'s 409. It drops the
-core profile's vocabulary chatter and adds class and domain/range conclusions.
+On the ACME data, `owlrl-core-v1` derives 409 triples, `owlrl-full-v1` 313 and the native engine
+216. The full profile drops the core profile's vocabulary chatter and adds class and
+domain/range conclusions. The native engine leaves out owlrl's RDFS layer as well.
 
 Conformance (W3C OWL 2 RL tests, RDF 1.1 Semantics, SPARQL entailment regimes; see
 `docs/conformance.md`):
@@ -160,8 +173,8 @@ graph is left exactly as it was.
 
 `status` keeps reporting `inconsistent`, with the clashes and `inconsistent_since`, while the job's
 sources, inputs and configuration are the ones that clashed. Change any of them and the job reads
-as stale again; a successful rebuild clears the record. The record is kept in memory, so a restart
-forgets it and the job reads as stale.
+as stale again; a successful rebuild clears the record. The record is stored in the job's
+metadata graph, next to the published output, so it survives a restart.
 
 A cascade never runs a job that reads an inconsistent one. Its step reads `blocked`, with
 `blocked_by`.
@@ -233,7 +246,7 @@ The `owlrl-native` provider computes OWL 2 RL in process, with no sidecar. Its p
 
 ```json
 "providers": {"native": {"kind": "owlrl-native", "config": {"cancel_after_seconds": 30, "max_triples": 200000}}},
-"jobs": [{"name": "acme-native", "provider": "native", "profile": "owl2rl-v1", "source_graphs": ["..."]}]
+"jobs": [{"name": "acme", "provider": "native", "profile": "owl2rl-v1", "source_graphs": ["..."]}]
 ```
 
 - **Rules:** the W3C OWL 2 RL/RDF tables for equality, properties, classes, class axioms and
@@ -241,7 +254,9 @@ The `owlrl-native` provider computes OWL 2 RL in process, with no sidecar. Its p
 - **Output policy:** the same as `owlrl-full-v1`.
 - **Agreement with owlrl:** it reaches the same OWL conclusions, apart from owlrl's extra RDFS
   layer (`p a rdf:Property`, `C a rdfs:Class`).
-- **Speed:** a 60,000-triple closure takes 0.16 s, against owlrl's 42.8 s.
+- **Speed:** a 60,000-triple closure takes 0.16 s, against owlrl's 42.8 s. The hottest rules
+  run semi-naively, so each round only joins triples new in the last round. The worst shape
+  measured, a 500-node transitive chain with a 125k-triple closure, takes 0.6 s.
 - **Clashes:** each clash names its `rule` and lists its `premises`. Two different values of a
   functional or max-1 property are a clash when they share a datatype and differ in value.
 - **Explanations:** it is the one OWL provider that can explain, described next.

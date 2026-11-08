@@ -114,22 +114,16 @@ impl std::fmt::Display for Inconsistent {
     }
 }
 impl std::error::Error for Inconsistent {}
-/// The last rebuild that stopped on an inconsistency, and exactly what it was computed from.
-struct Attempt {
-    fingerprint: String,
-    source_token: String,
-    inputs: Vec<(String, String)>,
-    clashes: Vec<Value>,
-    at: u64,
-}
 pub struct Inference {
     config: Config,
     reasoners: std::collections::BTreeMap<String, Arc<dyn Reasoner>>,
     gate: Mutex<()>,
     /// Every job, dependencies first.
     order: Vec<String>,
-    /// Kept per process: a restart forgets them and the job simply reads as stale again.
-    attempts: Mutex<std::collections::BTreeMap<String, Attempt>>,
+}
+/// Which outside inputs, at which content, a rebuild read.
+fn input_digests(fetched: &[Fetched]) -> Value {
+    json!(fetched.iter().map(|f| [&f.name, &f.digest]).collect::<Vec<_>>())
 }
 fn now() -> u64 {
     std::time::SystemTime::now()
@@ -318,18 +312,7 @@ impl Inference {
             }
         }
         let order = dependency_order(&config.jobs)?;
-        Ok(Self {
-            config,
-            reasoners,
-            gate: Mutex::new(()),
-            order,
-            attempts: Mutex::new(std::collections::BTreeMap::new()),
-        })
-    }
-    fn lock_attempts(
-        &self,
-    ) -> Result<std::sync::MutexGuard<'_, std::collections::BTreeMap<String, Attempt>>> {
-        self.attempts.lock().map_err(|_| anyhow::anyhow!("inference attempts lock poisoned"))
+        Ok(Self { config, reasoners, gate: Mutex::new(()), order })
     }
     /// A job whose last rebuild found its current input inconsistent reads as `inconsistent`, with
     /// the clashes, until the input or configuration changes or a rebuild succeeds.
@@ -340,24 +323,25 @@ impl Inference {
         fingerprint: &str,
         status: &mut Value,
     ) -> Result<()> {
-        let attempts = self.lock_attempts()?;
-        let Some(attempt) = attempts.get(&job.name) else { return Ok(()) };
-        if status["state"] == "ready" || attempt.fingerprint != fingerprint {
+        let Some(attempt) = status.as_object_mut().and_then(|s| s.remove("attempt")) else {
+            return Ok(());
+        };
+        if status["state"] == "ready" || attempt["fingerprint"] != fingerprint {
             return Ok(());
         }
         let token = context.snapshot(&job.source_graphs)?.token;
         let inputs = if job.inputs.is_empty() {
-            Vec::new()
+            json!([])
         } else {
             match fetch_inputs(job) {
-                Ok(now) => now.iter().map(|f| (f.name.clone(), f.digest.clone())).collect(),
+                Ok(now) => input_digests(&now),
                 Err(_) => return Ok(()),
             }
         };
-        if token == attempt.source_token && inputs == attempt.inputs {
+        if attempt["source_token"] == token.as_str() && attempt["inputs"] == inputs {
             status["state"] = json!("inconsistent");
-            status["clashes"] = json!(attempt.clashes);
-            status["inconsistent_since"] = json!(attempt.at);
+            status["clashes"] = attempt["clashes"].clone();
+            status["inconsistent_since"] = attempt["at"].clone();
         }
         Ok(())
     }
@@ -466,19 +450,15 @@ impl Inference {
                     return Err(error);
                 };
                 let kept = context.derived_status(&job.name)?["state"].clone();
-                self.lock_attempts()?.insert(
-                    job.name.clone(),
-                    Attempt {
-                        fingerprint,
-                        source_token: source.token.clone(),
-                        inputs: fetched
-                            .iter()
-                            .map(|f| (f.name.clone(), f.digest.clone()))
-                            .collect(),
-                        clashes: inconsistent.clashes.clone(),
-                        at: now(),
-                    },
-                );
+                // Stored next to the derived graph, so it survives a restart; publishing clears it.
+                context.record_attempt(
+                    &job.name,
+                    Some(json!({
+                        "outcome": "inconsistent", "fingerprint": fingerprint,
+                        "source_token": source.token, "inputs": input_digests(&fetched),
+                        "clashes": inconsistent.clashes, "at": now(),
+                    })),
+                )?;
                 return Ok(json!({
                     "job": job.name, "state": "inconsistent", "clashes": inconsistent.clashes,
                     "kept": kept, "note": "the derived graph was left as it was",
@@ -486,7 +466,6 @@ impl Inference {
             }
         };
         ensure!(actual == identity, "reasoner identity changed during rebuild");
-        self.lock_attempts()?.remove(&job.name);
         let mut metadata =
             json!({"config_digest":fingerprint,"reasoner":identity,"profile":job.profile});
         if !fetched.is_empty() {

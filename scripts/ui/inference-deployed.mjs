@@ -24,20 +24,21 @@ try {
   await table.locator('tbody tr').first().waitFor();
   await page.waitForFunction(() => !document.querySelector('[aria-label="Inference job states"] tbody')?.textContent?.includes('…'));
   const rows = await table.locator('tbody tr').count();
-  check('the panel lists every job with a state', rows === 11);
+  check('the panel lists every job with a state', rows === 10);
 
   const idle = () => page.waitForFunction(() => !document.querySelector('[aria-label="Inference jobs"]')?.textContent?.includes('Working…'));
   const status = text => panel.getByRole('status').filter({ hasText: text }).first().waitFor();
   const pick = async name => { await table.getByRole('button', { name, exact: true }).click(); await panel.getByRole('region', { name: `Job ${name}` }).waitFor().catch(() => {}); };
   const job = name => panel.getByLabel(`Job ${name}`);
+  const row = name => table.locator('tbody tr').filter({ has: page.getByRole('button', { name, exact: true }) });
 
-  await pick('acme-native');
+  await pick('acme');
   await panel.getByRole('button', { name: 'Rebuild', exact: true }).click();
-  await status('Rebuilt acme-native'); await idle();
-  check('rebuilding from the panel makes the job ready', (await job('acme-native').innerText()).includes('ready'));
+  await status('Rebuilt acme:'); await idle();
+  check('rebuilding from the panel makes the job ready', (await job('acme').innerText()).includes('ready'));
 
-  await panel.getByRole('button', { name: /Run 3 rule tests/ }).click();
-  await status('All 3 rule tests passed'); await idle();
+  await panel.getByRole('button', { name: /Run 4 rule tests/ }).click();
+  await status('All 4 rule tests passed'); await idle();
   check('rule tests run from the panel, including the expected clash', (await panel.getByLabel('Rule test results').innerText()).includes('found inconsistent, as expected'));
 
   const deduced = panel.getByRole('list', { name: 'Deduced triples' });
@@ -57,14 +58,14 @@ try {
     const clashes = panel.getByRole('list', { name: 'Clashes' }).first();
     const clashText = await clashes.innerText();
     check('a clash is shown with its message and the resource involved', clashText.includes('disjoint') && clashText.includes('claim'));
-    check('the job badge reads inconsistent', (await table.locator('tbody tr', { hasText: 'acme-native' }).innerText()).includes('inconsistent'));
+    check('the job badge reads inconsistent', (await row('acme').innerText()).includes('inconsistent'));
     await page.screenshot({ path: 'target/ui/inference-clash.png', fullPage: true });
   } finally {
     await update(page, clash.replace('INSERT DATA', 'DELETE DATA'));
   }
   await panel.getByRole('button', { name: 'Rebuild', exact: true }).click();
-  await status('Rebuilt acme-native'); await idle();
-  check('after the clash is removed, a rebuild makes it ready again', (await table.locator('tbody tr', { hasText: 'acme-native' }).innerText()).includes('ready'));
+  await status('Rebuilt acme:'); await idle();
+  check('after the clash is removed, a rebuild makes it ready again', (await row('acme').innerText()).includes('ready'));
 
   await pick('reserve-summary');
   await panel.getByRole('combobox', { name: 'Cascade' }).selectOption('upstream');

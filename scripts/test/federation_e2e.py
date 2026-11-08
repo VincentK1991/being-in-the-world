@@ -108,7 +108,7 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
     pairs = [(value(r, 'stored'), value(r, 'live')) for r in same['results']['bindings']] if status == 200 else same
     check('materialized graph and live Postgres rows agree (federation + virtual graph)', pairs and all(a == b for a, b in pairs) and len(pairs) == 2, pairs)
     status, inferred = federate('', f'{pre}SELECT ?claim ?type WHERE {{ SERVICE <{ontop}> {{ ?claim ins:hasLossReserve ?amount }} SERVICE <{local}> {{ SELECT ?amount ?type WHERE {{ GRAPH <urn:rdftool:derived:inference:acme> {{ ?amount rdf:type ?type }} FILTER(?type != owl:Thing) }} }} }}')
-    check('Postgres rows get types inferred by the OWL-RL job', status == 200 and {value(r, 'type') for r in inferred['results']['bindings']} == {INS + 'LossReserve'} and len(inferred['results']['bindings']) == 2, inferred)
+    check('Postgres rows get types inferred by the OWL 2 RL job', status == 200 and {value(r, 'type') for r in inferred['results']['bindings']} == {INS + 'LossReserve'} and len(inferred['results']['bindings']) == 2, inferred)
     everything = f'''{pre}SELECT ?narrative ?number ?cc ?type WHERE {{
   SERVICE <{claims}> {{ SELECT ?claim ?narrative ?policy WHERE {{ (?claim ?p ?narrative ?score) search:hybrid ("narratives" "burst pipe flooding" 1) . ?claim ex:onPolicy ?policy }} }}
   SERVICE <{ontop}> {{ ?policy ins:policyNumber ?number . ?claim ins:hasLossReserve ?reserve }}
@@ -154,8 +154,9 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
     check('Ontop applies subClassOf: loss and expense reserves are both Reserves', len(reserves_up) == 4 and {value(r, 'x') for r in vq('SELECT ?x WHERE { ?x a ins:LossReserve }')} < reserves_up, reserves_up)
     check('Ontop applies subClassOf to payments without a job', len({value(r, 'x') for r in vq('SELECT ?x WHERE { ?x a ins:Payment }')}) == 4)
     check('Ontop applies subPropertyOf: hasLossReserve and hasExpenseReserve answer hasReserve', len(vq('SELECT ?c ?a WHERE { ?c ins:hasReserve ?a }')) == 4)
-    check('Ontop reasoning plus OWL-RL over live rows equals OWL-RL over the stored copy', live and live == stored, (len(live), len(stored), sorted(live ^ stored)[:5]))
-    check('OWL-RL adds only what Ontop did not already entail', live_derived and not (live_derived & ontop_types), sorted(live_derived & ontop_types)[:3])
+    check('Ontop reasoning plus OWL 2 RL over live rows equals OWL 2 RL over the stored copy', live and live == stored, (len(live), len(stored), sorted(live ^ stored)[:5]))
+    # Over live rows Ontop already entails every instance type, so the OWL 2 RL job may add none at all.
+    check('the OWL 2 RL job adds no type Ontop already entails', not (live_derived & ontop_types), sorted(live_derived & ontop_types)[:3])
     risk = {(value(r, 'policy').rsplit('/', 1)[-1], value(r, 'n')) for r in rows(sparql('', 'PREFIX rsk: <https://risk.example.org/vocab#> SELECT ?policy ?n WHERE { GRAPH <urn:rdftool:derived:inference:portfolio-risk> { ?policy rsk:highSeverityClaims ?n } }')[1])}
     check('rules over Postgres + claims + finance derive per-policy risk', risk == {('Policy-1', '2'), ('Policy-2', '1')}, risk)
     _, notes = federate('', f'''{pre}SELECT ?number ?note ?score WHERE {{
@@ -240,25 +241,25 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
         post(f'{store}/update', clash.replace('INSERT DATA', 'DELETE DATA'), 'application/sparql-update')
     check('removing the clash and rebuilding makes the job ready again', inf('acme-full', 'rebuild')[1].get('state') == 'ready' and 'clashes' not in inf('acme-full')[1])
     # The in-process OWL 2 RL engine: no sidecar, the same OWL conclusions, and explanations.
-    native = inf('acme-native', 'rebuild')[1]
-    check('the native OWL 2 RL job rebuilds', native.get('state') == 'ready', native)
+    native = inf('acme', 'rebuild')[1]
+    check('the ACME job, now on the native OWL 2 RL engine, rebuilds', native.get('state') == 'ready', native)
     graph_lines = lambda job: {f"{value(r, 's')} {value(r, 'p')} {value(r, 'o')}" for r in rows(sparql('', f'SELECT ?s ?p ?o WHERE {{ GRAPH <urn:rdftool:derived:inference:{job}> {{ ?s ?p ?o }} }}')[1])}
-    native_lines, full_lines = graph_lines('acme-native'), graph_lines('acme-full')
+    native_lines, full_lines = graph_lines('acme'), graph_lines('acme-full')
     check('every native deduction is also made by owlrl (owlrl adds its RDFS layer on top)', native_lines and native_lines <= full_lines, sorted(native_lines - full_lines)[:3])
     reserve = '<https://myinsurancecompany.linked.data.world/d/omg-pc-database/ClaimAmount-1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://data.world/schema/insurance/LossReserve> .'
     # The range of hasLossReserve and the domain of lossReserveAmount both type it; the first found is kept.
-    why = op('', 'inference', 'explain', {'triple': reserve, 'job': 'acme-native'})[1]
+    why = op('', 'inference', 'explain', {'triple': reserve, 'job': 'acme'})[1]
     first = (why.get('explanations') or [{}])[0]
     derivation = (first.get('derivations') or [{}])[0]
     check('a native deduction is explained by its OWL 2 RL rule, down to asserted triples', first.get('supported') is True and derivation.get('rule') in ('prp-rng', 'prp-dom') and any(p.get('asserted_in') for p in derivation.get('premises', [])), why)
     try:
         post(f'{store}/update', clash, 'application/sparql-update')
-        result = inf('acme-native', 'rebuild')[1]
+        result = inf('acme', 'rebuild')[1]
         named = (result.get('clashes') or [{}])[0]
         check('a native clash names the rule and the triples that clash', result.get('state') == 'inconsistent' and named.get('rule') == 'cax-dw' and len(named.get('premises', [])) == 3, result)
     finally:
         post(f'{store}/update', clash.replace('INSERT DATA', 'DELETE DATA'), 'application/sparql-update')
-    check('and recovers once the clash is removed', inf('acme-native', 'rebuild')[1].get('state') == 'ready')
+    check('and recovers once the clash is removed', inf('acme', 'rebuild')[1].get('state') == 'ready')
 
     # Explanations: why a triple was deduced, traced through chained jobs and outside inputs.
     base = 'https://myinsurancecompany.linked.data.world/d/omg-pc-database/'
@@ -270,7 +271,9 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
     middle = [e for p in derivation.get('premises', []) for e in p.get('deduced_by', [])]
     check('explain follows a premise into the earlier job that deduced it', middle and middle[0]['job'] == 'reserved-claims' and middle[0]['supported'], middle[:1])
     deepest = [e for m in middle for p in m.get('derivations', [{}])[0].get('premises', []) for e in p.get('deduced_by', [])]
-    check('and says plainly when a reasoner (OWL-RL) records no justification', deepest and deepest[0]['job'] == 'acme' and deepest[0]['supported'] is False, deepest[:1])
+    check('the trail continues into the OWL 2 RL job, down to the asserted ontology', deepest and deepest[0]['job'] == 'acme' and deepest[0]['supported'] is True and deepest[0]['derivations'][0]['rule'] in ('prp-rng', 'prp-dom'), deepest[:1])
+    unexplained = explain(f'<{base}ClaimAmount-1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://data.world/schema/insurance/LossReserve> .', job='acme-full')[1]
+    check('and says plainly when a reasoner (the owlrl sidecar) records no justification', unexplained['explanations'][0]['supported'] is False, unexplained)
     status, why = explain(f'<{base}Policy-2> <https://risk.example.org/vocab#atRisk> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .')
     premises = why['explanations'][0]['derivations'][0]['premises'] if status == 200 else []
     check('explain traces facts to the outside input they came from (claims joined with Postgres and finance)', status == 200 and premises and all(p.get('outside_input') == ['portfolio'] for p in premises), premises)

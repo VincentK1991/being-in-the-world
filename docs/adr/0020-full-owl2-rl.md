@@ -92,3 +92,27 @@ large inputs.
   no RDFS-only profile.
 - Its explanations name one justification per triple, the first it found. Other valid ones
   exist.
+
+## Later (same day)
+
+- `p rdfs:domain owl:Thing` and `rdfs:range owl:Thing` (or `rdfs:Resource`) count as true of
+  everything too. Both the v2 profiles and the native engine now leave them out, and their
+  identities carry `output_policy: 2`, so jobs built earlier read as stale. On ACME this gives
+  216 triples for the native engine and 313 for `owlrl-full-v1`. Conformance is unchanged.
+- The native engine is now the default for the bundled OWL jobs (`vehicles`, `acme`,
+  `acme-live`). `acme-full` stays on owlrl as the reference implementation.
+- Clash records persist across restarts. They are kept in the job's metadata graph through
+  `ReadContext::record_attempt`, and publishing clears them.
+- The native engine evaluates its hottest rules semi-naively: equality copying, domain/range,
+  subproperty, transitivity, subclass, and subclass/subproperty transitivity only join triples
+  new in the last round. Premise lists are built only for conclusions that are actually new. On
+  six inputs, the old and new engines produced byte-identical closures. Times in release build:
+
+  | Input | Before | After |
+  |---|---|---|
+  | 500-node transitive chain (125k derived) | 1.54 s | 0.57 s |
+  | Deep hierarchy (144k derived) | 0.30 s | 0.19 s |
+
+  The crate also compiles optimised in the dev profile the local stack runs. There, the chain
+  went from 12 s to 0.66 s.
+

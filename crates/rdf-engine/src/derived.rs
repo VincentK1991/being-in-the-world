@@ -8,6 +8,7 @@ use sha2::{Digest, Sha256};
 
 const PREFIX: &str = "urn:rdftool:derived:";
 const META: &str = "urn:rdftool:metadata";
+const ATTEMPT: &str = "urn:rdftool:attempt";
 const MAX_BYTES: usize = 16 * 1024 * 1024;
 fn hash(value: &str) -> String {
     format!("{:x}", Sha256::digest(value.as_bytes()))
@@ -126,10 +127,60 @@ impl ReadContext for PluginContext<'_> {
         tx.commit()?;
         Ok(record)
     }
+    fn record_attempt(&self, name: &str, attempt: Option<Value>) -> Result<()> {
+        let target = self.target(name)?;
+        let meta_graph = NamedNode::new(format!("{}:metadata", target.as_str()))?;
+        let predicate = NamedNode::new(ATTEMPT)?;
+        let text = attempt.as_ref().map(serde_json::to_string).transpose()?;
+        ensure!(text.as_ref().is_none_or(|t| t.len() <= 65536), "attempt record exceeds 64 KiB");
+        let _guard = self.database.dataset.lock_mutation()?;
+        let store = self.database.dataset.store();
+        let old = store
+            .quads_for_pattern(
+                Some(target.as_ref().into()),
+                Some(predicate.as_ref()),
+                None,
+                Some(meta_graph.as_ref().into()),
+            )
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut tx = store.start_transaction()?;
+        for quad in &old {
+            tx.remove(quad);
+        }
+        if let Some(text) = text {
+            tx.insert_named_graph(&meta_graph);
+            tx.insert(&Quad::new(
+                target.clone(),
+                predicate,
+                Literal::new_simple_literal(text),
+                meta_graph,
+            ));
+        }
+        tx.commit()?;
+        Ok(())
+    }
     fn derived_status(&self, name: &str) -> Result<Value> {
         let target = self.target(name)?;
         let meta_graph = NamedNode::new(format!("{}:metadata", target.as_str()))?;
         let _guard = self.database.dataset.lock_mutation()?;
+        let attempt = match self
+            .database
+            .dataset
+            .store()
+            .quads_for_pattern(
+                Some(target.as_ref().into()),
+                Some(NamedNode::new(ATTEMPT)?.as_ref()),
+                None,
+                Some(meta_graph.as_ref().into()),
+            )
+            .next()
+        {
+            Some(quad) => match quad?.object {
+                Term::Literal(literal) => Some(serde_json::from_str::<Value>(literal.value())?),
+                _ => anyhow::bail!("invalid attempt record"),
+            },
+            None => None,
+        };
         let mut records = self.database.dataset.store().quads_for_pattern(
             Some(target.as_ref().into()),
             Some(NamedNode::new(META)?.as_ref()),
@@ -137,7 +188,11 @@ impl ReadContext for PluginContext<'_> {
             Some(meta_graph.as_ref().into()),
         );
         let Some(record) = records.next() else {
-            return Ok(json!({"state":"missing","graph":target.as_str()}));
+            let mut missing = json!({"state":"missing","graph":target.as_str()});
+            if let Some(attempt) = attempt {
+                missing["attempt"] = attempt;
+            }
+            return Ok(missing);
         };
         let Term::Literal(literal) = record?.object else {
             anyhow::bail!("invalid derived metadata");
@@ -156,6 +211,9 @@ impl ReadContext for PluginContext<'_> {
             && record["source_token"].as_str().context("source token missing")? == source.token
             && record["output_digest"] == hash(&lines(quads));
         record["state"] = json!(if current { "ready" } else { "stale" });
+        if let Some(attempt) = attempt {
+            record["attempt"] = attempt;
+        }
         Ok(record)
     }
 }
