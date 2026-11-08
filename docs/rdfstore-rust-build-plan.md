@@ -1,5 +1,14 @@
 # RDF Store from Scratch in Rust — Phased Build Plan
 
+> **Outdated in part (2026-11-08).** The repository took the plugin-and-sidecar route instead of building
+> every subsystem in Rust (see ADR 0002 and ADR 0004). Where this plan disagrees, the plugin model wins:
+> **Phase 16 (OBDA / R2RML) and the federation items in it (16.7) are rejected as written**, and
+> Phase 15 (an in-Rust HNSW index) is superseded by the Qdrant semantic-search plugin.
+> Virtual graphs and `SERVICE` federation now follow
+> [federation-and-virtual-graphs-plan.md](federation-and-virtual-graphs-plan.md): Ontop for R2RML/SQL,
+> Comunica for federation, both behind a plugin contract. The rest of this document is kept as history
+> and background.
+
 ## Scope
 
 Build a Rust-native RDF quad store with:
@@ -441,6 +450,8 @@ Since Phase 1 already modeled `QuotedTriple` as a Term variant, this phase is ab
 
 ## Phase 15 — Vector Embeddings and Search
 
+> **Superseded.** Implemented as the Qdrant-backed `semantic-search` plugin (ADR 0004, ADR 0009) instead of an in-Rust HNSW index.
+
 **Goal:** Attach dense vectors to IRIs, query them from SPARQL.
 
 **Storage:**
@@ -478,6 +489,12 @@ The algebra translator recognizes `vec:nearestTo` and produces a `VectorSearch` 
 ---
 
 ## Phase 16 — OBDA / Virtual Knowledge Graph (SPARQL-to-SQL)
+
+> **REJECTED — outdated.** Do not build an R2RML parser, unfolder, SQL optimizer, dialect executors, OWL 2 QL
+> rewriter or native-store federation in Rust. That is a multi-month rebuild of Ontop. The adopted approach is
+> to run Ontop as a sidecar and register it as an approved SPARQL service, per
+> [federation-and-virtual-graphs-plan.md](federation-and-virtual-graphs-plan.md), so the feature ships quickly
+> through the plugin model. The text below is retained only as background on what Ontop does.
 
 **Goal:** SPARQL queries resolve transparently against relational sources through R2RML mappings, producing a single SQL query executed on the remote database. A SPARQL `SELECT` over `:Customer` translates into a BigQuery SQL SELECT over `analytics.customers`, threaded through the ontology at query time, with zero ETL.
 
