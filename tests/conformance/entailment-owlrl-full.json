@@ -1,0 +1,457 @@
+{
+ "suite": "entailment",
+ "variant": "owlrl-full",
+ "rdf_tests_revision": "d01b141c65ddf8e5b615256f264111118bdb2134",
+ "totals": {
+  "failed": 28,
+  "passed": 155,
+  "unsupported": 61
+ },
+ "expected": {
+  "<http://owl.semanticweb.org/id/Chain2trans#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-rl-no-schema-conclusions",
+   "detail": "conclusion not entailed; unmatched: <http://example.org/ontology#p> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#TransitiveProperty>"
+  },
+  "<http://owl.semanticweb.org/id/DisjointClasses-2D001#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-full-structural-conclusion",
+   "detail": "conclusion not entailed; unmatched: _:fce223ce81238eeb44e8f917b39ff129 <http://www.w3.org/2002/07/owl#complementOf> <http://example.org/Girl>"
+  },
+  "<http://owl.semanticweb.org/id/DisjointClasses-2D003#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-full-structural-conclusion",
+   "detail": "conclusion not entailed; unmatched: _:b787d8001faa583b44298a39eb292fdf <http://www.w3.org/2002/07/owl#complementOf> <http://example.org/Girl> | _:a8e2ea8f534e0139acc96a89c006633b <http://www.w3.org/20"
+  },
+  "<http://owl.semanticweb.org/id/Functionality-2Dclash#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-functional-syntax-only",
+   "detail": "premise given in functional syntax only"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointDataProperties-2D002#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-full-structural-conclusion",
+   "detail": "conclusion not entailed; unmatched: _:a9f32ad8f97f324700b5bca631f9a44e <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#AllDifferent> | _:faebc5068e4006bebe6952552b1c63"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointObjectProperties-2D001#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-rl-derives-no-differentFrom",
+   "detail": "conclusion not entailed; unmatched: <http://example.org/Peter> <http://www.w3.org/2002/07/owl#differentFrom> <http://example.org/Lois>"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DDisjointObjectProperties-2D002#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-full-structural-conclusion",
+   "detail": "conclusion not entailed; unmatched: _:b8ccf25f3c76ca48ed4d7559b0b06582 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#AllDifferent> | _:bdb49b9f159cbeee6ce750ac2cdde2"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DKeys-2D006#InconsistencyTest>": {
+   "status": "failed",
+   "cause": "owlrl-haskey-gap",
+   "detail": "inconsistency not detected"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D002#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-functional-syntax-only",
+   "detail": "premise given in functional syntax only"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectPropertyChain-2DBJP-2D002#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "owl-functional-syntax-only",
+   "detail": "premise given in functional syntax only"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DObjectQCR-2D002#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-full-structural-conclusion",
+   "detail": "conclusion not entailed; unmatched: _:e31884eb2787ce9ee3df5845a8f1616a <http://www.w3.org/2002/07/owl#complementOf> <http://example.org/Woman>"
+  },
+  "<http://owl.semanticweb.org/id/New-2DFeature-2DReflexiveProperty-2D001#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "not-in-owl-rl",
+   "detail": "conclusion not entailed; unmatched: <http://example.org/Peter> <http://example.org/knows> <http://example.org/Peter>"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Drules-2Dfp-2DdifferentFrom#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-rl-derives-no-differentFrom",
+   "detail": "conclusion not entailed; unmatched: <http://owl2.test/rules/Y1> <http://www.w3.org/2002/07/owl#differentFrom> <http://owl2.test/rules/Y2>"
+  },
+  "<http://owl.semanticweb.org/id/Owl2-2Drl-2Drules-2Difp-2DdifferentFrom#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-rl-derives-no-differentFrom",
+   "detail": "conclusion not entailed; unmatched: <http://owl2.test/rules/X1> <http://www.w3.org/2002/07/owl#differentFrom> <http://owl2.test/rules/X2>"
+  },
+  "<http://owl.semanticweb.org/id/Plus-2Dminus-2D0-2Dplus-2Ddisjointness#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-functional-syntax-only",
+   "detail": "premise given in functional syntax only"
+  },
+  "<http://owl.semanticweb.org/id/String-2Dinteger-2Dclash#InconsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-functional-syntax-only",
+   "detail": "premise given in functional syntax only"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D005-2DDirect#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-direct-semantics-only",
+   "detail": "Direct Semantics only: OWL 2 RL rules implement the RDF-Based Semantics"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI4.6-2D005-2DDirect#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "owl-direct-semantics-only",
+   "detail": "Direct Semantics only: OWL 2 RL rules implement the RDF-Based Semantics"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.26-2D010#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-full-structural-conclusion",
+   "detail": "conclusion not entailed; unmatched: _:n <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Restriction> | _:n <http://www.w3.org/2002/07/owl#onProperty> <http://www.w3.or"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.5-2D005#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-full-structural-conclusion",
+   "detail": "conclusion not entailed; unmatched: _:b1b2f17f6b6138fb4a3a80ad5c40a461 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/1999/02/22-rdf-syntax-ns#List> | _:b1b2f17f6b6138fb4a3a80ad5"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D006#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/2002/03owlt/I5.8/premises006#p> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#short>"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D008#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/2002/03owlt/I5.8/premises008#p> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#unsignedShort>"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D009#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/2002/03owlt/I5.8/premises009#p> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#short>"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DI5.8-2D011#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "axioms-scoped-to-input",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/2001/XMLSchema#integer> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Datatype> | <http://www.w3.org/20"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DdifferentFrom-2D001#PositiveEntailmentTest>": {
+   "status": "failed",
+   "cause": "owl-rl-derives-no-differentFrom",
+   "detail": "conclusion not entailed; unmatched: <http://www.w3.org/2002/03owlt/differentFrom/premises001#b> <http://www.w3.org/2002/07/owl#differentFrom> <http://www.w3.org/2002/03owlt/differentFrom/premises001#a"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D008-2DDirect#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-direct-semantics-only",
+   "detail": "Direct Semantics only: OWL 2 RL rules implement the RDF-Based Semantics"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2DequivalentClass-2D008-2DDirect#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "owl-direct-semantics-only",
+   "detail": "Direct Semantics only: OWL 2 RL rules implement the RDF-Based Semantics"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Dimports-2D011#ConsistencyTest>": {
+   "status": "unsupported",
+   "cause": "owl-imports",
+   "detail": "uses owl:imports; the reasoner fetches nothing"
+  },
+  "<http://owl.semanticweb.org/id/TestCase-3AWebOnt-2Dimports-2D011#PositiveEntailmentTest>": {
+   "status": "unsupported",
+   "cause": "owl-imports",
+   "detail": "uses owl:imports; the reasoner fetches nothing"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#d-ent-01>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/D> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q1>": {
+   "status": "failed",
+   "cause": "axioms-scoped-to-input",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:c> <http://www.w3.org/2002/07/owl#Nothing> | _:c14n1 <urn:binding:c> <http://example.org/GraduateAssistant> | _:c14n2 <urn:binding:c> <http://examp"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q3>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent10>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent3>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent4>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent5>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent6>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent7>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent8>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent9>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf01>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf02>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf03>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RDF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif01>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif03>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif04>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif06>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/RIF> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple1>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple3>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple4>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple5>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple6>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple7>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple8>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "entailment regime <http://www.w3.org/ns/entailment/OWL-Direct> needs a reasoner for RDFS or OWL-RDF-Based"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-11>": {
+   "status": "failed",
+   "cause": "owl-direct-answer-conventions",
+   "detail": "query result mismatch: missing: _:c14n0 <urn:binding:C> <foo://bla/names#Parent> | _:c14n0 <urn:result:row> \"\" | _:c14n1 <urn:binding:C> <http://www.w3.org/2002/07/owl#Thing> | _:c14n1 <urn:result:row"
+  },
+  "<http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-12>": {
+   "status": "failed",
+   "cause": "owl-direct-answer-conventions",
+   "detail": "query result mismatch: missing:  ; unexpected: _:c14n2 <urn:binding:C> <http://www.w3.org/2000/01/rdf-schema#Resource> | _:c14n2 <urn:result:row> \"\" | _:c14n4 <urn:binding:C> _:c14n3 | _:c14n4 <urn:re"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-non-well-formed-literal-2>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#integer>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-range-clash>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#integer>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-semantic-equivalence-between-datatypes>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-semantic-equivalence-within-type-1>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-semantic-equivalence-within-type-2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-test008>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-test009>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#datatypes-test010>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#integer>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-infinity>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-round-different>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-round-same>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#double-zero>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-infinity>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-round-different>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-round-same>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#float-zero>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#literal-type>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdf-charmod-uris-test003>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdf-charmod-uris-test004>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-xmllang-test007a>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-xmllang-test007b>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfms-xmllang-test007c>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "simple entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfs-entailment-test001>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#rdfs-entailment-test002>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#statement-entailment-test001>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#statement-entailment-test002>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#statement-entailment-test004>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#tex-01-language-tag-case-1>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#tex-01-language-tag-case-2>": {
+   "status": "unsupported",
+   "cause": "regime-not-offered",
+   "detail": "RDF entailment: no matching profile (only RDFS is offered; using it would over-entail)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#xmlsch-02-whitespace-facet-2>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#int>)"
+  },
+  "<https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-mt/manifest.ttl#xmlsch-02-whitespace-facet-4>": {
+   "status": "failed",
+   "cause": "datatype-entailment-not-in-profile",
+   "detail": "inconsistency not detected (recognized datatypes <http://www.w3.org/2001/XMLSchema#int>)"
+  }
+ }
+}

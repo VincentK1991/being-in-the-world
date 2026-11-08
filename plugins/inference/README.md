@@ -98,11 +98,53 @@ are rejected, including imports, restrictions, union/intersection expressions,
 cardinalities and property chains. This conservative check also rejects an
 unsupported OWL term merely mentioned as a URI in the selected data.
 
-This is **not full OWL 2 RL or OWL 2 DL conformance**. The profile guard is a
-bounded vocabulary/structure check, not a complete OWL structural validator.
-Reasoner-reported inconsistencies fail publication; absence of reported errors
-is not proof of general OWL consistency. OWL uses open-world reasoning; missing
-facts are not validation failures. SHACL validation is a separate future plugin.
+`owlrl-core-v1` is **not full OWL 2 RL**. Its guard is a bounded vocabulary and structure
+check, not a complete OWL structural validator.
+
+Two later profiles drop the guards. A job opts in by naming one; `rdfs-v1` and `owlrl-core-v1`
+never change, because the profile and the reasoner's identity are part of every job's fingerprint.
+
+- `rdfs-v2`: RDFS, with OWL terms treated as plain IRIs instead of rejected.
+- `owlrl-full-v1`: all of OWL 2 RL as the owlrl library implements it. This includes intersections,
+  unions, restrictions (`someValuesFrom`, `allValuesFrom`, `hasValue`, max cardinality), property
+  chains, keys, `AllDisjoint*`, `AllDifferent`, negative property assertions and annotations.
+
+Both add axiomatic triples, scoped:
+
+- Nothing is said about an RDF, RDFS, OWL or XSD term that the input never mentions.
+- Nothing is said that holds of every resource (`x a rdfs:Resource`, `x a owl:Thing`).
+- Reflexive `owl:sameAs` stays, because queries that walk `sameAs` chains rely on it.
+
+On the ACME data, `owlrl-full-v1` derives 393 triples against `owlrl-core-v1`'s 409. It drops the
+core profile's vocabulary chatter and adds class and domain/range conclusions.
+
+Conformance (W3C OWL 2 RL tests, RDF 1.1 Semantics, SPARQL entailment regimes; see
+`docs/conformance.md`):
+
+| Profile | Pass | Fail | Not run |
+|---|---|---|---|
+| `owlrl-core-v1` | 59 | 20 | 165 |
+| `owlrl-full-v1` / `rdfs-v2` | 155 | 28 | 61 |
+
+The remaining failures are mostly beyond rule-based OWL 2 RL, for example `differentFrom` by
+contradiction or conclusions that a class expression exists. `docs/owl-coverage.md` lists each one.
+
+### Inconsistent input
+
+An inconsistency is a result, not a failure (sidecar protocol 2). `rebuild` returns
+`"state": "inconsistent"` with `clashes`, each a `message` and the `terms` it names. The derived
+graph is left exactly as it was.
+
+`status` keeps reporting `inconsistent`, with the clashes and `inconsistent_since`, while the job's
+sources, inputs and configuration are the ones that clashed. Change any of them and the job reads
+as stale again; a successful rebuild clears the record. The record is kept in memory, so a restart
+forgets it and the job reads as stale.
+
+A cascade never runs a job that reads an inconsistent one. Its step reads `blocked`, with
+`blocked_by`.
+
+OWL is open-world: no clash is not proof of consistency, and missing facts are not validation
+failures. For closed-world checks use the SHACL plugin.
 
 ## Storage, freshness and recovery
 
@@ -229,6 +271,9 @@ with tests) runs the job's own reasoner and rules over `given` and reports, per 
 job's tests are not part of its fingerprint, so editing one never makes the job stale. Bad Turtle, blank nodes in
 `expect`/`absent` and tests that check nothing are rejected when the configuration loads. A chained job is tested by
 putting its upstream conclusions in `given`. Run all of them with `just rule-tests`.
+
+A test with `"inconsistent": true` passes only if the reasoner finds `given` inconsistent. Its result lists the `clashes`.
+`expect`, `absent` and `exact` are not checked for such a test.
 
 ## Explaining a deduction
 

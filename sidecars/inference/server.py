@@ -5,9 +5,12 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 IDENTITY = {'engine': 'owlrl', 'version': importlib.metadata.version('owlrl'),
-            'rdflib': importlib.metadata.version('rdflib'), 'protocol': 1,
-            'profiles': ['rdfs-v1', 'owlrl-core-v1'],
-            'axiomatic_triples': False, 'datatype_axioms': False}
+            'rdflib': importlib.metadata.version('rdflib'),
+            # Protocol 2: an inconsistent input answers 200 with `clashes` instead of failing.
+            'protocol': 2,
+            'profiles': ['rdfs-v1', 'owlrl-core-v1', 'rdfs-v2', 'owlrl-full-v1'],
+            'axiomatic_triples': {'rdfs-v1': 'none', 'owlrl-core-v1': 'none', 'rdfs-v2': 'scoped', 'owlrl-full-v1': 'scoped'},
+            'datatype_axioms': False}
 GATE = threading.BoundedSemaphore(1)
 class Handler(BaseHTTPRequestHandler):
     def reply(self, status, body):

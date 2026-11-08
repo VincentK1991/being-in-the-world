@@ -224,6 +224,21 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
         post(f'{store}/update', unmark, 'application/sparql-update')
         op('', 'inference', 'rebuild', {'job': 'reserve-summary', 'cascade': 'both'})
     check('stages are ready again after the data is restored', all(inf(j)[1]['state'] == 'ready' for j in chain))
+    # Full OWL 2 RL: an inconsistency is a result. The job keeps its output and names the clash.
+    full = inf('acme-full', 'rebuild')[1]
+    check('the full OWL 2 RL profile rebuilds over the ACME data', full.get('state') == 'ready', full)
+    count = lambda: int(value(rows(sparql('', 'SELECT (COUNT(*) AS ?n) WHERE { GRAPH <urn:rdftool:derived:inference:acme-full> { ?s ?p ?o } }')[1])[0], 'n'))
+    before = count()
+    clash = 'INSERT DATA { GRAPH <urn:rdftool:examples:acme-insurance> { <urn:e2e:Open> <http://www.w3.org/2002/07/owl#disjointWith> <urn:e2e:Closed> . <urn:e2e:claim> a <urn:e2e:Open> , <urn:e2e:Closed> } }'
+    try:
+        post(f'{store}/update', clash, 'application/sparql-update')
+        result = inf('acme-full', 'rebuild')[1]
+        check('a clash makes the rebuild report inconsistent, naming the resource', result.get('state') == 'inconsistent' and any('urn:e2e:claim' in c['terms'] for c in result.get('clashes', [])), result)
+        status = inf('acme-full')[1]
+        check('status reads inconsistent and the last good output stays published', status['state'] == 'inconsistent' and status.get('clashes') and count() == before, (status.get('state'), count(), before))
+    finally:
+        post(f'{store}/update', clash.replace('INSERT DATA', 'DELETE DATA'), 'application/sparql-update')
+    check('removing the clash and rebuilding makes the job ready again', inf('acme-full', 'rebuild')[1].get('state') == 'ready' and 'clashes' not in inf('acme-full')[1])
 
     # Explanations: why a triple was deduced, traced through chained jobs and outside inputs.
     base = 'https://myinsurancecompany.linked.data.world/d/omg-pc-database/'

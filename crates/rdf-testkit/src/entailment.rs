@@ -23,6 +23,8 @@ pub enum Regime {
 enum Kind {
     /// The OWL-RL sidecar: profiles `rdfs-v1` and `owlrl-core-v1`.
     Owlrl,
+    /// The OWL-RL sidecar's full profiles: `rdfs-v2` and `owlrl-full-v1`.
+    OwlrlFull,
     /// The Jena forward-rule sidecar given the RDFS rules in `rdfs.rules`.
     JenaRdfs(Vec<String>),
 }
@@ -40,14 +42,15 @@ pub enum Derivation {
     Rejected(String),
 }
 impl Reasoning {
-    /// `owlrl=<url>` or `jena-rdfs=<url>`.
+    /// `owlrl=<url>`, `owlrl-full=<url>` or `jena-rdfs=<url>`.
     pub fn parse(spec: &str) -> Result<Self> {
         let (name, endpoint) = spec.split_once('=').context("expected name=url")?;
         let reasoner = HttpReasonerFactory.create(&json!({ "endpoint": endpoint }))?;
         let kind = match name {
             "owlrl" => Kind::Owlrl,
+            "owlrl-full" => Kind::OwlrlFull,
             "jena-rdfs" => Kind::JenaRdfs(vec![include_str!("rdfs.rules").to_owned()]),
-            other => bail!("unknown reasoner {other}: expected owlrl or jena-rdfs"),
+            other => bail!("unknown reasoner {other}: expected owlrl, owlrl-full or jena-rdfs"),
         };
         Ok(Self { reasoner, kind })
     }
@@ -55,6 +58,8 @@ impl Reasoning {
         match (&self.kind, regime) {
             (Kind::Owlrl, Regime::Rdfs) => Some(("rdfs-v1", &[])),
             (Kind::Owlrl, Regime::OwlRl) => Some(("owlrl-core-v1", &[])),
+            (Kind::OwlrlFull, Regime::Rdfs) => Some(("rdfs-v2", &[])),
+            (Kind::OwlrlFull, Regime::OwlRl) => Some(("owlrl-full-v1", &[])),
             (Kind::JenaRdfs(rules), Regime::Rdfs) => Some(("jena-forward-v1", rules)),
             (Kind::JenaRdfs(_), Regime::OwlRl) => None,
         }
@@ -72,7 +77,7 @@ impl Reasoning {
             )),
             Err(error) => {
                 let message = format!("{error:#}");
-                if message.contains("inconsisten") {
+                if error.downcast_ref::<rdf_plugin_inference::Inconsistent>().is_some() {
                     Ok(Derivation::Inconsistent(message))
                 } else if ["unsupported", "must be named", "exceeds", "only "]
                     .iter()

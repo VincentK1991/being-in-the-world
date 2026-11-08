@@ -28,6 +28,9 @@ pub struct RuleTest {
     /// Also fail if the job produces anything not listed in `expect`.
     #[serde(default)]
     pub exact: bool,
+    /// The given data must be found inconsistent (no triples are compared).
+    #[serde(default)]
+    pub inconsistent: bool,
 }
 
 /// Parses Turtle into sorted, de-duplicated N-Triples lines.
@@ -73,8 +76,11 @@ pub fn validate(tests: &[RuleTest]) -> Result<()> {
         );
         ensure!(!test.given.trim().is_empty(), "test {} has no given data", test.name);
         ensure!(
-            !(test.expect.trim().is_empty() && test.absent.trim().is_empty() && !test.exact),
-            "test {} checks nothing: add expect, absent or exact",
+            !test.expect.trim().is_empty()
+                || !test.absent.trim().is_empty()
+                || test.exact
+                || test.inconsistent,
+            "test {} checks nothing: add expect, absent, exact or inconsistent",
             test.name
         );
         triples(&test.prefixes, &test.given, &format!("given of test {}", test.name))?;
@@ -94,7 +100,20 @@ impl RuleTest {
     pub fn run(&self, reasoner: &dyn Reasoner, profile: &str, rules: &[String]) -> Result<Value> {
         let given = triples(&self.prefixes, &self.given, "given")?;
         let input = given.iter().cloned().collect::<Vec<_>>().join("\n");
-        let (output, _) = reasoner.infer_rules(profile, &input, rules)?;
+        let output = match reasoner.infer_rules(profile, &input, rules) {
+            Ok((output, _)) if !self.inconsistent => output,
+            Ok(_) => {
+                return Ok(json!({"name": self.name, "passed": false,
+                    "error": "expected the given data to be inconsistent, but it was not"}));
+            }
+            Err(error) => match error.downcast_ref::<crate::Inconsistent>() {
+                Some(found) => {
+                    return Ok(json!({"name": self.name, "passed": self.inconsistent,
+                        "inconsistent": true, "clashes": found.clashes}));
+                }
+                None => return Err(error),
+            },
+        };
         let output = produced(&output)?;
         let expect = triples(&self.prefixes, &self.expect, "expect")?;
         let absent = triples(&self.prefixes, &self.absent, "absent")?;

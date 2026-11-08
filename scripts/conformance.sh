@@ -32,5 +32,6 @@ python3 scripts/conformance/baseline.py sparql --engine database
 # Entailment (RDF 1.1 Semantics, SPARQL entailment regimes, OWL 2 RL) needs the reasoner sidecars.
 if [[ "${CONFORMANCE_REASONERS:-0}" == 1 ]]; then
   python3 scripts/conformance/baseline.py entailment --reasoner owlrl
+  python3 scripts/conformance/baseline.py entailment --reasoner owlrl-full
   python3 scripts/conformance/baseline.py entailment --reasoner jena-rdfs
 fi

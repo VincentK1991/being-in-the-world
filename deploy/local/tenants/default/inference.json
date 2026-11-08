@@ -211,6 +211,34 @@
           "exact": true
         }
       ]
+    },
+    {
+      "name": "acme-full",
+      "provider": "owlrl",
+      "profile": "owlrl-full-v1",
+      "source_graphs": [
+        "urn:rdftool:examples:acme-insurance"
+      ],
+      "tests": [
+        {
+          "name": "intersections and property chains",
+          "prefixes": "@prefix : <https://example.org/> . @prefix owl: <http://www.w3.org/2002/07/owl#> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+          "given": ":Insured owl:intersectionOf ( :Person :PolicyHolder ) . :ann a :Person , :PolicyHolder . :grandparent owl:propertyChainAxiom ( :parent :parent ) . :a :parent :b . :b :parent :c .",
+          "expect": ":ann a :Insured . :a :grandparent :c ."
+        },
+        {
+          "name": "keys identify the same policy",
+          "prefixes": "@prefix : <https://example.org/> . @prefix owl: <http://www.w3.org/2002/07/owl#> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+          "given": ":Policy owl:hasKey ( :policyNumber ) . :p1 a :Policy ; :policyNumber \"31003000336\" . :p2 a :Policy ; :policyNumber \"31003000336\" .",
+          "expect": ":p1 owl:sameAs :p2 ."
+        },
+        {
+          "name": "a claim cannot be both open and closed",
+          "prefixes": "@prefix : <https://example.org/> . @prefix owl: <http://www.w3.org/2002/07/owl#> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+          "given": ":OpenClaim owl:disjointWith :ClosedClaim . :c7 a :OpenClaim , :ClosedClaim .",
+          "inconsistent": true
+        }
+      ]
     }
   ]
 }

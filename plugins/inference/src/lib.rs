@@ -95,12 +95,43 @@ pub trait Reasoner: Send + Sync {
         Ok(None)
     }
 }
+/// The reasoner found the input inconsistent. Not a failure: the job keeps its last good output
+/// and reports what clashed. Providers return it as an error so callers that ignore it still stop.
+#[derive(Debug, Clone)]
+pub struct Inconsistent {
+    /// One entry per clash: at least `message`; `terms` names the resources involved; a provider
+    /// that records justifications also gives `rule` and `premises`.
+    pub clashes: Vec<Value>,
+}
+impl std::fmt::Display for Inconsistent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let first = self.clashes.first().and_then(|c| c["message"].as_str()).unwrap_or("no detail");
+        write!(f, "input is inconsistent ({} clash(es)): {first}", self.clashes.len())
+    }
+}
+impl std::error::Error for Inconsistent {}
+/// The last rebuild that stopped on an inconsistency, and exactly what it was computed from.
+struct Attempt {
+    fingerprint: String,
+    source_token: String,
+    inputs: Vec<(String, String)>,
+    clashes: Vec<Value>,
+    at: u64,
+}
 pub struct Inference {
     config: Config,
     reasoners: std::collections::BTreeMap<String, Arc<dyn Reasoner>>,
     gate: Mutex<()>,
     /// Every job, dependencies first.
     order: Vec<String>,
+    /// Kept per process: a restart forgets them and the job simply reads as stale again.
+    attempts: Mutex<std::collections::BTreeMap<String, Attempt>>,
+}
+fn now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or_default()
 }
 /// A job whose `source_graphs` lists another job's output graph reads that job's deductions.
 const DERIVED: &str = "urn:rdftool:derived:inference:";
@@ -146,6 +177,9 @@ impl Reasoner for HttpReasoner {
         }
         let result = self
             .response(self.client.post(format!("{}/infer", self.endpoint)).json(&body).send()?)?;
+        if let Some(clashes) = result["clashes"].as_array().filter(|c| !c.is_empty()) {
+            return Err(Inconsistent { clashes: clashes.clone() }.into());
+        }
         Ok((
             result["ntriples"].as_str().context("missing derived triples")?.into(),
             result["reasoner"].clone(),
@@ -280,7 +314,48 @@ impl Inference {
             }
         }
         let order = dependency_order(&config.jobs)?;
-        Ok(Self { config, reasoners, gate: Mutex::new(()), order })
+        Ok(Self {
+            config,
+            reasoners,
+            gate: Mutex::new(()),
+            order,
+            attempts: Mutex::new(std::collections::BTreeMap::new()),
+        })
+    }
+    fn lock_attempts(
+        &self,
+    ) -> Result<std::sync::MutexGuard<'_, std::collections::BTreeMap<String, Attempt>>> {
+        self.attempts.lock().map_err(|_| anyhow::anyhow!("inference attempts lock poisoned"))
+    }
+    /// A job whose last rebuild found its current input inconsistent reads as `inconsistent`, with
+    /// the clashes, until the input or configuration changes or a rebuild succeeds.
+    fn mark_inconsistent(
+        &self,
+        context: &dyn ReadContext,
+        job: &Job,
+        fingerprint: &str,
+        status: &mut Value,
+    ) -> Result<()> {
+        let attempts = self.lock_attempts()?;
+        let Some(attempt) = attempts.get(&job.name) else { return Ok(()) };
+        if status["state"] == "ready" || attempt.fingerprint != fingerprint {
+            return Ok(());
+        }
+        let token = context.snapshot(&job.source_graphs)?.token;
+        let inputs = if job.inputs.is_empty() {
+            Vec::new()
+        } else {
+            match fetch_inputs(job) {
+                Ok(now) => now.iter().map(|f| (f.name.clone(), f.digest.clone())).collect(),
+                Err(_) => return Ok(()),
+            }
+        };
+        if token == attempt.source_token && inputs == attempt.inputs {
+            status["state"] = json!("inconsistent");
+            status["clashes"] = json!(attempt.clashes);
+            status["inconsistent_since"] = json!(attempt.at);
+        }
+        Ok(())
     }
     fn job(&self, name: &str) -> Option<&Job> {
         self.config.jobs.iter().find(|job| job.name == name)
@@ -360,8 +435,34 @@ impl Inference {
         );
         let fetched = fetch_inputs(job)?;
         let merged = inputs::merge(&source.ntriples, &fetched)?;
-        let (triples, actual) = reasoner.infer_rules(&job.profile, &merged, &job.rules)?;
+        let (triples, actual) = match reasoner.infer_rules(&job.profile, &merged, &job.rules) {
+            Ok(done) => done,
+            Err(error) => {
+                let Some(inconsistent) = error.downcast_ref::<Inconsistent>() else {
+                    return Err(error);
+                };
+                let kept = context.derived_status(&job.name)?["state"].clone();
+                self.lock_attempts()?.insert(
+                    job.name.clone(),
+                    Attempt {
+                        fingerprint,
+                        source_token: source.token.clone(),
+                        inputs: fetched
+                            .iter()
+                            .map(|f| (f.name.clone(), f.digest.clone()))
+                            .collect(),
+                        clashes: inconsistent.clashes.clone(),
+                        at: now(),
+                    },
+                );
+                return Ok(json!({
+                    "job": job.name, "state": "inconsistent", "clashes": inconsistent.clashes,
+                    "kept": kept, "note": "the derived graph was left as it was",
+                }));
+            }
+        };
         ensure!(actual == identity, "reasoner identity changed during rebuild");
+        self.lock_attempts()?.remove(&job.name);
         let mut metadata =
             json!({"config_digest":fingerprint,"reasoner":identity,"profile":job.profile});
         if !fetched.is_empty() {
@@ -405,20 +506,54 @@ impl Inference {
                 .map(Some)
                 .with_context(|| format!("rebuild of job {name} failed"))
         };
+        let inconsistent = |outcome: &Option<Value>| {
+            outcome.as_ref().is_some_and(|result| result["state"] == "inconsistent")
+        };
+        // After an inconsistent job, nothing that reads it runs: its output was not refreshed.
+        let mut blocked_by: Option<String> = None;
         for name in &upstream {
-            let outcome = attempt(name, false)?;
-            steps.push(json!({"job": name, "action": if outcome.is_some() { "rebuilt" } else { "skipped" }}));
-            if outcome.is_some() {
-                ran.push(json!({"job": name}));
+            if blocked_by.is_some() {
+                steps.push(json!({"job": name, "action": "blocked", "blocked_by": blocked_by}));
+                continue;
             }
+            let outcome = attempt(name, false)?;
+            let action = if inconsistent(&outcome) {
+                blocked_by = Some(name.clone());
+                "inconsistent"
+            } else if outcome.is_some() {
+                ran.push(json!({"job": name}));
+                "rebuilt"
+            } else {
+                "skipped"
+            };
+            steps.push(json!({"job": name, "action": action}));
         }
-        let mut result = attempt(&job.name, true)?.context("job was not rebuilt")?;
+        let mut result = match &blocked_by {
+            Some(name) => json!({
+                "job": job.name, "state": "blocked", "blocked_by": name,
+                "note": "an upstream job is inconsistent; fix it and rebuild again",
+            }),
+            None => attempt(&job.name, true)?.context("job was not rebuilt")?,
+        };
+        if result["state"] == "inconsistent" {
+            blocked_by = Some(job.name.clone());
+        }
         for name in &downstream {
-            let outcome = attempt(name, false)?;
-            steps.push(json!({"job": name, "action": if outcome.is_some() { "rebuilt" } else { "skipped" }}));
-            if outcome.is_some() {
-                ran.push(json!({"job": name}));
+            if blocked_by.is_some() {
+                steps.push(json!({"job": name, "action": "blocked", "blocked_by": blocked_by}));
+                continue;
             }
+            let outcome = attempt(name, false)?;
+            let action = if inconsistent(&outcome) {
+                blocked_by = Some(name.clone());
+                "inconsistent"
+            } else if outcome.is_some() {
+                ran.push(json!({"job": name}));
+                "rebuilt"
+            } else {
+                "skipped"
+            };
+            steps.push(json!({"job": name, "action": action}));
         }
         if cascade.is_some() {
             result["cascade"] =
@@ -489,6 +624,7 @@ impl Inference {
             status["stale_upstream"] = json!(waiting);
         }
         status["depends_on"] = json!(dependencies);
+        self.mark_inconsistent(context, job, &fingerprint, &mut status)?;
         memo.insert(job.name.clone(), status.clone());
         Ok(status)
     }
