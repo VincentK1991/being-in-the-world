@@ -108,6 +108,30 @@
         "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX ex: <https://claims.example.org/vocab#>\nPREFIX fin: <https://finance.example.org/vocab#>\nPREFIX rsk: <https://risk.example.org/vocab#>\nCONSTRUCT { ?policy rsk:highSeverityClaims ?count } WHERE { SELECT ?policy (COUNT(?claim) AS ?count) WHERE { ?claim ex:onPolicy ?policy ; ex:severity \"high\" } GROUP BY ?policy }",
         "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX ex: <https://claims.example.org/vocab#>\nPREFIX fin: <https://finance.example.org/vocab#>\nPREFIX rsk: <https://risk.example.org/vocab#>\nCONSTRUCT { ?policy rsk:riskNote ?note } WHERE { ?claim ex:onPolicy ?policy ; ex:severity \"high\" ; ex:narrative ?text . ?policy ins:policyNumber ?n ; fin:costCentre ?cc ; fin:budgetOwner ?owner . BIND(CONCAT(\"Policy \", ?n, \" owned by \", ?owner, \" (\", ?cc, \") has a high-severity claim: \", ?text) AS ?note) }"
       ]
+    },
+    {
+      "name": "reserved-claims",
+      "provider": "sparql",
+      "profile": "sparql-construct-once-v1",
+      "source_graphs": [
+        "urn:rdftool:examples:acme-insurance",
+        "urn:rdftool:derived:inference:acme"
+      ],
+      "rules": [
+        "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX rsk: <https://risk.example.org/vocab#>\n# Needs stage 1: the LossReserve type is a deduction of the OWL-RL job `acme`, not stored data.\nCONSTRUCT { ?claim rsk:hasReserve ?amount } WHERE { ?claim ins:hasLossReserve ?amount . ?amount a ins:LossReserve }"
+      ]
+    },
+    {
+      "name": "reserve-summary",
+      "provider": "sparql",
+      "profile": "sparql-construct-once-v1",
+      "source_graphs": [
+        "urn:rdftool:examples:acme-insurance",
+        "urn:rdftool:derived:inference:reserved-claims"
+      ],
+      "rules": [
+        "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX rsk: <https://risk.example.org/vocab#>\n# Needs stage 2: rsk:hasReserve exists only in the output of `reserved-claims`.\nCONSTRUCT { ?policy rsk:reservedClaims ?count } WHERE { SELECT ?policy (COUNT(DISTINCT ?claim) AS ?count) WHERE { ?claim rsk:hasReserve ?amount ; ins:against ?detail . ?detail ins:hasPolicy ?policy } GROUP BY ?policy }"
+      ]
     }
   ]
 }

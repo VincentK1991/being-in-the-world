@@ -51,7 +51,7 @@ A job may declare `inputs`: CONSTRUCT or DESCRIBE queries run against a loopback
 - Indexes over derived graphs go stale whenever the job is rebuilt; rebuild the index afterwards. Any new graph can also
   make an index that covers all graphs stale (the seed script rebuilds every index last).
 - Outside data is not part of the store's source token, so the staleness check compares fetched content, not versions.
-- Derived graphs still cannot be inputs to other inference jobs (unchanged from ADR 0006).
+- Derived graphs can now be sources of other jobs (ADR 0015); before that, a job could only reach another job's output through a federation input.
 - Not done: scheduled refresh, streaming large inputs, per-input credentials, and a provenance record linking each derived
   triple to the input rows that produced it (the spec in `docs/specs/inference-provenance.md` remains unimplemented).
 

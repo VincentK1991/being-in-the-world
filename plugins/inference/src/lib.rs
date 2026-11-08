@@ -81,6 +81,17 @@ pub struct Inference {
     config: Config,
     reasoners: std::collections::BTreeMap<String, Arc<dyn Reasoner>>,
     gate: Mutex<()>,
+    /// Every job, dependencies first.
+    order: Vec<String>,
+}
+/// A job whose `source_graphs` lists another job's output graph reads that job's deductions.
+const DERIVED: &str = "urn:rdftool:derived:inference:";
+fn upstream_name(graph: &str) -> Option<&str> {
+    graph.strip_prefix(DERIVED)
+}
+/// Jobs this job reads directly.
+fn depends_on(job: &Job) -> impl Iterator<Item = &str> {
+    job.source_graphs.iter().filter_map(|graph| upstream_name(graph))
 }
 struct HttpReasoner {
     endpoint: String,
@@ -241,19 +252,254 @@ impl Inference {
             );
             for graph in &job.source_graphs {
                 ensure!(
-                    !graph.starts_with("urn:rdftool:derived:"),
-                    "derived graphs cannot be source graphs"
+                    !graph.starts_with("urn:rdftool:derived:") || upstream_name(graph).is_some(),
+                    "only the output of an inference job can be a derived source graph"
                 );
                 if graph != "default" {
                     oxiri::Iri::parse(graph.as_str())?;
                 }
             }
         }
-        Ok(Self { config, reasoners, gate: Mutex::new(()) })
+        let order = dependency_order(&config.jobs)?;
+        Ok(Self { config, reasoners, gate: Mutex::new(()), order })
     }
+    fn job(&self, name: &str) -> Option<&Job> {
+        self.config.jobs.iter().find(|job| job.name == name)
+    }
+    /// Jobs `name` reads from, directly or not, dependencies first.
+    fn upstream(&self, name: &str) -> Vec<String> {
+        let mut found = std::collections::HashSet::new();
+        let mut stack = vec![name];
+        while let Some(current) = stack.pop() {
+            for dependency in self.job(current).into_iter().flat_map(depends_on) {
+                if found.insert(dependency) {
+                    stack.push(dependency);
+                }
+            }
+        }
+        self.order.iter().filter(|job| found.contains(job.as_str())).cloned().collect()
+    }
+    /// Jobs that read `name`, directly or not, dependencies first.
+    fn downstream(&self, name: &str) -> Vec<String> {
+        self.order
+            .iter()
+            .filter(|job| job.as_str() != name && self.upstream(job).iter().any(|up| up == name))
+            .cloned()
+            .collect()
+    }
+}
+/// Orders jobs so each follows the jobs it reads; rejects unknown references and cycles.
+fn dependency_order(jobs: &[Job]) -> Result<Vec<String>> {
+    let names: std::collections::HashSet<&str> = jobs.iter().map(|job| job.name.as_str()).collect();
+    for job in jobs {
+        for dependency in depends_on(job) {
+            ensure!(
+                names.contains(dependency),
+                "job {} reads the output of unknown job {dependency}",
+                job.name
+            );
+        }
+    }
+    let mut order: Vec<String> = Vec::new();
+    let mut remaining: Vec<&Job> = jobs.iter().collect();
+    while !remaining.is_empty() {
+        let (ready, blocked): (Vec<&Job>, Vec<&Job>) = remaining.into_iter().partition(|job| {
+            depends_on(job).all(|dependency| order.iter().any(|d| d == dependency))
+        });
+        ensure!(
+            !ready.is_empty(),
+            "inference jobs form a cycle: {}",
+            blocked.iter().map(|job| job.name.as_str()).collect::<Vec<_>>().join(", ")
+        );
+        order.extend(ready.into_iter().map(|job| job.name.clone()));
+        remaining = blocked;
+    }
+    Ok(order)
 }
 fn fetch_inputs(job: &Job) -> Result<Vec<Fetched>> {
     job.inputs.iter().enumerate().map(|(index, input)| input.fetch(index)).collect()
+}
+impl Inference {
+    fn parts(&self, job: &Job) -> Result<(&Arc<dyn Reasoner>, String)> {
+        let provider = job.provider.as_ref().expect("validated provider");
+        let fingerprint = format!(
+            "{:x}",
+            Sha256::digest(serde_json::to_vec(&(job, &self.config.providers[provider]))?)
+        );
+        Ok((&self.reasoners[provider], fingerprint))
+    }
+    /// Rebuilds one job; the caller holds the gate.
+    fn rebuild_one(&self, context: &dyn ReadContext, job: &Job) -> Result<Value> {
+        let (reasoner, fingerprint) = self.parts(job)?;
+        let source = context.snapshot(&job.source_graphs)?;
+        let identity = reasoner.identity()?;
+        ensure!(
+            identity["profiles"]
+                .as_array()
+                .is_some_and(|profiles| profiles.iter().any(|profile| profile == &job.profile)),
+            "reasoner does not support requested profile"
+        );
+        let fetched = fetch_inputs(job)?;
+        let merged = inputs::merge(&source.ntriples, &fetched)?;
+        let (triples, actual) = reasoner.infer_rules(&job.profile, &merged, &job.rules)?;
+        ensure!(actual == identity, "reasoner identity changed during rebuild");
+        let mut metadata =
+            json!({"config_digest":fingerprint,"reasoner":identity,"profile":job.profile});
+        if !fetched.is_empty() {
+            metadata["inputs"] = fetched.iter().map(Fetched::record).collect();
+        }
+        let mut result = context.publish(&job.name, &source, &triples, metadata)?;
+        result["state"] = json!("ready");
+        Ok(result)
+    }
+    /// Rebuilds `job`, and with `cascade` the jobs around it that are no longer ready, in dependency
+    /// order. Jobs that are still ready are skipped, so an unchanged result stops the cascade.
+    fn rebuild_with_cascade(
+        &self,
+        context: &dyn ReadContext,
+        job: &Job,
+        cascade: Option<&str>,
+    ) -> Result<Value> {
+        let upstream = if matches!(cascade, Some("upstream" | "both")) {
+            self.upstream(&job.name)
+        } else {
+            vec![]
+        };
+        let downstream = if matches!(cascade, Some("downstream" | "both")) {
+            self.downstream(&job.name)
+        } else {
+            vec![]
+        };
+        let mut steps = Vec::new();
+        let mut ran = Vec::new();
+        let not_ready = |name: &str| -> Result<bool> {
+            let job = self.job(name).context("unknown inference job")?;
+            Ok(self.status(context, job, &mut std::collections::BTreeMap::new())?["state"]
+                != "ready")
+        };
+        let attempt = |name: &str, forced: bool| -> Result<Option<Value>> {
+            if !forced && !not_ready(name)? {
+                return Ok(None);
+            }
+            let target = self.job(name).context("unknown inference job")?;
+            self.rebuild_one(context, target)
+                .map(Some)
+                .with_context(|| format!("rebuild of job {name} failed"))
+        };
+        for name in &upstream {
+            let outcome = attempt(name, false)?;
+            steps.push(json!({"job": name, "action": if outcome.is_some() { "rebuilt" } else { "skipped" }}));
+            if outcome.is_some() {
+                ran.push(json!({"job": name}));
+            }
+        }
+        let mut result = attempt(&job.name, true)?.context("job was not rebuilt")?;
+        for name in &downstream {
+            let outcome = attempt(name, false)?;
+            steps.push(json!({"job": name, "action": if outcome.is_some() { "rebuilt" } else { "skipped" }}));
+            if outcome.is_some() {
+                ran.push(json!({"job": name}));
+            }
+        }
+        if cascade.is_some() {
+            result["cascade"] =
+                json!({"upstream": upstream, "downstream": downstream, "steps": steps});
+            // The engine reads `ran` to run follow-up rules written for the other jobs.
+            result["ran"] = Value::Array(ran);
+        }
+        Ok(result)
+    }
+    /// The job's own state, then whether anything it reads is out of date. `memo` avoids asking twice.
+    fn status(
+        &self,
+        context: &dyn ReadContext,
+        job: &Job,
+        memo: &mut std::collections::BTreeMap<String, Value>,
+    ) -> Result<Value> {
+        if let Some(known) = memo.get(&job.name) {
+            return Ok(known.clone());
+        }
+        let (reasoner, fingerprint) = self.parts(job)?;
+        let mut status = context.derived_status(&job.name)?;
+        if status["state"] != "missing"
+            && (status["metadata"]["config_digest"] != fingerprint
+                || status["metadata"]["reasoner"] != reasoner.identity()?)
+        {
+            status["state"] = json!("stale");
+        }
+        // Outside data is not part of the store's source token, so re-read it and compare digests.
+        if status["state"] == "ready" && !job.inputs.is_empty() {
+            match fetch_inputs(job) {
+                Ok(now) => {
+                    let recorded = &status["metadata"]["inputs"];
+                    let changed: Vec<_> = now
+                        .iter()
+                        .filter(|input| {
+                            !recorded.as_array().is_some_and(|all| {
+                                all.iter()
+                                    .any(|r| r["name"] == input.name && r["digest"] == input.digest)
+                            })
+                        })
+                        .map(|input| input.name.clone())
+                        .collect();
+                    if !changed.is_empty() {
+                        status["state"] = json!("stale");
+                        status["stale_inputs"] = json!(changed);
+                    }
+                }
+                Err(error) => {
+                    status["state"] = json!("stale");
+                    status["input_error"] = json!(format!("{error:#}"));
+                }
+            }
+        }
+        // The store's token notices when an upstream graph's content changed; it cannot notice an
+        // upstream job that is itself out of date and has not been rebuilt yet.
+        let dependencies: Vec<&str> = depends_on(job).collect();
+        let mut waiting = Vec::new();
+        for dependency in &dependencies {
+            let upstream = self.job(dependency).context("unknown inference job")?;
+            if self.status(context, upstream, memo)?["state"] != "ready" {
+                waiting.push(*dependency);
+            }
+        }
+        if status["state"] == "ready" && !waiting.is_empty() {
+            status["state"] = json!("stale");
+        }
+        if !waiting.is_empty() {
+            status["stale_upstream"] = json!(waiting);
+        }
+        status["depends_on"] = json!(dependencies);
+        memo.insert(job.name.clone(), status.clone());
+        Ok(status)
+    }
+    /// What the job reads and what reads it, with each one's state and the order to rebuild in.
+    fn lineage(&self, context: &dyn ReadContext, job: &Job) -> Result<Value> {
+        let mut memo = std::collections::BTreeMap::new();
+        let mut describe = |names: Vec<String>| -> Result<Vec<Value>> {
+            names
+                .into_iter()
+                .map(|name| {
+                    let target = self.job(&name).context("unknown inference job")?;
+                    let status = self.status(context, target, &mut memo)?;
+                    Ok(json!({"job": name, "state": status["state"], "depends_on": status["depends_on"]}))
+                })
+                .collect()
+        };
+        let upstream = describe(self.upstream(&job.name))?;
+        let downstream = describe(self.downstream(&job.name))?;
+        let own = self.status(context, job, &mut std::collections::BTreeMap::new())?;
+        let names = |entries: &[Value]| -> Vec<String> {
+            entries.iter().filter_map(|entry| entry["job"].as_str().map(str::to_owned)).collect()
+        };
+        let mut order = names(&upstream);
+        order.push(job.name.clone());
+        order.extend(names(&downstream));
+        Ok(json!({
+            "job": job.name, "state": own["state"], "depends_on": own["depends_on"],
+            "upstream": upstream, "downstream": downstream, "rebuild_order": order,
+        }))
+    }
 }
 impl Plugin for Inference {
     fn facets(&self) -> Vec<rdf_plugin_api::Facet> {
@@ -268,90 +514,36 @@ impl Plugin for Inference {
             id: "inference".into(),
             version: env!("CARGO_PKG_VERSION").into(),
             sdk_version: SDK_VERSION,
-            operations: vec!["rebuild".into(), "status".into()],
+            operations: vec!["rebuild".into(), "status".into(), "lineage".into()],
             properties: vec![],
         }
     }
     fn invoke(&self, context: &dyn ReadContext, operation: &str, input: Value) -> Result<Value> {
         let object = input.as_object().context("expected object")?;
-        ensure!(object.len() == 1 && object.contains_key("job"), "expected only job argument");
-        let name = input["job"].as_str().context("job required")?;
-        let job = self
-            .config
-            .jobs
-            .iter()
-            .find(|job| job.name == name)
-            .context("unknown inference job")?;
-        let provider = job.provider.as_ref().expect("validated provider");
-        let reasoner = &self.reasoners[provider];
-        let fingerprint = format!(
-            "{:x}",
-            Sha256::digest(serde_json::to_vec(&(job, &self.config.providers[provider]))?)
+        let cascade = object.get("cascade").map(|value| value.as_str().unwrap_or_default());
+        ensure!(
+            object.contains_key("job")
+                && object
+                    .keys()
+                    .all(|key| key == "job" || (key == "cascade" && operation == "rebuild")),
+            "expected only a job argument (and cascade for rebuild)"
         );
+        ensure!(
+            matches!(cascade, None | Some("upstream" | "downstream" | "both")),
+            "cascade must be upstream, downstream or both"
+        );
+        let name = input["job"].as_str().context("job required")?;
+        let job = self.job(name).context("unknown inference job")?;
         match operation {
             "rebuild" => {
                 let _guard = self
                     .gate
                     .try_lock()
                     .map_err(|_| anyhow::anyhow!("inference rebuild already running"))?;
-                let source = context.snapshot(&job.source_graphs)?;
-                let identity = reasoner.identity()?;
-                ensure!(
-                    identity["profiles"].as_array().is_some_and(|profiles| profiles
-                        .iter()
-                        .any(|profile| profile == &job.profile)),
-                    "reasoner does not support requested profile"
-                );
-                let fetched = fetch_inputs(job)?;
-                let merged = inputs::merge(&source.ntriples, &fetched)?;
-                let (triples, actual) = reasoner.infer_rules(&job.profile, &merged, &job.rules)?;
-                ensure!(actual == identity, "reasoner identity changed during rebuild");
-                let mut metadata =
-                    json!({"config_digest":fingerprint,"reasoner":identity,"profile":job.profile});
-                if !fetched.is_empty() {
-                    metadata["inputs"] = fetched.iter().map(Fetched::record).collect();
-                }
-                let mut result = context.publish(name, &source, &triples, metadata)?;
-                result["state"] = json!("ready");
-                Ok(result)
+                self.rebuild_with_cascade(context, job, cascade)
             }
-            "status" => {
-                let mut status = context.derived_status(name)?;
-                if status["state"] != "missing"
-                    && (status["metadata"]["config_digest"] != fingerprint
-                        || status["metadata"]["reasoner"] != reasoner.identity()?)
-                {
-                    status["state"] = json!("stale");
-                }
-                // Outside data is not part of the store's source token, so re-read it and compare digests.
-                if status["state"] == "ready" && !job.inputs.is_empty() {
-                    match fetch_inputs(job) {
-                        Ok(now) => {
-                            let recorded = &status["metadata"]["inputs"];
-                            let changed: Vec<_> = now
-                                .iter()
-                                .filter(|input| {
-                                    !recorded.as_array().is_some_and(|all| {
-                                        all.iter().any(|r| {
-                                            r["name"] == input.name && r["digest"] == input.digest
-                                        })
-                                    })
-                                })
-                                .map(|input| input.name.clone())
-                                .collect();
-                            if !changed.is_empty() {
-                                status["state"] = json!("stale");
-                                status["stale_inputs"] = json!(changed);
-                            }
-                        }
-                        Err(error) => {
-                            status["state"] = json!("stale");
-                            status["input_error"] = json!(format!("{error:#}"));
-                        }
-                    }
-                }
-                Ok(status)
-            }
+            "status" => self.status(context, job, &mut std::collections::BTreeMap::new()),
+            "lineage" => self.lineage(context, job),
             _ => bail!("unknown inference operation"),
         }
     }

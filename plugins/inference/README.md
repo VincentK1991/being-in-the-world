@@ -45,8 +45,9 @@ Library applications can also register the plugin against an in-memory database.
 
 Each job explicitly merges its selected asserted/ontology graphs for reasoning.
 Use `"default"` to select the default graph. Unselected graphs do not participate.
-Sources may not use the reserved `urn:rdftool:derived:` namespace. Derived-graph
-chaining and remote ontology imports are deferred. Blank-node graph names cannot
+A source may be another job's output graph (`urn:rdftool:derived:inference:<job>`), which chains the jobs;
+see [Chained jobs](#chained-jobs). No other part of the `urn:rdftool:derived:` namespace can be a source.
+Remote ontology imports are deferred. Blank-node graph names cannot
 be selected in this release; blank-node subjects/objects retain their identities.
 
 ## Query and Studio
@@ -183,3 +184,28 @@ A job can also read RDF from a virtual graph or the federation sidecar by listin
 endpoint and a `kind` of `sparql` or `federation`). The fetched triples feed the reasoner but are never stored, and
 `status` reports `stale` with `stale_inputs` when the outside data changes. See
 [ADR 0012](../../docs/adr/0012-inference-with-outside-inputs.md).
+
+## Chained jobs
+
+List a job's output graph among another job's `source_graphs` and the second job reasons over the first job's
+deductions (usually together with the asserted graphs, since a job's output holds only what it added):
+
+```json
+{"name": "reserved-claims", "provider": "sparql", "profile": "sparql-construct-once-v1",
+ "source_graphs": ["urn:rdftool:examples:acme-insurance", "urn:rdftool:derived:inference:acme"],
+ "rules": ["... CONSTRUCT { ?claim rsk:hasReserve ?amount } WHERE { ?claim ins:hasLossReserve ?amount . ?amount a ins:LossReserve }"]}
+```
+
+- Dependencies come from `source_graphs`; there is nothing else to declare. Unknown jobs, self-reference and cycles are
+  rejected when the configuration loads.
+- `status` adds `depends_on`. A job whose upstream job is stale or missing is `stale` with `stale_upstream`, even when
+  its own source graphs have not changed yet. A change in an upstream job's output makes the downstream job stale
+  through the usual source token.
+- `rebuild` accepts `"cascade"`: `upstream` first rebuilds the jobs this one reads, `downstream` afterwards rebuilds the
+  jobs that read it, `both` does both. Jobs are visited in dependency order and only those that are no longer ready are
+  rebuilt, so a rebuild that changes nothing stops the cascade. The named job is always rebuilt. The response lists the
+  `steps` and reports the other jobs in `ran`, so refresh rules written for them fire too. A failing job stops the cascade.
+- `lineage` returns what a job reads and what reads it, each with its state, and the order to rebuild in.
+- One rebuild runs at a time; a cascade holds that slot for all of its jobs.
+
+See [ADR 0015](../../docs/adr/0015-chained-inference-jobs.md).

@@ -159,10 +159,16 @@ impl Database {
     }
     pub fn invoke(&self, plugin: &str, operation: &str, input: Value) -> Result<Value> {
         let mut result = self.invoke_once(plugin, operation, input.clone())?;
+        // An operation that ran the same operation for other inputs (a cascade of jobs) lists them in
+        // `ran`, so rules written for those inputs fire too.
+        let mut calls = vec![input];
+        if let Some(more) = result.get("ran").and_then(Value::as_array) {
+            calls.extend(more.iter().cloned());
+        }
         let ran: Vec<Value> = self
             .refresh
             .iter()
-            .filter(|rule| triggers(&rule.after, plugin, operation, &input))
+            .filter(|rule| calls.iter().any(|call| triggers(&rule.after, plugin, operation, call)))
             .map(|rule| {
                 let then = &rule.then;
                 let outcome = self.invoke_once(&then.plugin, &then.operation, then.input.clone());

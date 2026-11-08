@@ -74,3 +74,35 @@ fn rules_naming_unknown_operations_or_chaining_are_rejected() -> Result<()> {
     assert!(database(serde_json::from_str(chain)?).is_err());
     Ok(())
 }
+
+#[test]
+fn rules_for_jobs_a_cascade_also_ran_fire_too() -> Result<()> {
+    struct Cascading(Arc<Mutex<Vec<String>>>);
+    impl Plugin for Cascading {
+        fn manifest(&self) -> Manifest {
+            Manifest {
+                id: "jobs".into(),
+                version: "0".into(),
+                sdk_version: SDK_VERSION,
+                operations: vec!["run".into()],
+                properties: vec![],
+            }
+        }
+        fn invoke(&self, _: &dyn ReadContext, _: &str, input: Value) -> Result<Value> {
+            self.0.lock().expect("lock").push(input.to_string());
+            Ok(json!({"ran": [{"job": "downstream"}]}))
+        }
+    }
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let mut db = Database::memory()?;
+    db.register(Cascading(calls.clone()))?;
+    db.register(Recorder { id: "search", calls: calls.clone() })?;
+    let rules = r#"[{"after": {"plugin": "jobs", "operation": "run", "input": {"job": "downstream"}},
+                     "then":  {"plugin": "search", "operation": "run", "input": {"index": "notes"}}}]"#;
+    db.refresh_rules(serde_json::from_str::<Vec<RefreshRule>>(rules)?)?;
+    // The call itself was for another job; the rule is for one the cascade also ran.
+    let result = db.invoke("jobs", "run", json!({"job": "upstream"}))?;
+    assert_eq!(result["refreshed"][0]["ok"], true);
+    assert_eq!(calls.lock().expect("lock").len(), 2);
+    Ok(())
+}

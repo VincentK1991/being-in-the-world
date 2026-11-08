@@ -179,6 +179,28 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
     check('richer filters (!=, ||, IN) work on catalog rows through SERVICE', isinstance(filtered, dict) and sorted(value(r, 'name') for r in filtered['results']['bindings'])[:2] == ['narratives', 'totals'], filtered)
     check('federation results carry no process-wide counters', isinstance(filtered, dict) and 'httpRequests' not in json.dumps(filtered), filtered)
 
+    # Chained jobs: stage 2 reads stage 1's deductions, stage 3 reads stage 2's.
+    chain = ('acme', 'reserved-claims', 'reserve-summary')
+    built = op('', 'inference', 'rebuild', {'job': 'reserve-summary', 'cascade': 'upstream'})[1]
+    check('cascade rebuilds the upstream jobs a job reads, in order', [s['job'] for s in built['cascade']['steps']] == ['acme', 'reserved-claims'] and built['state'] == 'ready', built.get('cascade'))
+    summary = {(value(r, 'p'), value(r, 'o')) for r in rows(sparql('', 'SELECT ?p ?o WHERE { GRAPH <urn:rdftool:derived:inference:reserve-summary> { ?s ?p ?o } }')[1])}
+    check('stage 3 counts claims whose reserve type only stage 1 could infer', summary == {('https://risk.example.org/vocab#reservedClaims', '2')}, summary)
+    check('all three stages are ready after a cascade', all(inf(j)[1]['state'] == 'ready' for j in chain))
+    lineage = op('', 'inference', 'lineage', {'job': 'reserved-claims'})[1]
+    check('lineage lists both directions and the rebuild order', lineage['rebuild_order'] == list(chain) and lineage['downstream'][0]['job'] == 'reserve-summary', lineage)
+    marker = 'INSERT DATA { GRAPH <urn:rdftool:examples:acme-insurance> { <urn:e2e:marker> <urn:e2e:p> 1 } }'
+    unmark = 'DELETE DATA { GRAPH <urn:rdftool:examples:acme-insurance> { <urn:e2e:marker> <urn:e2e:p> 1 } }'
+    try:
+        post(f'{store}/update', marker, 'application/sparql-update')
+        check('changing the data marks every stage stale', all(inf(j)[1]['state'] == 'stale' for j in chain), [inf(j)[1]['state'] for j in chain])
+        cascade = op('', 'inference', 'rebuild', {'job': 'acme', 'cascade': 'downstream'})[1]
+        check('downstream cascade rebuilds the jobs that read it', [s['job'] for s in cascade['cascade']['steps']] == ['reserved-claims', 'reserve-summary'] and all(s['action'] == 'rebuilt' for s in cascade['cascade']['steps']), cascade.get('cascade'))
+        check('and a second cascade skips them because nothing changed', [s['action'] for s in op('', 'inference', 'rebuild', {'job': 'acme', 'cascade': 'downstream'})[1]['cascade']['steps']] == ['skipped', 'skipped'])
+    finally:
+        post(f'{store}/update', unmark, 'application/sparql-update')
+        op('', 'inference', 'rebuild', {'job': 'reserve-summary', 'cascade': 'both'})
+    check('stages are ready again after the data is restored', all(inf(j)[1]['state'] == 'ready' for j in chain))
+
     # Staleness follows the outside data: change a Postgres row and the job reports it, then rebuilds clean.
     def postgres(sql):
         compose = ['bash', 'scripts/docker-compose.sh', '-f', 'sidecars/federation/compose.yml', 'exec', '-T', 'postgres', 'psql', '-U', 'rdf', '-d', 'acme', '-c', sql]

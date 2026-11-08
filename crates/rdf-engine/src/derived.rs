@@ -34,9 +34,10 @@ impl PluginContext<'_> {
     fn snapshot_unlocked(&self, graphs: &[String]) -> Result<GraphSnapshot> {
         ensure!(!graphs.is_empty() && graphs.len() <= 64, "select 1 to 64 source graphs");
         for graph in graphs {
+            // A derived graph may feed another derived graph (chained jobs); its bookkeeping graph may not.
             ensure!(
-                !graph.starts_with(PREFIX),
-                "derived graphs cannot be inference sources in this release"
+                !(graph.starts_with(PREFIX) && graph.ends_with(":metadata")),
+                "derived-graph metadata cannot be a source"
             );
             if graph != "default" {
                 NamedNode::new(graph.clone())?;
@@ -190,7 +191,10 @@ mod tests {
         let other_context = PluginContext { database: &other, owner: "test" };
         assert!(other_context.publish("job", &source, "", Value::Null).is_err());
         assert!(context.publish("../escape", &source, "", Value::Null).is_err());
-        assert!(context.snapshot(&["urn:rdftool:derived:test:job".into()]).is_err());
+        // A derived graph is a valid source, so jobs can chain; its metadata graph is not.
+        let chained = context.snapshot(&["urn:rdftool:derived:test:job".into()])?;
+        assert_eq!(chained.graphs, ["urn:rdftool:derived:test:job"]);
+        assert!(context.snapshot(&["urn:rdftool:derived:test:job:metadata".into()]).is_err());
         let current = context.snapshot(&["urn:source".into()])?;
         context.publish("job", &current, "", json!({"version":2}))?;
         assert_eq!(context.derived_status("job")?["state"], "ready");
