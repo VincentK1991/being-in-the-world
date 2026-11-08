@@ -8,7 +8,9 @@
   [hidden] { display: none !important; }
 }
 @layer components {
+  .btn { @apply rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50; }
   .primary { @apply rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800; }
+  .btn.primary { @apply border-transparent bg-accent text-white hover:bg-emerald-800; }
   .secondary { @apply rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm hover:bg-slate-100; }
   .card { @apply rounded-xl border border-slate-200 bg-white overflow-hidden; }
   .notice { @apply rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900; }

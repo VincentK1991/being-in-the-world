@@ -33,13 +33,14 @@ PROFILES = {
 }
 RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
 SUBCLASS = 'http://www.w3.org/2000/01/rdf-schema#subClassOf'
+DOMAIN_RANGE = ('http://www.w3.org/2000/01/rdf-schema#domain', 'http://www.w3.org/2000/01/rdf-schema#range')
 EVERYTHING = {'http://www.w3.org/2000/01/rdf-schema#Resource', OWL + 'Thing'}
 
 def trivial(s, p, o):
     """True of every resource, so saying it adds nothing: `x a rdfs:Resource`, `x a owl:Thing`,
-    `C rdfs:subClassOf owl:Thing`. Reflexive `owl:sameAs` stays: queries that walk sameAs chains
-    rely on it (eq-ref)."""
-    return str(p) in (RDF_TYPE, SUBCLASS) and str(o) in EVERYTHING
+    `C rdfs:subClassOf owl:Thing`, `p rdfs:domain owl:Thing`. Reflexive `owl:sameAs` stays: queries
+    that walk sameAs chains rely on it (eq-ref)."""
+    return str(p) in (RDF_TYPE, SUBCLASS) + DOMAIN_RANGE and str(o) in EVERYTHING
 
 IRI = re.compile(r'(?:https?|urn|file|tag):[^\s,;()\'"<>]+')
 

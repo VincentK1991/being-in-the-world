@@ -10,7 +10,9 @@ IDENTITY = {'engine': 'owlrl', 'version': importlib.metadata.version('owlrl'),
             'protocol': 2,
             'profiles': ['rdfs-v1', 'owlrl-core-v1', 'rdfs-v2', 'owlrl-full-v1'],
             'axiomatic_triples': {'rdfs-v1': 'none', 'owlrl-core-v1': 'none', 'rdfs-v2': 'scoped', 'owlrl-full-v1': 'scoped'},
-            'datatype_axioms': False}
+            'datatype_axioms': False,
+            # What the v2 profiles leave out of their output; a change here makes their jobs stale.
+            'output_policy': 2}
 GATE = threading.BoundedSemaphore(1)
 class Handler(BaseHTTPRequestHandler):
     def reply(self, status, body):

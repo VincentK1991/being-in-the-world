@@ -59,13 +59,16 @@ impl Reasoner for NativeOwlRl {
     fn identity(&self) -> Result<Value> {
         Ok(json!({"engine": "rdftool-owl2rl", "adapter": env!("CARGO_PKG_VERSION"), "protocol": 2,
                   "profiles": [Self::PROFILE], "rules": "OWL 2 RL/RDF tables 4-7 and 9; no datatype rules",
-                  "axiomatic_triples": "scoped", "justifications": true}))
+                  "axiomatic_triples": "scoped", "output_policy": 2, "justifications": true}))
     }
     fn infer(&self, profile: &str, ntriples: &str) -> Result<(String, Value)> {
         ensure!(profile == Self::PROFILE, "unsupported OWL 2 RL profile");
         ensure!(ntriples.len() <= 16 * 1024 * 1024, "source exceeds 16 MiB");
         let (derived, _) = owl2rl::infer(ntriples, &self.0)?;
         Ok((derived, self.identity()?))
+    }
+    fn explains(&self) -> bool {
+        true
     }
     fn explain(
         &self,
@@ -127,6 +130,9 @@ impl Reasoner for SparqlRules {
     }
     fn infer(&self, _: &str, _: &str) -> Result<(String, Value)> {
         bail!("SPARQL rules are required")
+    }
+    fn explains(&self) -> bool {
+        true
     }
     fn explain(
         &self,

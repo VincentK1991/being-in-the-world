@@ -1160,7 +1160,7 @@ impl Closure {
     /// The `owlrl-full-v1` output policy.
     fn shown(&self, t: T, mentioned: &HashSet<Id>) -> bool {
         let (s, p, o) = t;
-        let everything = (p == self.v.ty || p == self.v.sub_class)
+        let everything = [self.v.ty, self.v.sub_class, self.v.domain, self.v.range].contains(&p)
             && (o == self.v.thing || self.name(o) == format!("{RDFS}Resource"));
         !everything && (!self.vocabulary(s) || mentioned.contains(&s))
     }

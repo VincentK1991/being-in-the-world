@@ -176,3 +176,30 @@ fn a_failing_upstream_job_stops_the_cascade_and_leaves_downstream_untouched() ->
     assert_eq!(run(&db, "status", json!({"job": "living"}))?["state"], "missing");
     Ok(())
 }
+
+#[test]
+fn jobs_and_status_for_all_list_every_job_in_rebuild_order() -> Result<()> {
+    let db = database()?;
+    let jobs = run(&db, "jobs", json!({}))?;
+    let names: Vec<&str> =
+        jobs["jobs"].as_array().into_iter().flatten().filter_map(|j| j["name"].as_str()).collect();
+    assert_eq!(names, ["animals", "living"]);
+    assert_eq!(jobs["jobs"][1]["depends_on"], json!(["animals"]));
+    assert_eq!(jobs["jobs"][1]["graph"], "urn:rdftool:derived:inference:living");
+    assert_eq!(
+        jobs["jobs"][0]["explains"], false,
+        "the stand-in reasoner records no justifications"
+    );
+    assert!(run(&db, "jobs", json!({"job": "animals"})).is_err(), "jobs takes no arguments");
+
+    run(&db, "rebuild", json!({"job": "animals"}))?;
+    let all = run(&db, "status", json!({}))?;
+    let states: Vec<(&str, &str)> = all["jobs"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|s| Some((s["job"].as_str()?, s["state"].as_str()?)))
+        .collect();
+    assert_eq!(states, [("animals", "ready"), ("living", "missing")]);
+    Ok(())
+}

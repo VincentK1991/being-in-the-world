@@ -74,10 +74,32 @@ target/debug/rdftool plugin --source http://127.0.0.1:7878 --plugin inference \
   --operation rebuild --input '{"job":"vehicles"}'
 ```
 
-Studio discovers the plugin automatically. Upload data and run the SPARQL query
-above; rebuild through CLI/HTTP. There is no dedicated inference-management panel.
-The equivalent endpoint is `POST /api/plugins/inference/operations/rebuild` with
-`{"job":"vehicles"}`. `status` uses the same generic endpoint structure.
+Studio's Plugins page has an **Inference** panel:
+
+- **Job list:** every job in rebuild order, with its state (`ready`, `stale`, `missing`,
+  `inconsistent`, `blocked`), its reasoner and what it reads.
+- **Selecting a job:**
+  - **Rebuild:** this job only, or cascading upstream, downstream or both. The steps taken are
+    shown.
+  - **Rule tests:** run them, with what was missing or unexpected.
+  - **Clashes:** what clashed, with the resources involved and the triples.
+  - **Deduced triples:** the first 25 the job published, each with a **Why?** button.
+- **Why?:** opens the explanation. You see the rule and its premises, and premises the job deduced
+  first nest inside. Each fact shows where it was asserted. Jobs whose reasoner records no
+  justifications say so and name the graphs they read.
+- **Reflexive triples:** triples that relate something to itself are hidden unless you ask for
+  them. Examples are `x owl:sameAs x` and `C rdfs:subClassOf C`.
+
+Two operations exist mainly for the panel:
+
+- `jobs` (`{}`) lists every job: provider, profile, sources, inputs, dependencies, test count, and
+  whether its reasoner `explains`. No reasoner is called.
+- `status` with `{}` returns every job's state in one call, computing each upstream state once.
+
+The page is exercised against the deployed stack by
+`node scripts/ui/inference-deployed.mjs` (set `PLAYWRIGHT_MODULE` if Playwright is installed
+elsewhere). Everything is also available over HTTP, for example
+`POST /api/plugins/inference/operations/rebuild` with `{"job":"vehicles"}`.
 
 ## Declared profiles
 

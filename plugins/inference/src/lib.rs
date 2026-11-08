@@ -94,6 +94,10 @@ pub trait Reasoner: Send + Sync {
     ) -> Result<Option<Vec<Value>>> {
         Ok(None)
     }
+    /// Whether `explain` can name rules and premises, so a UI knows before asking.
+    fn explains(&self) -> bool {
+        false
+    }
 }
 /// The reasoner found the input inconsistent. Not a failure: the job keeps its last good output
 /// and reports what clashed. Providers return it as an error so callers that ignore it still stop.
@@ -356,6 +360,26 @@ impl Inference {
             status["inconsistent_since"] = json!(attempt.at);
         }
         Ok(())
+    }
+    /// Every job in rebuild order, with what it reads and what can be asked of it. No reasoner is
+    /// called and nothing is read from the store.
+    fn jobs(&self) -> Result<Value> {
+        let jobs = self
+            .order
+            .iter()
+            .filter_map(|name| self.job(name))
+            .map(|job| {
+                let (reasoner, _) = self.parts(job)?;
+                Ok(json!({
+                    "name": job.name, "provider": job.provider, "profile": job.profile,
+                    "source_graphs": job.source_graphs, "depends_on": depends_on(job).collect::<Vec<_>>(),
+                    "inputs": job.inputs.iter().map(|input| &input.name).collect::<Vec<_>>(),
+                    "rules": job.rules.len(), "tests": job.tests.len(), "explains": reasoner.explains(),
+                    "graph": format!("{DERIVED}{}", job.name),
+                }))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(json!({"jobs": jobs}))
     }
     fn job(&self, name: &str) -> Option<&Job> {
         self.config.jobs.iter().find(|job| job.name == name)
@@ -704,6 +728,7 @@ impl Plugin for Inference {
                 "lineage".into(),
                 "test".into(),
                 "explain".into(),
+                "jobs".into(),
             ],
             properties: vec![],
         }
@@ -712,10 +737,15 @@ impl Plugin for Inference {
         if operation == "explain" {
             return self.explain(context, &input);
         }
+        if operation == "jobs" {
+            ensure!(input.as_object().is_some_and(|o| o.is_empty()), "jobs takes no arguments");
+            return self.jobs();
+        }
         let object = input.as_object().context("expected object")?;
         let cascade = object.get("cascade").map(|value| value.as_str().unwrap_or_default());
         ensure!(
-            (object.contains_key("job") || (operation == "test" && object.is_empty()))
+            (object.contains_key("job")
+                || (matches!(operation, "test" | "status") && object.is_empty()))
                 && object
                     .keys()
                     .all(|key| key == "job" || (key == "cascade" && operation == "rebuild")),
@@ -727,6 +757,18 @@ impl Plugin for Inference {
         );
         if operation == "test" && !object.contains_key("job") {
             return self.test_all();
+        }
+        if operation == "status" && !object.contains_key("job") {
+            // Every job at once, dependencies first, sharing one memo so each is computed once.
+            let mut memo = std::collections::BTreeMap::new();
+            let mut all = Vec::new();
+            for name in &self.order {
+                let job = self.job(name).context("unknown inference job")?;
+                let mut status = self.status(context, job, &mut memo)?;
+                status["job"] = json!(name);
+                all.push(status);
+            }
+            return Ok(json!({"jobs": all}));
         }
         let name = input["job"].as_str().context("job required")?;
         let job = self.job(name).context("unknown inference job")?;
