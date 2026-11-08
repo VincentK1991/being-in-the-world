@@ -1,0 +1,8 @@
+@prefix ex: <https://example.org/animals/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+ex:Mammal rdfs:label "Mammals" ; rdfs:comment "Warm-blooded vertebrates that nurse their young." .
+ex:Elephant rdfs:label "Elephant" ; rdfs:subClassOf ex:Mammal ; ex:habitat ex:Savanna ; ex:diet "Herbivore" .
+ex:Whale rdfs:label "Whale" ; rdfs:subClassOf ex:Mammal ; ex:habitat ex:Ocean .
+ex:BlueWhale rdfs:label "Blue whale" ; rdfs:subClassOf ex:Whale ; rdfs:comment "The largest living animal." .
+ex:Savanna rdfs:label "Savanna" .
+ex:Ocean rdfs:label "Ocean" .

@@ -1,0 +1,8 @@
+@prefix ex: <https://example.org/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+ex:alice a foaf:Person ; foaf:name "Alice" ; ex:worksOn ex:atlas ; foaf:knows ex:bob .
+ex:bob a foaf:Person ; foaf:name "Bob" ; ex:worksOn ex:atlas .
+ex:carol a foaf:Person ; foaf:name "Carol" ; ex:worksOn ex:beacon .
+ex:atlas a ex:Project ; ex:title "Atlas" .
+ex:beacon a ex:Project ; ex:title "Beacon" .
