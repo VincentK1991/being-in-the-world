@@ -40,7 +40,7 @@ fn triples(prefixes: &str, body: &str, what: &str) -> Result<BTreeSet<String>> {
     }
     Ok(found)
 }
-fn blank(line: &str) -> bool {
+pub(crate) fn blank(line: &str) -> bool {
     let body = line.trim_end_matches(" .");
     body.starts_with("_:") || body.rsplit(' ').next().is_some_and(|object| object.starts_with("_:"))
 }

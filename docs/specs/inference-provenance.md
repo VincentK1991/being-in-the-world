@@ -1,7 +1,8 @@
 # Fact-level inference provenance
 
-Status: proposed implementation specification, 2026-11-03. This is not a claim
-that fact-level provenance has been implemented or validated.
+Status: proposed implementation specification, 2026-11-03. A partial, on-demand
+version for SPARQL rule jobs exists as the `explain` operation (ADR 0017); recorded
+fact-level provenance has not been implemented or validated.
 
 [Confirmed intent](../intent/inference-provenance.md).
 

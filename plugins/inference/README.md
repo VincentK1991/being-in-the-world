@@ -229,3 +229,26 @@ with tests) runs the job's own reasoner and rules over `given` and reports, per 
 job's tests are not part of its fingerprint, so editing one never makes the job stale. Bad Turtle, blank nodes in
 `expect`/`absent` and tests that check nothing are rejected when the configuration loads. A chained job is tested by
 putting its upstream conclusions in `given`. Run all of them with `just rule-tests`.
+
+## Explaining a deduction
+
+`explain` answers "why does this triple hold?":
+
+```json
+{"triple": "<https://example.org/p1> <https://risk.example.org/vocab#atRisk> true .", "job": "portfolio-risk", "depth": 3}
+```
+
+Only `triple` is required (one N-Triples line, no blank nodes). Without `job` the triple is looked up in every job's
+derived graph; `depth` (1 to 5, default 3) limits how far back a trail through chained jobs goes. For a derived triple the
+result lists one entry per job that holds it, and per derivation: the `rule` and its text, the variable `bindings`, whether
+it was an `aggregate` (then every member counted is listed), and the `premises` it relied on. Each premise says where it
+lives: `asserted_in` (a source graph), `outside_input` (a virtual-graph or federation input, which is not stored) or
+`deduced_by` (the earlier job that derived it, explained in turn). A triple that is not derived is reported with the graphs
+that assert it.
+
+- The explanation is computed by re-running the rules over what the job reads now, so a job that is out of date says
+  `stale: true` and its trail may differ from what was published.
+- Only SPARQL rule jobs can name the rule and premises. OWL-RL and Jena jobs answer `supported: false` with the graphs they
+  read, because those sidecars return conclusions without justifications.
+- Premises that depend on property paths, `GRAPH` blocks or blank nodes are marked `incomplete` or left untraced.
+- One call makes at most 400 premise lookups (`truncated` is set when it stops early).

@@ -1,4 +1,5 @@
 //! Inference orchestration through generic snapshot/publication capabilities.
+mod explain;
 mod inputs;
 mod rule_tests;
 use anyhow::{Context, Result, bail, ensure};
@@ -80,6 +81,18 @@ pub trait Reasoner: Send + Sync {
     ) -> Result<(String, Value)> {
         ensure!(rules.is_empty(), "provider does not accept custom rules");
         self.infer(profile, ntriples)
+    }
+    /// How `target` (one N-Triples line) follows from `ntriples` under `rules`: one entry per derivation,
+    /// each with the rule, the variable bindings and the triples it relied on. `None` when this
+    /// reasoner records no justifications.
+    fn explain(
+        &self,
+        _profile: &str,
+        _ntriples: &str,
+        _rules: &[String],
+        _target: &str,
+    ) -> Result<Option<Vec<Value>>> {
+        Ok(None)
     }
 }
 pub struct Inference {
@@ -549,11 +562,20 @@ impl Plugin for Inference {
             id: "inference".into(),
             version: env!("CARGO_PKG_VERSION").into(),
             sdk_version: SDK_VERSION,
-            operations: vec!["rebuild".into(), "status".into(), "lineage".into(), "test".into()],
+            operations: vec![
+                "rebuild".into(),
+                "status".into(),
+                "lineage".into(),
+                "test".into(),
+                "explain".into(),
+            ],
             properties: vec![],
         }
     }
     fn invoke(&self, context: &dyn ReadContext, operation: &str, input: Value) -> Result<Value> {
+        if operation == "explain" {
+            return self.explain(context, &input);
+        }
         let object = input.as_object().context("expected object")?;
         let cascade = object.get("cascade").map(|value| value.as_str().unwrap_or_default());
         ensure!(

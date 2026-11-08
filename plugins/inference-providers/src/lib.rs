@@ -1,5 +1,5 @@
 //! Application-registered adapters. Neither inference orchestration nor the host depends on these.
-use anyhow::{Result, bail, ensure};
+use anyhow::{Context, Result, bail, ensure};
 use rdf_plugin_inference::{HttpReasonerFactory, Reasoner, ReasonerFactory, ReasonerRegistry};
 use rdf_store::{
     engine::Dataset,
@@ -12,6 +12,8 @@ use rdf_store::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::{collections::BTreeSet, sync::Arc, time::Duration};
+
+mod explain;
 
 pub fn registry() -> Result<ReasonerRegistry> {
     let mut registry = ReasonerRegistry::default();
@@ -47,6 +49,20 @@ impl ReasonerFactory for SparqlFactory {
         Ok(Arc::new(SparqlRules(config)))
     }
 }
+/// An in-memory copy of the rule input. Import helpers rename blank nodes; replay must preserve identity.
+fn load(ntriples: &str) -> Result<Dataset> {
+    let snapshot = Dataset::memory()?;
+    let mut transaction = snapshot.store().start_transaction()?;
+    for (count, quad) in
+        RdfParser::from_format(RdfFormat::NTriples).for_reader(ntriples.as_bytes()).enumerate()
+    {
+        ensure!(count < 100_000, "source exceeds 100000 triples");
+        transaction.insert(&quad?);
+    }
+    transaction.commit()?;
+    ensure!(snapshot.store().len()? <= 100_000, "source exceeds 100000 triples");
+    Ok(snapshot)
+}
 impl Reasoner for SparqlRules {
     fn identity(&self) -> Result<Value> {
         Ok(
@@ -55,6 +71,23 @@ impl Reasoner for SparqlRules {
     }
     fn infer(&self, _: &str, _: &str) -> Result<(String, Value)> {
         bail!("SPARQL rules are required")
+    }
+    fn explain(
+        &self,
+        profile: &str,
+        ntriples: &str,
+        rules: &[String],
+        target: &str,
+    ) -> Result<Option<Vec<Value>>> {
+        ensure!(profile == "sparql-construct-once-v1", "unsupported SPARQL rule profile");
+        let parsed =
+            rules.iter().map(|rule| Dataset::prepare_query(rule)).collect::<Result<Vec<_>>>()?;
+        let mut quads = RdfParser::from_format(RdfFormat::NTriples).for_reader(target.as_bytes());
+        let quad = quads.next().context("no triple to explain")??;
+        ensure!(quads.next().is_none(), "explain one triple at a time");
+        let triple =
+            rdf_store::oxigraph::model::Triple::new(quad.subject, quad.predicate, quad.object);
+        explain::explain(&load(ntriples)?, &parsed, rules, &triple).map(Some)
     }
     fn infer_rules(
         &self,
@@ -81,17 +114,7 @@ impl Reasoner for SparqlRules {
                 Ok(query)
             })
             .collect::<Result<Vec<_>>>()?;
-        let snapshot = Dataset::memory()?;
-        // Import helpers rename blank nodes; snapshot replay must preserve identity.
-        let mut transaction = snapshot.store().start_transaction()?;
-        for (count, quad) in
-            RdfParser::from_format(RdfFormat::NTriples).for_reader(ntriples.as_bytes()).enumerate()
-        {
-            ensure!(count < 100_000, "source exceeds 100000 triples");
-            transaction.insert(&quad?);
-        }
-        transaction.commit()?;
-        ensure!(snapshot.store().len()? <= 100_000, "source exceeds 100000 triples");
+        let snapshot = load(ntriples)?;
         let cancel = CancellationToken::new();
         let worker_token = cancel.clone();
         let (done, receiver) = std::sync::mpsc::channel::<()>();

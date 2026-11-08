@@ -217,6 +217,23 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
         op('', 'inference', 'rebuild', {'job': 'reserve-summary', 'cascade': 'both'})
     check('stages are ready again after the data is restored', all(inf(j)[1]['state'] == 'ready' for j in chain))
 
+    # Explanations: why a triple was deduced, traced through chained jobs and outside inputs.
+    base = 'https://myinsurancecompany.linked.data.world/d/omg-pc-database/'
+    explain = lambda triple, **extra: op('', 'inference', 'explain', {'triple': triple, **extra})
+    status, why = explain(f'<{base}Policy-1> <https://risk.example.org/vocab#reservedClaims> "2"^^<http://www.w3.org/2001/XMLSchema#integer> .')
+    top = why['explanations'][0] if status == 200 else {}
+    derivation = top.get('derivations', [{}])[0]
+    check('explain names the rule, that it was an aggregate, and the facts it counted', status == 200 and top.get('job') == 'reserve-summary' and derivation.get('aggregate') and any('hasLossReserve' in p['triple'] or 'ClaimAmount' in p['triple'] for p in derivation['premises']) and len(derivation['premises']) >= 4, why if status != 200 else derivation.get('bindings'))
+    middle = [e for p in derivation.get('premises', []) for e in p.get('deduced_by', [])]
+    check('explain follows a premise into the earlier job that deduced it', middle and middle[0]['job'] == 'reserved-claims' and middle[0]['supported'], middle[:1])
+    deepest = [e for m in middle for p in m.get('derivations', [{}])[0].get('premises', []) for e in p.get('deduced_by', [])]
+    check('and says plainly when a reasoner (OWL-RL) records no justification', deepest and deepest[0]['job'] == 'acme' and deepest[0]['supported'] is False, deepest[:1])
+    status, why = explain(f'<{base}Policy-2> <https://risk.example.org/vocab#atRisk> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .')
+    premises = why['explanations'][0]['derivations'][0]['premises'] if status == 200 else []
+    check('explain traces facts to the outside input they came from (claims joined with Postgres and finance)', status == 200 and premises and all(p.get('outside_input') == ['portfolio'] for p in premises), premises)
+    status, plain = explain(f'<{base}Policy-1> <http://data.world/schema/insurance/policyNumber> "31003000336" .')
+    check('explain reports an asserted triple as not derived', status == 200 and plain.get('derived') is False, plain)
+
     # Staleness follows the outside data: change a Postgres row and the job reports it, then rebuilds clean.
     def postgres(sql):
         compose = ['bash', 'scripts/docker-compose.sh', '-f', 'sidecars/federation/compose.yml', 'exec', '-T', 'postgres', 'psql', '-U', 'rdf', '-d', 'acme', '-c', sql]
