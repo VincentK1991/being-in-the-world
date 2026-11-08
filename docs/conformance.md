@@ -88,6 +88,8 @@ Each run goes through the same HTTP adapters that inference jobs use.
   - D-entailment.
 - **OWL tests we cannot read:** tests given only in functional syntax (5), and tests that use `owl:imports` (2).
 
+For OWL in depth, see [owl-coverage.md](owl-coverage.md). It covers what lifting our profile restriction gains (measured), the soundness and cost checks, and a staged roadmap.
+
 ## Changes that would close the most gaps
 
 1. **Widen the profiles.**
