@@ -1,0 +1,22 @@
+{
+  "qdrant_url": "http://127.0.0.1:16333",
+  "providers": {
+    "local_gpu": {
+      "kind": "local",
+      "config": {
+        "url": "http://127.0.0.1:18081"
+      }
+    }
+  },
+  "indexes": [
+    {
+      "name": "narratives",
+      "provider": "local_gpu",
+      "mode": "hybrid",
+      "predicates": [
+        "https://claims.example.org/vocab#narrative"
+      ],
+      "max_entries": 10000
+    }
+  ]
+}

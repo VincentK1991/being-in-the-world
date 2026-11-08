@@ -1,0 +1,32 @@
+name: rdf-local
+# Docker Desktop / WSL deployment. Only loopback host ports are published.
+# Internal relays preserve the engine and provider loopback-only policy.
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: deploy/local/backend.Dockerfile
+    ports: ["127.0.0.1:7878:7878"]
+    command: ["--inference-config", "/config/inference.json", "--semantic-config", "/config/semantic.json", "gateway", "--db", "/data/db", "--default-dataset", "default", "--tenant-config-dir", "/config/tenants", "--bind", "127.0.0.1:7879"]
+    volumes:
+      - rdf-data:/data
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:7878/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  ui:
+    build:
+      context: ../..
+      dockerfile: deploy/local/ui.Dockerfile
+    ports: ["127.0.0.1:4321:4321"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4321/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+volumes:
+  rdf-data:

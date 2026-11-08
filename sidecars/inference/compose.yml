@@ -1,0 +1,13 @@
+name: rdf-inference
+services:
+  owlrl:
+    build: .
+    ports: ["127.0.0.1:18082:8082"]
+    mem_limit: 512m
+    cpus: 2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8082/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3

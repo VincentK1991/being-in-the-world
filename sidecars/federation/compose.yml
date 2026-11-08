@@ -1,0 +1,32 @@
+name: rdf-federation
+# Virtual graph (Postgres + Ontop) and the SERVICE federation engine (Comunica). Loopback ports only.
+# The backend reaches these through the same relays it uses for Qdrant: 18090 (Ontop) and 18095 (Comunica).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: rdf
+      POSTGRES_PASSWORD: rdf-local-only
+      POSTGRES_DB: acme
+    ports: ["127.0.0.1:15432:5432"]
+    volumes: ["pg-data:/var/lib/postgresql/data"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rdf -d acme"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  ontop:
+    build: ./ontop
+    depends_on:
+      postgres: { condition: service_healthy }
+    ports: ["127.0.0.1:18090:8080"]
+    restart: unless-stopped
+  federation:
+    build: ./comunica
+    depends_on: [ontop]
+    ports: ["127.0.0.1:18095:8095"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    restart: unless-stopped
+volumes:
+  pg-data:

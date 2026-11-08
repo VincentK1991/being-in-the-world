@@ -1,0 +1,5 @@
+{
+  "name": "acme-postgres",
+  "description": "ACME Insurance tables in Postgres, mapped to RDF by R2RML through Ontop",
+  "endpoint": "http://127.0.0.1:18090/sparql"
+}

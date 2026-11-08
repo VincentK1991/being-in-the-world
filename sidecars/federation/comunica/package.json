@@ -1,0 +1,10 @@
+{
+  "name": "rdf-federation-sidecar",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@comunica/query-sparql": "5.4.1",
+    "n3": "^1.26.0",
+    "sparqljs": "3.7.4"
+  }
+}

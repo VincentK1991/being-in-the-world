@@ -1,0 +1,11 @@
+{
+  "endpoint": "http://127.0.0.1:18095/sparql",
+  "local_source": "http://host.docker.internal:7878/d/finance/query",
+  "allow": [
+    "http://ontop:8080/sparql",
+    "http://host.docker.internal:7878/query",
+    "http://host.docker.internal:7878/d/claims/query",
+    "http://host.docker.internal:7878/d/finance/query",
+    "http://host.docker.internal:7878/d/acme/query"
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "providers": {
+    "sparql": {
+      "kind": "sparql-rules",
+      "config": {
+        "cancel_after_seconds": 30,
+        "max_triples": 200000
+      }
+    },
+    "jena": {
+      "kind": "jena-rules",
+      "config": {
+        "endpoint": "http://127.0.0.1:18083"
+      }
+    },
+    "owlrl": {
+      "kind": "owlrl",
+      "config": {
+        "endpoint": "http://127.0.0.1:18082"
+      }
+    }
+  },
+  "jobs": [
+    {
+      "name": "work-sparql",
+      "provider": "sparql",
+      "profile": "sparql-construct-once-v1",
+      "source_graphs": [
+        "urn:rules:data"
+      ],
+      "rules": [
+        "PREFIX ex: <https://example.org/>\nCONSTRUCT { ?person ex:worksInCountry ?country } WHERE { ?person ex:worksFor ?company . ?company ex:locatedIn ?country }",
+        "PREFIX ex: <https://example.org/>\nCONSTRUCT { ?person ex:worksOnContinent ?continent } WHERE { ?person ex:worksInCountry ?country . ?country ex:onContinent ?continent }"
+      ]
+    },
+    {
+      "name": "totals",
+      "provider": "sparql",
+      "profile": "sparql-construct-once-v1",
+      "source_graphs": [
+        "urn:rules:data"
+      ],
+      "rules": [
+        "PREFIX ex: <https://example.org/>\nCONSTRUCT { ?line ex:total ?total } WHERE { ?line ex:unitPrice ?price ; ex:quantity ?quantity . BIND(?price * ?quantity AS ?total) FILTER(?total > 10) }"
+      ]
+    },
+    {
+      "name": "work-jena",
+      "provider": "jena",
+      "profile": "jena-forward-v1",
+      "source_graphs": [
+        "urn:rules:data"
+      ],
+      "rules": [
+        "[worksIn: (?person <https://example.org/worksFor> ?company) (?company <https://example.org/locatedIn> ?country) -> (?person <https://example.org/worksInCountry> ?country)]\n[continent: (?person <https://example.org/worksInCountry> ?country) (?country <https://example.org/onContinent> ?continent) -> (?person <https://example.org/worksOnContinent> ?continent)]"
+      ]
+    },
+    {
+      "name": "vehicles",
+      "provider": "owlrl",
+      "profile": "owlrl-core-v1",
+      "source_graphs": [
+        "urn:example:data",
+        "urn:example:ontology"
+      ]
+    },
+    {
+      "name": "acme",
+      "provider": "owlrl",
+      "profile": "owlrl-core-v1",
+      "source_graphs": [
+        "urn:rdftool:examples:acme-insurance"
+      ]
+    },
+    {
+      "name": "acme-live",
+      "provider": "owlrl",
+      "profile": "owlrl-core-v1",
+      "source_graphs": [
+        "urn:rdftool:examples:acme-ontology"
+      ],
+      "inputs": [
+        {
+          "name": "postgres",
+          "kind": "sparql",
+          "endpoint": "http://127.0.0.1:18090/sparql",
+          "query": "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }"
+        }
+      ]
+    },
+    {
+      "name": "portfolio-risk",
+      "provider": "sparql",
+      "profile": "sparql-construct-once-v1",
+      "source_graphs": [
+        "urn:rdftool:examples:acme-ontology"
+      ],
+      "inputs": [
+        {
+          "name": "portfolio",
+          "kind": "federation",
+          "endpoint": "http://127.0.0.1:18095/sparql",
+          "query": "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX ex: <https://claims.example.org/vocab#>\nPREFIX fin: <https://finance.example.org/vocab#>\nPREFIX rsk: <https://risk.example.org/vocab#>\nCONSTRUCT {\n  ?claim ex:onPolicy ?policy ; ex:severity ?severity ; ex:narrative ?text .\n  ?policy ins:policyNumber ?number ; ins:policyExpirationDate ?expires ; fin:costCentre ?costCentre ; fin:budgetOwner ?owner .\n} WHERE {\n  SERVICE <http://host.docker.internal:7878/d/claims/query> { ?claim ex:onPolicy ?policy ; ex:severity ?severity ; ex:narrative ?text }\n  SERVICE <http://ontop:8080/sparql> { ?policy ins:policyNumber ?number ; ins:policyExpirationDate ?expires }\n  SERVICE <http://host.docker.internal:7878/d/finance/query> { ?policy fin:costCentre ?costCentre ; fin:budgetOwner ?owner }\n}"
+        }
+      ],
+      "rules": [
+        "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX ex: <https://claims.example.org/vocab#>\nPREFIX fin: <https://finance.example.org/vocab#>\nPREFIX rsk: <https://risk.example.org/vocab#>\nCONSTRUCT { ?policy rsk:atRisk true } WHERE { ?claim ex:onPolicy ?policy ; ex:severity \"high\" }",
+        "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX ex: <https://claims.example.org/vocab#>\nPREFIX fin: <https://finance.example.org/vocab#>\nPREFIX rsk: <https://risk.example.org/vocab#>\nCONSTRUCT { ?policy rsk:highSeverityClaims ?count } WHERE { SELECT ?policy (COUNT(?claim) AS ?count) WHERE { ?claim ex:onPolicy ?policy ; ex:severity \"high\" } GROUP BY ?policy }",
+        "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX ex: <https://claims.example.org/vocab#>\nPREFIX fin: <https://finance.example.org/vocab#>\nPREFIX rsk: <https://risk.example.org/vocab#>\nCONSTRUCT { ?policy rsk:riskNote ?note } WHERE { ?claim ex:onPolicy ?policy ; ex:severity \"high\" ; ex:narrative ?text . ?policy ins:policyNumber ?n ; fin:costCentre ?cc ; fin:budgetOwner ?owner . BIND(CONCAT(\"Policy \", ?n, \" owned by \", ?owner, \" (\", ?cc, \") has a high-severity claim: \", ?text) AS ?note) }"
+      ]
+    }
+  ]
+}

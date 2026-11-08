@@ -1,0 +1,40 @@
+{
+  "qdrant_url": "http://127.0.0.1:16333",
+  "providers": {
+    "local_gpu": {
+      "kind": "local",
+      "config": {
+        "url": "http://127.0.0.1:18081"
+      }
+    }
+  },
+  "indexes": [
+    {
+      "name": "descriptions",
+      "provider": "local_gpu",
+      "predicates": [
+        "http://www.w3.org/2000/01/rdf-schema#comment"
+      ],
+      "max_entries": 100000
+    },
+    {
+      "name": "descriptions-hybrid",
+      "provider": "local_gpu",
+      "mode": "hybrid",
+      "predicates": [
+        "http://www.w3.org/2000/01/rdf-schema#comment"
+      ],
+      "max_entries": 100000
+    },
+    {
+      "name": "risk-notes",
+      "provider": "local_gpu",
+      "mode": "hybrid",
+      "graph": "urn:rdftool:derived:inference:portfolio-risk",
+      "predicates": [
+        "https://risk.example.org/vocab#riskNote"
+      ],
+      "max_entries": 10000
+    }
+  ]
+}

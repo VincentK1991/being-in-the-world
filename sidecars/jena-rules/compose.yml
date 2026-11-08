@@ -1,0 +1,13 @@
+name: rdf-jena-rules
+services:
+  jena:
+    build: .
+    ports: ["127.0.0.1:18083:8083"]
+    mem_limit: 640m
+    cpus: 2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8083/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
