@@ -59,6 +59,10 @@ federation:
     bash scripts/docker-compose.sh -f sidecars/federation/compose.yml up -d --build --wait --wait-timeout 300
     python3 scripts/seed/federation_demo.py
 
+# Run every inference job's rule tests (needs `just dev`, and the OWL-RL and Jena sidecars for those jobs).
+rule-tests:
+    python3 scripts/test/rule_tests.py
+
 # End-to-end virtual graph and cross-dataset federation checks (needs `just dev` and `just federation`).
 federation-test:
     python3 scripts/test/federation_e2e.py

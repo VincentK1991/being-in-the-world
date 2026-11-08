@@ -1,8 +1,10 @@
 //! Inference orchestration through generic snapshot/publication capabilities.
 mod inputs;
+mod rule_tests;
 use anyhow::{Context, Result, bail, ensure};
 pub use inputs::{ExternalInput, Fetched, InputKind};
 use rdf_plugin_api::{Manifest, Plugin, ReadContext, SDK_VERSION};
+pub use rule_tests::RuleTest;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -33,6 +35,9 @@ pub struct Job {
     /// Extra RDF fetched from a sidecar at rebuild time (virtual graph or federation); never stored, only deduced from.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<ExternalInput>,
+    /// Checked by the `test` operation. Not serialized, so editing a test never makes the job stale.
+    #[serde(default, skip_serializing)]
+    pub tests: Vec<RuleTest>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -240,6 +245,7 @@ impl Inference {
                 "invalid or duplicate inference job"
             );
             ensure!(!job.profile.is_empty(), "unsupported inference profile");
+            rule_tests::validate(&job.tests)?;
             ensure!(job.inputs.len() <= 8, "a job accepts at most 8 inputs");
             let mut input_names = std::collections::HashSet::new();
             for input in &job.inputs {
@@ -473,6 +479,35 @@ impl Inference {
         memo.insert(job.name.clone(), status.clone());
         Ok(status)
     }
+    /// Runs a job's tests through its reasoner on the data each test supplies.
+    fn test(&self, job: &Job) -> Result<Value> {
+        let (reasoner, _) = self.parts(job)?;
+        let results = job
+            .tests
+            .iter()
+            .map(|test| {
+                test.run(reasoner.as_ref(), &job.profile, &job.rules).or_else(|error| {
+                    Ok::<_, anyhow::Error>(
+                        json!({"name": test.name, "passed": false, "error": format!("{error:#}")}),
+                    )
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let passed = results.iter().all(|r| r["passed"] == true);
+        Ok(json!({"job": job.name, "tests": results.len(), "passed": passed, "results": results}))
+    }
+    /// Every job that has tests; jobs without any are left out.
+    fn test_all(&self) -> Result<Value> {
+        let jobs = self
+            .config
+            .jobs
+            .iter()
+            .filter(|job| !job.tests.is_empty())
+            .map(|job| self.test(job))
+            .collect::<Result<Vec<_>>>()?;
+        let passed = jobs.iter().all(|r| r["passed"] == true);
+        Ok(json!({"passed": passed, "jobs": jobs}))
+    }
     /// What the job reads and what reads it, with each one's state and the order to rebuild in.
     fn lineage(&self, context: &dyn ReadContext, job: &Job) -> Result<Value> {
         let mut memo = std::collections::BTreeMap::new();
@@ -514,7 +549,7 @@ impl Plugin for Inference {
             id: "inference".into(),
             version: env!("CARGO_PKG_VERSION").into(),
             sdk_version: SDK_VERSION,
-            operations: vec!["rebuild".into(), "status".into(), "lineage".into()],
+            operations: vec!["rebuild".into(), "status".into(), "lineage".into(), "test".into()],
             properties: vec![],
         }
     }
@@ -522,7 +557,7 @@ impl Plugin for Inference {
         let object = input.as_object().context("expected object")?;
         let cascade = object.get("cascade").map(|value| value.as_str().unwrap_or_default());
         ensure!(
-            object.contains_key("job")
+            (object.contains_key("job") || (operation == "test" && object.is_empty()))
                 && object
                     .keys()
                     .all(|key| key == "job" || (key == "cascade" && operation == "rebuild")),
@@ -532,9 +567,13 @@ impl Plugin for Inference {
             matches!(cascade, None | Some("upstream" | "downstream" | "both")),
             "cascade must be upstream, downstream or both"
         );
+        if operation == "test" && !object.contains_key("job") {
+            return self.test_all();
+        }
         let name = input["job"].as_str().context("job required")?;
         let job = self.job(name).context("unknown inference job")?;
         match operation {
+            "test" => self.test(job),
             "rebuild" => {
                 let _guard = self
                     .gate

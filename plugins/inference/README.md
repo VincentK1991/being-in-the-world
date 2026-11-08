@@ -209,3 +209,23 @@ deductions (usually together with the asserted graphs, since a job's output hold
 - One rebuild runs at a time; a cascade holds that slot for all of its jobs.
 
 See [ADR 0015](../../docs/adr/0015-chained-inference-jobs.md).
+
+## Rule tests
+
+A job may carry `tests`. Each gives data, and what the job must (and must not) produce from it:
+
+```json
+{"name": "totals above 10 only",
+ "prefixes": "@prefix ex: <https://example.org/> .",
+ "given":  "ex:l1 ex:unitPrice 5 ; ex:quantity 3 . ex:l2 ex:unitPrice 2 ; ex:quantity 3 .",
+ "expect": "ex:l1 ex:total 15 .",
+ "absent": "ex:l2 ex:total 6 .",
+ "exact":  true}
+```
+
+`given`, `expect` and `absent` are Turtle, sharing `prefixes`. The `test` operation (`{"job": "..."}`, or `{}` for every job
+with tests) runs the job's own reasoner and rules over `given` and reports, per test, what was `missing`, what was
+`present_but_forbidden` and, with `exact`, what was `unexpected`. It reads nothing from the store and writes nothing, and a
+job's tests are not part of its fingerprint, so editing one never makes the job stale. Bad Turtle, blank nodes in
+`expect`/`absent` and tests that check nothing are rejected when the configuration loads. A chained job is tested by
+putting its upstream conclusions in `given`. Run all of them with `just rule-tests`.

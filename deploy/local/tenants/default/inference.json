@@ -31,6 +31,21 @@
       "rules": [
         "PREFIX ex: <https://example.org/>\nCONSTRUCT { ?person ex:worksInCountry ?country } WHERE { ?person ex:worksFor ?company . ?company ex:locatedIn ?country }",
         "PREFIX ex: <https://example.org/>\nCONSTRUCT { ?person ex:worksOnContinent ?continent } WHERE { ?person ex:worksInCountry ?country . ?country ex:onContinent ?continent }"
+      ],
+      "tests": [
+        {
+          "name": "derives the country a person works in",
+          "prefixes": "@prefix ex: <https://example.org/> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+          "given": "ex:alice ex:worksFor ex:acme . ex:acme ex:locatedIn ex:france . ex:france ex:onContinent ex:europe .",
+          "expect": "ex:alice ex:worksInCountry ex:france .",
+          "absent": "ex:acme ex:worksInCountry ex:france ."
+        },
+        {
+          "name": "rules read the original data only, so the continent is not derived in one pass",
+          "prefixes": "@prefix ex: <https://example.org/> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+          "given": "ex:alice ex:worksFor ex:acme . ex:acme ex:locatedIn ex:france . ex:france ex:onContinent ex:europe .",
+          "absent": "ex:alice ex:worksOnContinent ex:europe ."
+        }
       ]
     },
     {
@@ -42,6 +57,16 @@
       ],
       "rules": [
         "PREFIX ex: <https://example.org/>\nCONSTRUCT { ?line ex:total ?total } WHERE { ?line ex:unitPrice ?price ; ex:quantity ?quantity . BIND(?price * ?quantity AS ?total) FILTER(?total > 10) }"
+      ],
+      "tests": [
+        {
+          "name": "totals above 10 only",
+          "prefixes": "@prefix ex: <https://example.org/> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+          "given": "ex:l1 ex:unitPrice 5 ; ex:quantity 3 . ex:l2 ex:unitPrice 2 ; ex:quantity 3 .",
+          "expect": "ex:l1 ex:total 15 .",
+          "absent": "ex:l2 ex:total 6 .",
+          "exact": true
+        }
       ]
     },
     {
@@ -53,6 +78,15 @@
       ],
       "rules": [
         "[worksIn: (?person <https://example.org/worksFor> ?company) (?company <https://example.org/locatedIn> ?country) -> (?person <https://example.org/worksInCountry> ?country)]\n[continent: (?person <https://example.org/worksInCountry> ?country) (?country <https://example.org/onContinent> ?continent) -> (?person <https://example.org/worksOnContinent> ?continent)]"
+      ],
+      "tests": [
+        {
+          "name": "chains both rules: country, then continent",
+          "prefixes": "@prefix ex: <https://example.org/> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+          "given": "ex:alice ex:worksFor ex:acme . ex:acme ex:locatedIn ex:france . ex:france ex:onContinent ex:europe .",
+          "expect": "ex:alice ex:worksInCountry ex:france . ex:alice ex:worksOnContinent ex:europe .",
+          "absent": "ex:acme ex:worksInCountry ex:france ."
+        }
       ]
     },
     {
@@ -62,6 +96,14 @@
       "source_graphs": [
         "urn:example:data",
         "urn:example:ontology"
+      ],
+      "tests": [
+        {
+          "name": "a subclass instance is also an instance of the superclass",
+          "prefixes": "@prefix ex: <https://example.org/> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+          "given": "ex:Car rdfs:subClassOf ex:Vehicle . ex:car1 a ex:Car .",
+          "expect": "ex:car1 a ex:Vehicle ."
+        }
       ]
     },
     {
@@ -70,6 +112,14 @@
       "profile": "owlrl-core-v1",
       "source_graphs": [
         "urn:rdftool:examples:acme-insurance"
+      ],
+      "tests": [
+        {
+          "name": "the range of hasLossReserve types the amount",
+          "prefixes": "@prefix ins: <http://data.world/schema/insurance/> . @prefix rsk: <https://risk.example.org/vocab#> . @prefix ex: <https://claims.example.org/vocab#> . @prefix fin: <https://finance.example.org/vocab#> . @prefix d: <urn:test:> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+          "given": "ins:hasLossReserve rdfs:range ins:LossReserve . d:claim ins:hasLossReserve d:amount .",
+          "expect": "d:amount a ins:LossReserve ."
+        }
       ]
     },
     {
@@ -107,6 +157,16 @@
         "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX ex: <https://claims.example.org/vocab#>\nPREFIX fin: <https://finance.example.org/vocab#>\nPREFIX rsk: <https://risk.example.org/vocab#>\nCONSTRUCT { ?policy rsk:atRisk true } WHERE { ?claim ex:onPolicy ?policy ; ex:severity \"high\" }",
         "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX ex: <https://claims.example.org/vocab#>\nPREFIX fin: <https://finance.example.org/vocab#>\nPREFIX rsk: <https://risk.example.org/vocab#>\nCONSTRUCT { ?policy rsk:highSeverityClaims ?count } WHERE { SELECT ?policy (COUNT(?claim) AS ?count) WHERE { ?claim ex:onPolicy ?policy ; ex:severity \"high\" } GROUP BY ?policy }",
         "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX ex: <https://claims.example.org/vocab#>\nPREFIX fin: <https://finance.example.org/vocab#>\nPREFIX rsk: <https://risk.example.org/vocab#>\nCONSTRUCT { ?policy rsk:riskNote ?note } WHERE { ?claim ex:onPolicy ?policy ; ex:severity \"high\" ; ex:narrative ?text . ?policy ins:policyNumber ?n ; fin:costCentre ?cc ; fin:budgetOwner ?owner . BIND(CONCAT(\"Policy \", ?n, \" owned by \", ?owner, \" (\", ?cc, \") has a high-severity claim: \", ?text) AS ?note) }"
+      ],
+      "tests": [
+        {
+          "name": "a high-severity claim puts its policy at risk, with a count and a note",
+          "prefixes": "@prefix ins: <http://data.world/schema/insurance/> . @prefix rsk: <https://risk.example.org/vocab#> . @prefix ex: <https://claims.example.org/vocab#> . @prefix fin: <https://finance.example.org/vocab#> . @prefix d: <urn:test:> .",
+          "given": "d:c1 ex:onPolicy d:p1 ; ex:severity \"high\" ; ex:narrative \"Pipe burst\" . d:c2 ex:onPolicy d:p2 ; ex:severity \"low\" ; ex:narrative \"Scratch\" . d:p1 ins:policyNumber \"111\" ; fin:costCentre \"CC-1\" ; fin:budgetOwner \"Dana\" . d:p2 ins:policyNumber \"222\" ; fin:costCentre \"CC-2\" ; fin:budgetOwner \"Lee\" .",
+          "expect": "d:p1 rsk:atRisk true ; rsk:highSeverityClaims 1 ; rsk:riskNote \"Policy 111 owned by Dana (CC-1) has a high-severity claim: Pipe burst\" .",
+          "absent": "d:p2 rsk:atRisk true .",
+          "exact": true
+        }
       ]
     },
     {
@@ -119,6 +179,16 @@
       ],
       "rules": [
         "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX rsk: <https://risk.example.org/vocab#>\n# Needs stage 1: the LossReserve type is a deduction of the OWL-RL job `acme`, not stored data.\nCONSTRUCT { ?claim rsk:hasReserve ?amount } WHERE { ?claim ins:hasLossReserve ?amount . ?amount a ins:LossReserve }"
+      ],
+      "tests": [
+        {
+          "name": "only claims whose reserve was typed upstream are flagged",
+          "prefixes": "@prefix ins: <http://data.world/schema/insurance/> . @prefix rsk: <https://risk.example.org/vocab#> . @prefix ex: <https://claims.example.org/vocab#> . @prefix fin: <https://finance.example.org/vocab#> . @prefix d: <urn:test:> .",
+          "given": "d:c1 ins:hasLossReserve d:a1 . d:a1 a ins:LossReserve . d:c2 ins:hasLossReserve d:a2 .",
+          "expect": "d:c1 rsk:hasReserve d:a1 .",
+          "absent": "d:c2 rsk:hasReserve d:a2 .",
+          "exact": true
+        }
       ]
     },
     {
@@ -131,6 +201,15 @@
       ],
       "rules": [
         "PREFIX ins: <http://data.world/schema/insurance/>\nPREFIX rsk: <https://risk.example.org/vocab#>\n# Needs stage 2: rsk:hasReserve exists only in the output of `reserved-claims`.\nCONSTRUCT { ?policy rsk:reservedClaims ?count } WHERE { SELECT ?policy (COUNT(DISTINCT ?claim) AS ?count) WHERE { ?claim rsk:hasReserve ?amount ; ins:against ?detail . ?detail ins:hasPolicy ?policy } GROUP BY ?policy }"
+      ],
+      "tests": [
+        {
+          "name": "counts reserved claims per policy",
+          "prefixes": "@prefix ins: <http://data.world/schema/insurance/> . @prefix rsk: <https://risk.example.org/vocab#> . @prefix ex: <https://claims.example.org/vocab#> . @prefix fin: <https://finance.example.org/vocab#> . @prefix d: <urn:test:> .",
+          "given": "d:c1 rsk:hasReserve d:a1 ; ins:against d:x1 . d:c2 rsk:hasReserve d:a2 ; ins:against d:x2 . d:c3 rsk:hasReserve d:a3 ; ins:against d:x3 . d:x1 ins:hasPolicy d:p1 . d:x2 ins:hasPolicy d:p1 . d:x3 ins:hasPolicy d:p2 .",
+          "expect": "d:p1 rsk:reservedClaims 2 . d:p2 rsk:reservedClaims 1 .",
+          "exact": true
+        }
       ]
     }
   ]

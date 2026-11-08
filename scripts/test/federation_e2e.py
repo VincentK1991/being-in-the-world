@@ -136,9 +136,18 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
     refreshed = rebuilt['portfolio-risk'][1].get('refreshed', [])
     _, notes_index = op('', 'semantic-search', 'status', {'index': 'risk-notes'})
     check('rebuilding the job refreshes the search index over its output', len(refreshed) == 1 and refreshed[0]['ok'] and notes_index['state'] == 'ready', (refreshed, notes_index))
-    types = lambda graph: {(value(r, 's'), value(r, 't')) for r in rows(sparql('', f'PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT ?s ?t WHERE {{ GRAPH <{graph}> {{ ?s rdf:type ?t FILTER(STRSTARTS(STR(?s), "https://myinsurancecompany")) }} }}')[1])}
-    live, stored = types('urn:rdftool:derived:inference:acme-live'), types('urn:rdftool:derived:inference:acme')
-    check('OWL-RL over live Postgres rows infers exactly what it infers over the stored copy', live and live == stored, (len(live), len(stored), sorted(live ^ stored)[:5]))
+    guard = 'FILTER(STRSTARTS(STR(?s), "https://myinsurancecompany"))'
+    types = lambda graph: {(value(r, 's'), value(r, 't')) for r in rows(sparql('', f'PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT ?s ?t WHERE {{ GRAPH <{graph}> {{ ?s rdf:type ?t {guard} }} }}')[1])}
+    virtual_types = lambda: {(value(r, 's'), value(r, 't')) for r in op('', 'virtual-graph', 'query', {'query': f'SELECT ?s ?t WHERE {{ ?s a ?t {guard} }}'})[1]['results']['bindings']}
+    # Ontop now reasons over the ontology itself, so the live job only adds what Ontop did not already entail.
+    # The fair comparison is closure against closure: what is visible live vs what is visible in the stored copy.
+    live_derived, stored_derived = types('urn:rdftool:derived:inference:acme-live'), types('urn:rdftool:derived:inference:acme')
+    ontop_types, asserted_types = virtual_types(), types('urn:rdftool:examples:acme-insurance')
+    live, stored = live_derived | ontop_types, stored_derived | asserted_types
+    _, reserves = op('', 'virtual-graph', 'query', {'query': 'PREFIX ins: <http://data.world/schema/insurance/> SELECT ?x WHERE { ?x a ins:LossReserve }'})
+    check('Ontop infers LossReserve from the ontology at query time, with nothing stored', len(reserves['results']['bindings']) == 2, reserves)
+    check('Ontop reasoning plus OWL-RL over live rows equals OWL-RL over the stored copy', live and live == stored, (len(live), len(stored), sorted(live ^ stored)[:5]))
+    check('OWL-RL adds only what Ontop did not already entail', live_derived and not (live_derived & ontop_types), sorted(live_derived & ontop_types)[:3])
     risk = {(value(r, 'policy').rsplit('/', 1)[-1], value(r, 'n')) for r in rows(sparql('', 'PREFIX rsk: <https://risk.example.org/vocab#> SELECT ?policy ?n WHERE { GRAPH <urn:rdftool:derived:inference:portfolio-risk> { ?policy rsk:highSeverityClaims ?n } }')[1])}
     check('rules over Postgres + claims + finance derive per-policy risk', risk == {('Policy-1', '2'), ('Policy-2', '1')}, risk)
     _, notes = federate('', f'''{pre}SELECT ?number ?note ?score WHERE {{
@@ -178,6 +187,13 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
     _, filtered = federate('', f'{plugins_pre}SELECT ?name WHERE {{ SERVICE <{claims_url}> {{ (?p ?kind ?name) plugins:provides () }} FILTER(?kind != "operation" && ?kind != "property-function" && ?kind != "plugin") }}')
     check('richer filters (!=, ||, IN) work on catalog rows through SERVICE', isinstance(filtered, dict) and sorted(value(r, 'name') for r in filtered['results']['bindings'])[:2] == ['narratives', 'totals'], filtered)
     check('federation results carry no process-wide counters', isinstance(filtered, dict) and 'httpRequests' not in json.dumps(filtered), filtered)
+
+    # Rule tests: every job's tests run through its own reasoner and none touches the store.
+    quads_before = rows(sparql('', 'SELECT (COUNT(*) AS ?n) WHERE { { ?s ?p ?o } UNION { GRAPH ?g { ?s ?p ?o } } }')[1])[0]['n']['value']
+    status, tests = op('', 'inference', 'test', {})
+    check('all rule tests pass (SPARQL rules, Jena rules and OWL-RL)', status == 200 and tests['passed'] and sum(j['tests'] for j in tests['jobs']) >= 9, [r for j in tests['jobs'] for r in j['results'] if not r['passed']] if status == 200 else tests)
+    quads_after = rows(sparql('', 'SELECT (COUNT(*) AS ?n) WHERE { { ?s ?p ?o } UNION { GRAPH ?g { ?s ?p ?o } } }')[1])[0]['n']['value']
+    check('running rule tests wrote nothing to the store', quads_before == quads_after, (quads_before, quads_after))
 
     # Chained jobs: stage 2 reads stage 1's deductions, stage 3 reads stage 2's.
     chain = ('acme', 'reserved-claims', 'reserve-summary')
