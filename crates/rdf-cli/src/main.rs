@@ -256,6 +256,11 @@ fn application_database(
             )?)?)?;
         }
     }
+    // Per-dataset rules such as "after job X rebuilds, rebuild index Y over its output".
+    if let Some(path) = std::env::var_os("RDF_REFRESH_CONFIG").map(PathBuf::from) {
+        let file = File::open(&path).context("open refresh configuration")?;
+        database.refresh_rules(serde_json::from_reader(file).context("invalid refresh rules")?)?;
+    }
     // Last, so the catalog sees every plugin registered above.
     database.register(rdf_plugin_catalog::PluginCatalog::new(database.catalog()))?;
     Ok(database)

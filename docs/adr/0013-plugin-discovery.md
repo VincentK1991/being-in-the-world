@@ -34,9 +34,6 @@ One catalog, two surfaces.
 
 - The catalog is a snapshot taken at startup, like plugin configuration. Live state (a stale
   inference job, an index needing a rebuild) still comes from each plugin's `status` operation.
-- Federation through Comunica only handles a plain `=` filter or no filter on rows coming back
-  from a catalog call; `IN`, `||` and `!=` outside the `SERVICE` fail with "property lists must
-  be finite". Put richer filtering after a sub-select or compare in a second step.
 - The vocabulary is a public contract; add terms, do not rename them.
 - Endpoint URLs of the federation and virtual-graph plugins are deliberately not published.
 

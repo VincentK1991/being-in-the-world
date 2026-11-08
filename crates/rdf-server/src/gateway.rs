@@ -104,11 +104,15 @@ impl Gateway {
     /// tenant file the child inherits the gateway's own `RDF_VIRTUAL_CONFIG` / `RDF_FEDERATION_CONFIG`.
     fn child_env(&self, name: &str) -> Vec<(&'static str, PathBuf)> {
         let Some(dir) = &self.config.tenant_config_dir else { return Vec::new() };
-        [("RDF_VIRTUAL_CONFIG", "virtual.json"), ("RDF_FEDERATION_CONFIG", "federation.json")]
-            .into_iter()
-            .map(|(variable, file)| (variable, dir.join(name).join(file)))
-            .filter(|(_, path)| path.is_file())
-            .collect()
+        [
+            ("RDF_VIRTUAL_CONFIG", "virtual.json"),
+            ("RDF_FEDERATION_CONFIG", "federation.json"),
+            ("RDF_REFRESH_CONFIG", "refresh.json"),
+        ]
+        .into_iter()
+        .map(|(variable, file)| (variable, dir.join(name).join(file)))
+        .filter(|(_, path)| path.is_file())
+        .collect()
     }
 
     /// Returns the loopback port of a running server for `name`, starting one if needed.
