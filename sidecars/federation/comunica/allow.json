@@ -1,10 +1,10 @@
 {
   "allow": [
-    "http://ontop:8080/sparql",
-    "http://host.docker.internal:7878/query",
+    "http://host.docker.internal:7878/d/acme/query",
     "http://host.docker.internal:7878/d/claims/query",
     "http://host.docker.internal:7878/d/finance/query",
-    "http://host.docker.internal:7878/d/acme/query"
+    "http://host.docker.internal:7878/query",
+    "http://ontop:8080/sparql"
   ],
   "timeout_ms": 60000,
   "max_body_bytes": 1048576

@@ -133,6 +133,9 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
     inf = lambda job, operation='status': op('', 'inference', operation, {'job': job})
     rebuilt = {job: inf(job, 'rebuild') for job in ('acme', 'acme-live', 'portfolio-risk')}
     check('jobs with inputs rebuild and record what they read', all(st == 200 for st, _ in rebuilt.values()) and rebuilt['acme-live'][1]['metadata']['inputs'][0]['triples'] > 100 and rebuilt['portfolio-risk'][1]['metadata']['inputs'][0]['kind'] == 'federation', rebuilt)
+    refreshed = rebuilt['portfolio-risk'][1].get('refreshed', [])
+    _, notes_index = op('', 'semantic-search', 'status', {'index': 'risk-notes'})
+    check('rebuilding the job refreshes the search index over its output', len(refreshed) == 1 and refreshed[0]['ok'] and notes_index['state'] == 'ready', (refreshed, notes_index))
     types = lambda graph: {(value(r, 's'), value(r, 't')) for r in rows(sparql('', f'PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT ?s ?t WHERE {{ GRAPH <{graph}> {{ ?s rdf:type ?t FILTER(STRSTARTS(STR(?s), "https://myinsurancecompany")) }} }}')[1])}
     live, stored = types('urn:rdftool:derived:inference:acme-live'), types('urn:rdftool:derived:inference:acme')
     check('OWL-RL over live Postgres rows infers exactly what it infers over the stored copy', live and live == stored, (len(live), len(stored), sorted(live ^ stored)[:5]))
@@ -144,6 +147,8 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
     first = notes['results']['bindings'][0] if isinstance(notes, dict) and notes['results']['bindings'] else notes
     check('hybrid search over the inferred notes finds the theft claim first, joined to Postgres', isinstance(first, dict) and value(first, 'number') == '31003000336' and 'Jewelry' in value(first, 'note'), first)
 
+    _, fed = op('', 'federation', 'status', {})
+    check('dataset and sidecar allowlists agree', fed['state'] == 'ready' and fed['missing_in_sidecar'] == [], fed)
     # Discovery: a query (or a federation engine) can ask each dataset which plugins it has.
     catalog = lambda d: {(value(r, 'plugin'), value(r, 'kind'), value(r, 'name')) for r in rows(sparql(d, 'SELECT ?plugin ?kind ?name WHERE { (?plugin ?kind ?name) <urn:rdftool:plugins:provides> () }')[1])}
     here, claims_catalog, finance_catalog = catalog(''), catalog('claims'), catalog('finance')
@@ -166,6 +171,13 @@ SELECT ?policy ?owner ?handler WHERE {{ ?policy fin:budgetOwner ?owner .
   SERVICE <{claims_url}> {{ SELECT ?claim WHERE {{ (?claim ?p ?t ?score) search:hybrid ("narratives" "burst pipe flooding" 2) }} }} }}''')
     present, absent = guarded('narratives'), guarded('missing')
     check('search runs only when the remote dataset advertises the index', present[0] == 200 and len(present[1]['results']['bindings']) == 2 and absent[0] == 200 and absent[1]['results']['bindings'] == [], (present, absent))
+
+    # Reliability: queries that used to fail or silently return nothing.
+    _, bare = federate('', 'PREFIX ins: <http://data.world/schema/insurance/> SELECT ?n WHERE { SERVICE <http://host.docker.internal:7878/query> { GRAPH <urn:rdftool:examples:acme-insurance> { ?p ins:policyNumber ?n } } }')
+    check('a bare GRAPH block inside SERVICE returns rows', isinstance(bare, dict) and len(bare['results']['bindings']) == 2, bare)
+    _, filtered = federate('', f'{plugins_pre}SELECT ?name WHERE {{ SERVICE <{claims_url}> {{ (?p ?kind ?name) plugins:provides () }} FILTER(?kind != "operation" && ?kind != "property-function" && ?kind != "plugin") }}')
+    check('richer filters (!=, ||, IN) work on catalog rows through SERVICE', isinstance(filtered, dict) and sorted(value(r, 'name') for r in filtered['results']['bindings'])[:2] == ['narratives', 'totals'], filtered)
+    check('federation results carry no process-wide counters', isinstance(filtered, dict) and 'httpRequests' not in json.dumps(filtered), filtered)
 
     # Staleness follows the outside data: change a Postgres row and the job reports it, then rebuilds clean.
     def postgres(sql):

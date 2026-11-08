@@ -297,3 +297,36 @@ fn catalog_lists_the_plugins_a_dataset_has() -> Result<()> {
     assert!(db.query("SELECT * WHERE { (?p ?v) <urn:rdftool:plugins:available> (1) }").is_err());
     Ok(())
 }
+
+#[test]
+fn a_filter_pushed_onto_one_list_cell_does_not_break_the_property_call() -> Result<()> {
+    // The shape a federation engine forwards: the FILTER sits in a group around one list cell,
+    // splitting the call's list across two groups. `tokens` returns (token, position).
+    let db = database()?;
+    let shaped = |filter: &str| {
+        format!(
+            "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+             SELECT ?token ?position WHERE {{
+               {{ ?g_1 rdf:first ?position . {filter} }}
+               ?g_0 rdf:first ?token . ?g_0 rdf:rest ?g_1 . ?g_1 rdf:rest rdf:nil .
+               ?g_0 <urn:rdftool:property:tokens> 'a b c' }} ORDER BY ?position"
+        )
+    };
+    let all = rows(&db, &shaped(""))?;
+    assert_eq!(all.len(), 3);
+    for filter in [
+        "FILTER(?position != 1)",
+        "FILTER(?position = 0 || ?position = 2)",
+        "FILTER(?position IN (1, 2))",
+    ] {
+        let some = rows(&db, &shaped(filter))?;
+        assert_eq!(some.len(), 2, "{filter}");
+    }
+    // A filter that uses a variable its own block does not bind is not merged, and stays an error.
+    let unsafe_filter = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        SELECT * WHERE { { ?g_1 rdf:first ?position . FILTER(?token != 'a') }
+        ?g_0 rdf:first ?token . ?g_0 rdf:rest ?g_1 . ?g_1 rdf:rest rdf:nil .
+        ?g_0 <urn:rdftool:property:tokens> 'a b c' }";
+    assert!(db.query(unsafe_filter).is_err());
+    Ok(())
+}

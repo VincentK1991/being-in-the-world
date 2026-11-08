@@ -78,3 +78,21 @@ fn configuration_is_validated() {
         .is_err()
     );
 }
+
+#[test]
+fn reports_endpoints_the_sidecar_would_refuse() {
+    let owned = |list: &[&str]| list.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
+    let ours = owned(&["http://a/query", "http://b/query"]);
+    assert!(
+        super::missing(
+            &ours,
+            Some("http://a/query"),
+            &owned(&["http://b/query", "http://a/query", "http://c/query"])
+        )
+        .is_empty()
+    );
+    assert_eq!(
+        super::missing(&ours, Some("http://z/query"), &owned(&["http://a/query"])),
+        ["http://b/query", "http://z/query"]
+    );
+}

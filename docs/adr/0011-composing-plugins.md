@@ -36,8 +36,8 @@ traversed, and a plain variable argument without an `rdf:first` pattern behaves 
 
 ## Rules for writing composed queries
 
-- Put a search call or a named-graph read inside `SERVICE <endpoint> { SELECT ... { ... } }`. A bare `GRAPH` block can
-  silently return no rows (ADR 0010, known limit); a property call is safest in a sub-select too.
+- A named-graph read or a search call may sit directly in `SERVICE <endpoint> { ... }`; the sidecar rewrites `GRAPH` bodies
+  into the sub-select form Comunica handles (ADR 0014). The explicit `SELECT ... { ... }` form still works.
 - Everything outside `SERVICE` runs on the selected dataset's default graph.
 - Use inner joins between blocks. An `OPTIONAL` on a variable that may be unbound joins against every row of the next
   source (the correct SPARQL result, rarely the intended one).

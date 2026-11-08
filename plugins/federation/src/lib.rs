@@ -44,7 +44,23 @@ fn http(timeout_secs: u64) -> Result<Client> {
         .redirect(reqwest::redirect::Policy::none())
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(timeout_secs))
+        // The sidecars (Node, Jetty) close idle connections after a few seconds; reqwest would
+        // otherwise keep them for 90 s and sometimes reuse one the server just closed.
+        .pool_idle_timeout(Duration::from_secs(2))
         .build()?)
+}
+/// Sends a read-only request, trying once more if the connection failed (not if it timed out):
+/// a pooled connection can be closed by the sidecar at the moment it is reused.
+fn send(
+    request: reqwest::blocking::RequestBuilder,
+    what: &str,
+) -> Result<reqwest::blocking::Response> {
+    let retry = request.try_clone();
+    let outcome = match (request.send(), retry) {
+        (Err(error), Some(again)) if !error.is_timeout() => again.send(),
+        (first, _) => first,
+    };
+    outcome.with_context(|| format!("{what} unavailable"))
 }
 fn timeout_default() -> u64 {
     60
@@ -222,14 +238,14 @@ impl VirtualGraph {
         } else {
             "application/sparql-results+json"
         };
-        let response = self
-            .client
-            .post(&self.config.endpoint)
-            .header("Content-Type", "application/sparql-query")
-            .header("Accept", accept)
-            .body(query.to_owned())
-            .send()
-            .context("virtual graph sidecar unavailable")?;
+        let response = send(
+            self.client
+                .post(&self.config.endpoint)
+                .header("Content-Type", "application/sparql-query")
+                .header("Accept", accept)
+                .body(query.to_owned()),
+            "virtual graph sidecar",
+        )?;
         read_json(response)
     }
 }
@@ -317,6 +333,17 @@ impl Federation {
     fn health_url(&self) -> String {
         self.config.endpoint.trim_end_matches("/sparql").to_owned() + "/health"
     }
+    fn allowed_url(&self) -> String {
+        self.config.endpoint.trim_end_matches("/sparql").to_owned() + "/allowed"
+    }
+    /// Endpoints this dataset allows that the running sidecar would refuse. The sidecar enforces its
+    /// own list, so a mismatch makes those queries fail; `None` when the sidecar cannot be asked.
+    fn missing_in_sidecar(&self) -> Option<Vec<String>> {
+        let response = self.client.get(self.allowed_url()).send().ok()?.error_for_status().ok()?;
+        let theirs: Vec<String> =
+            serde_json::from_value(response.json::<Value>().ok()?["allow"].clone()).ok()?;
+        Some(missing(&self.config.allow, self.config.local_source.as_deref(), &theirs))
+    }
     /// Refuses a query that would contact an endpoint outside the allowlist; returns the endpoints it will use.
     fn authorize(&self, query: &str) -> Result<Vec<String>> {
         let targets = service_targets(query)?;
@@ -357,10 +384,18 @@ impl Plugin for Federation {
                     .ok()
                     .and_then(|r| r.error_for_status().ok())
                     .and_then(|r| r.json::<Value>().ok());
+                let missing = if health.is_some() { self.missing_in_sidecar() } else { None };
+                // The sidecar enforces its own allowlist; entries only this dataset lists would be refused there.
+                let state = match (&health, &missing) {
+                    (None, _) => "unavailable",
+                    (Some(_), Some(m)) if !m.is_empty() => "misconfigured",
+                    _ => "ready",
+                };
                 Ok(json!({
-                    "state": if health.is_some() { "ready" } else { "unavailable" },
+                    "state": state,
                     "endpoint": self.config.endpoint, "engine": health.as_ref().map(|h| h["engine"].clone()),
                     "local_source": self.config.local_source, "allow": self.config.allow,
+                    "missing_in_sidecar": missing,
                 }))
             }
             "query" => {
@@ -370,12 +405,10 @@ impl Plugin for Federation {
                 if let Some(source) = &self.config.local_source {
                     body["source"] = json!(source);
                 }
-                let response = self
-                    .client
-                    .post(&self.config.endpoint)
-                    .json(&body)
-                    .send()
-                    .context("federation sidecar unavailable")?;
+                let response = send(
+                    self.client.post(&self.config.endpoint).json(&body),
+                    "federation sidecar",
+                )?;
                 let mut result = read_json(response)?;
                 if let Some(object) = result.as_object_mut() {
                     object.insert("services".into(), json!(services));
@@ -385,4 +418,12 @@ impl Plugin for Federation {
             _ => bail!("unknown federation operation"),
         }
     }
+}
+
+/// Allowed endpoints (and the local source) that the sidecar's list does not contain.
+fn missing(allow: &[String], local_source: Option<&str>, sidecar: &[String]) -> Vec<String> {
+    let mut wanted: Vec<&str> = allow.iter().map(String::as_str).chain(local_source).collect();
+    wanted.sort_unstable();
+    wanted.dedup();
+    wanted.into_iter().filter(|e| !sidecar.iter().any(|s| s == e)).map(str::to_owned).collect()
 }

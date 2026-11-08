@@ -42,3 +42,11 @@ Inference jobs on `default` also read from these sidecars (`deploy/local/tenants
 hybrid index over the rules' output. [ADR 0012](../../docs/adr/0012-inference-with-outside-inputs.md) explains how.
 
 See [ADR 0010](../../docs/adr/0010-virtual-graph-and-federation-plugins.md).
+
+## Keeping it consistent
+
+- The sidecar's `comunica/allow.json` is generated from `deploy/local/tenants/*/federation.json`
+  (`python3 scripts/federation/sync_allowlist.py`; `just allowlist-check` fails when it drifted).
+  A dataset's federation `status` reports `misconfigured` if it allows an endpoint the sidecar would refuse.
+- `deploy/local/tenants/<dataset>/refresh.json` rebuilds dependent search indexes after an inference job rebuilds.
+- Set `FEDERATION_DEBUG=1` to log the requests Comunica sends while diagnosing a federated query. See ADR 0014.

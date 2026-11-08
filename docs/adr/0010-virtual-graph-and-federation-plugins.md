@@ -34,10 +34,10 @@ no change. Routing `SERVICE` queries from `/query` is a later host decision.
 - Other datasets are reached as `http://host.docker.internal:7878/d/<dataset>/query`, so each dataset behaves as its own
   business unit; nothing is merged.
 
-- **Known limit:** Comunica estimates a pattern's size with a default-graph count query that ignores `GRAPH <g>`, and returns
-  no rows when that count is zero. A bare `GRAPH` block inside `SERVICE`, or outside it, can therefore silently return nothing.
-  Read named graphs through a sub-select inside `SERVICE` (`SERVICE <e> { SELECT ... { GRAPH <g> { ... } } }`), which Comunica
-  forwards whole. Federated local patterns outside `SERVICE` see the default graph only.
+- **Known limit, now handled:** Comunica estimates a pattern's size with a default-graph count query that ignores `GRAPH <g>`,
+  and returns no rows when that count is zero, so a bare `GRAPH` block inside `SERVICE` used to return nothing silently.
+  The sidecar now wraps any `SERVICE` body that contains `GRAPH` in `SELECT * { ... }`, the form Comunica evaluates correctly
+  (see ADR 0014). Federated local patterns outside `SERVICE` still see the default graph only.
 
 ## Policy
 

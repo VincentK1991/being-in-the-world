@@ -291,6 +291,45 @@ impl Rewrite<'_> {
         }
         Ok(result)
     }
+    /// Federation engines push a FILTER down onto one list cell, which splits a property call's list
+    /// across two groups: `{ ?c1 rdf:first ?k . FILTER(f) } ?c0 rdf:first ?p . ...`. Joining the two
+    /// triple blocks back into one is equivalent when every filter only uses variables its own block
+    /// binds, so the call can be read again. Only done when the result contains a property call.
+    fn merged(&self, left: &G, right: &G) -> Option<G> {
+        fn block(pattern: &G) -> Option<(Option<&E>, &[TriplePattern])> {
+            match pattern {
+                G::Bgp { patterns } => Some((None, patterns)),
+                G::Filter { expr, inner } => match &**inner {
+                    G::Bgp { patterns } => Some((Some(expr), patterns)),
+                    _ => None,
+                },
+                _ => None,
+            }
+        }
+        let (left, right) = (block(left)?, block(right)?);
+        if left.0.is_none() && right.0.is_none() {
+            return None;
+        }
+        let all: Vec<TriplePattern> = left.1.iter().chain(right.1).cloned().collect();
+        all.iter()
+            .any(|p| predicate(p).is_some_and(|iri| special(self.registry, iri)))
+            .then_some(())?;
+        let mut filters = Vec::new();
+        for (filter, patterns) in [left, right] {
+            if let Some(expr) = filter {
+                let used = expression_variables(expr)?;
+                let bound = pattern_variables(patterns);
+                used.is_subset(&bound).then_some(())?;
+                filters.push(expr.clone());
+            }
+        }
+        let mut result = G::Bgp { patterns: all };
+        if let Some(first) = filters.pop() {
+            let expr = filters.into_iter().fold(first, |a, b| E::And(Box::new(a), Box::new(b)));
+            result = G::Filter { expr, inner: Box::new(result) };
+        }
+        Some(result)
+    }
     fn path(&self, path: &P) -> bool {
         match path {
             P::NamedNode(n) => special(self.registry, n.as_str()),
@@ -355,6 +394,10 @@ impl Rewrite<'_> {
             G::Path { path, .. } => {
                 ensure!(!self.path(path), "property functions cannot be used in property paths")
             }
+            G::Join { left, right } if self.merged(left, right).is_some() => {
+                *pattern = self.merged(left, right).expect("checked");
+                self.pattern(pattern, allowed)?;
+            }
             G::Join { left, right }
             | G::Union { left, right }
             | G::Minus { left, right }
@@ -405,6 +448,55 @@ impl Rewrite<'_> {
         | Query::Describe { pattern, .. }) = query;
         self.pattern(pattern, allowed)
     }
+}
+/// Variables a block of triple patterns binds.
+fn pattern_variables(patterns: &[TriplePattern]) -> HashSet<Variable> {
+    let mut found = HashSet::new();
+    for p in patterns {
+        for term in [&p.subject, &p.object] {
+            if let T::Variable(v) = term {
+                found.insert(v.clone());
+            }
+        }
+        if let NamedNodePattern::Variable(v) = &p.predicate {
+            found.insert(v.clone());
+        }
+    }
+    found
+}
+/// Variables an expression reads; `None` when it contains something this does not analyse (EXISTS).
+fn expression_variables(expr: &E) -> Option<HashSet<Variable>> {
+    let mut found = HashSet::new();
+    let mut stack = vec![expr];
+    while let Some(e) = stack.pop() {
+        match e {
+            E::NamedNode(_) | E::Literal(_) => {}
+            E::Variable(v) | E::Bound(v) => {
+                found.insert(v.clone());
+            }
+            E::Or(a, b)
+            | E::And(a, b)
+            | E::Equal(a, b)
+            | E::SameTerm(a, b)
+            | E::Greater(a, b)
+            | E::GreaterOrEqual(a, b)
+            | E::Less(a, b)
+            | E::LessOrEqual(a, b)
+            | E::Add(a, b)
+            | E::Subtract(a, b)
+            | E::Multiply(a, b)
+            | E::Divide(a, b) => stack.extend([&**a, &**b]),
+            E::UnaryPlus(a) | E::UnaryMinus(a) | E::Not(a) => stack.push(a),
+            E::In(a, list) => {
+                stack.push(a);
+                stack.extend(list);
+            }
+            E::If(a, b, c) => stack.extend([&**a, &**b, &**c]),
+            E::Coalesce(list) | E::FunctionCall(_, list) => stack.extend(list),
+            E::Exists(_) => return None,
+        }
+    }
+    Some(found)
 }
 pub fn prepare(mut query: Query, registry: &Registry, context: &dyn ReadContext) -> Result<Query> {
     // Validate the complete algebra before executing any trusted callbacks.

@@ -22,7 +22,11 @@ test:
 deny:
     cargo deny check
 
-ci: fmt-check check clippy test deny
+ci: fmt-check check clippy test deny allowlist-check
+
+# The Comunica allowlist is generated from the dataset configs; fail if it drifted.
+allowlist-check:
+    python3 scripts/federation/sync_allowlist.py --check
 
 # Build and start the localhost backend + persistent RDF store in Docker.
 backend:
@@ -48,6 +52,7 @@ semantic-cpu:
 
 # Start Postgres, Ontop (virtual graph) and Comunica (SERVICE federation); seeds ACME on first run.
 federation:
+    python3 scripts/federation/sync_allowlist.py
     test -f sidecars/federation/ontop/postgresql.jar || curl -fsSL -o sidecars/federation/ontop/postgresql.jar https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar
     bash scripts/docker-compose.sh -f sidecars/federation/compose.yml up -d --wait --wait-timeout 300 postgres
     python3 scripts/seed/acme_postgres.py

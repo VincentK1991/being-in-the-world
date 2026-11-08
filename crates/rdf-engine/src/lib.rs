@@ -2,8 +2,8 @@
 use anyhow::{Result, ensure};
 use rdf_plugin_api::{CatalogEntry, Manifest, Plugin, ReadContext, SDK_VERSION};
 use rdf_store::{engine::Dataset, oxigraph::io::RdfParser};
-use serde::Serialize;
-use serde_json::Value;
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
 use std::{collections::BTreeMap, path::Path, sync::Arc};
 mod derived;
 mod properties;
@@ -21,6 +21,23 @@ pub struct Database {
     dataset: Dataset,
     plugins: BTreeMap<String, (Manifest, Arc<dyn Plugin>)>,
     properties: properties::Registry,
+    refresh: Vec<RefreshRule>,
+}
+/// After `after` succeeds, run `then` (for example: rebuild a search index over a graph a job just rewrote).
+/// `after.input` matches when every field it lists equals the same field of the operation's input.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RefreshRule {
+    pub after: OperationRef,
+    pub then: OperationRef,
+}
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OperationRef {
+    pub plugin: String,
+    pub operation: String,
+    #[serde(default)]
+    pub input: Value,
 }
 #[derive(Serialize)]
 pub struct Overview {
@@ -47,7 +64,7 @@ impl Database {
         Ok(Self::from_dataset(Dataset::memory()?))
     }
     pub fn from_dataset(dataset: Dataset) -> Self {
-        Self { dataset, plugins: BTreeMap::new(), properties: BTreeMap::new() }
+        Self { dataset, plugins: BTreeMap::new(), properties: BTreeMap::new(), refresh: Vec::new() }
     }
     /// Register at composition time, before sharing the database with callers.
     pub fn register(&mut self, plugin: impl Plugin + 'static) -> Result<()> {
@@ -118,7 +135,47 @@ impl Database {
             .get(plugin)
             .is_some_and(|(m, _)| m.operations.iter().any(|name| name == operation))
     }
+    /// Register at composition time, like plugins. Both operations must exist, and a rule's `then`
+    /// may not be another rule's `after`, so one operation never starts a chain.
+    pub fn refresh_rules(&mut self, rules: Vec<RefreshRule>) -> Result<()> {
+        for rule in &rules {
+            ensure!(
+                self.has_operation(&rule.after.plugin, &rule.after.operation)
+                    && self.has_operation(&rule.then.plugin, &rule.then.operation),
+                "refresh rule names an unknown plugin or operation"
+            );
+            ensure!(
+                !rules.iter().any(|other| triggers(
+                    &other.after,
+                    &rule.then.plugin,
+                    &rule.then.operation,
+                    &rule.then.input
+                )),
+                "refresh rules must not chain"
+            );
+        }
+        self.refresh = rules;
+        Ok(())
+    }
     pub fn invoke(&self, plugin: &str, operation: &str, input: Value) -> Result<Value> {
+        let mut result = self.invoke_once(plugin, operation, input.clone())?;
+        let ran: Vec<Value> = self
+            .refresh
+            .iter()
+            .filter(|rule| triggers(&rule.after, plugin, operation, &input))
+            .map(|rule| {
+                let then = &rule.then;
+                let outcome = self.invoke_once(&then.plugin, &then.operation, then.input.clone());
+                json!({"plugin": then.plugin, "operation": then.operation, "input": then.input,
+                    "ok": outcome.is_ok(), "error": outcome.err().map(|e| format!("{e:#}"))})
+            })
+            .collect();
+        if let (false, Some(object)) = (ran.is_empty(), result.as_object_mut()) {
+            object.insert("refreshed".into(), Value::Array(ran));
+        }
+        Ok(result)
+    }
+    fn invoke_once(&self, plugin: &str, operation: &str, input: Value) -> Result<Value> {
         ensure!(self.has_operation(plugin, operation), "unknown plugin or operation");
         self.plugins[plugin].1.invoke(
             &derived::PluginContext { database: self, owner: plugin },
@@ -248,6 +305,16 @@ impl ReadContext for Database {
         write_results(results, QueryResultsFormat::Json, RdfFormat::Turtle, &mut bytes)?;
         Ok(serde_json::from_slice(&bytes)?)
     }
+}
+
+/// Does `rule` fire for this operation? Its `input` fields must all equal the call's.
+fn triggers(rule: &OperationRef, plugin: &str, operation: &str, input: &Value) -> bool {
+    rule.plugin == plugin
+        && rule.operation == operation
+        && rule
+            .input
+            .as_object()
+            .is_none_or(|wanted| wanted.iter().all(|(key, value)| input.get(key) == Some(value)))
 }
 
 #[cfg(test)]
