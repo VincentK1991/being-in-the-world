@@ -1,26 +1,34 @@
 # Local RDF store
 
-One SPARQL interface over everything you know about a domain: the facts you assert, the facts that
-follow from them, similar things found by meaning, and live rows from a SQL database. It is an RDF
-store built on [Oxigraph](https://github.com/oxigraph/oxigraph) (RocksDB), with a small, standard
-core and a plugin architecture for the rest.
+A knowledge graph for AI applications that you can query in one language. Semantic search, graph
+queries and logical inference sit behind a single SPARQL interface, so you can ground an LLM or an
+agent in facts that are searchable by meaning, derived by rules and traceable to their source. It is
+an RDF store built on [Oxigraph](https://github.com/oxigraph/oxigraph) (RocksDB), with a small,
+standard core and a plugin architecture for the rest.
 
 ## What it aims to do
 
-Knowledge-graph projects usually end up stitching together a triple store, a vector database, a
-reasoner, a validator and a federation layer, each with its own query language and its own idea of
-what is current. This project aims to make that one system you can reason about:
+Retrieval pipelines usually end up stitching together a vector database, a graph database, a reasoner
+and a validator, each with its own query language and its own idea of what is current. This project
+aims to make that one system:
 
-- **One query surface.** Semantic search, inference results, validation reports and virtual SQL tables
-  are reachable from SPARQL, through plugin functions and derived graphs, not through a second API.
-- **Asserted and derived data stay apart.** Inferred triples, SHACL reports and indexes are written to
-  separate derived graphs together with a record of the inputs they were built from, so you can tell
-  when they are stale and never confuse them with what you stated.
-- **Answers you can explain.** The reasoner can show why a triple holds, as a proof traced back to the
-  asserted data, and inconsistencies are reported as results rather than silent failures.
-- **A core you can trust.** The engine does storage, parsing, the query policy and derived-graph
-  bookkeeping, and nothing else. Anything that needs the network or heavy dependencies is a plugin or a
-  sidecar, and W3C conformance baselines can only move up.
+- **Vector, graph and rules in one query.** Semantic and hybrid search are SPARQL property functions,
+  and inference results, SHACL reports and virtual SQL tables are ordinary graphs. One query can find
+  entities by meaning, follow relationships, and use facts that were inferred rather than stored.
+- **Answers you can prove.** The reasoner can show why a triple holds, as a proof traced back to the
+  asserted data, and inconsistencies come back as results rather than silent failures. Context handed to
+  a model can carry its provenance.
+- **Asserted and derived data stay apart.** Inferred triples, reports and indexes live in separate
+  derived graphs together with a record of the inputs they were built from, so you can tell when they
+  are stale and never confuse them with what you stated.
+- **Standards, no lock-in.** Plain RDF, SPARQL, OWL and SHACL on open formats, with W3C conformance
+  baselines that can only move up. Your data and queries move to any other triple store.
+- **A small core.** The engine does storage, parsing, the query policy and derived-graph bookkeeping.
+  Anything that needs the network or heavy dependencies is a plugin or a sidecar.
+
+**Planned:** an MCP server that lets agents use the store directly. It will be read-only by default
+(search, query, explain), with writes as an explicit opt-in and dataset deletion never exposed. It is
+not built yet; today the interface is the SPARQL HTTP API and the CLI.
 
 ## Components
 
@@ -42,7 +50,7 @@ plugins and Studio work end to end on a local stack and are covered by roughly 1
 tests and a nightly live-stack run, but the project has no authentication or quotas (the server only binds
 to loopback), conformance is partial (for example SPARQL 1.1 at about 82% of the W3C suite), and
 interfaces may still change. See [validation status](docs/runbook/2026-11-01-oxigraph-validation.md)
-for the open gates, and the documentation (`/docs/` in Studio, sources in
+for the open gates, [LICENSE](LICENSE) (Apache-2.0), and the documentation (`/docs/` in Studio, sources in
 `apps/studio/src/content/docs/`) for what it is, how to use it, and how it works inside.
 
 ## Linux / WSL setup
