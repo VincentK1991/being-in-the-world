@@ -1,0 +1,92 @@
+---
+title: Reasoners
+description: What a reasoner computes, forward chaining (materialization) versus backward chaining and query rewriting, tableau reasoners, and the trade-offs between them.
+sidebar:
+  order: 4
+---
+
+A **reasoner** takes a graph and an entailment regime (RDFS, OWL 2 RL, a set of rules) and works out what follows. [Ontologies and RDFS](/docs/background/ontologies-and-rdfs/) covers what "follows" means. This page is about *how*: when the work happens, where the results go, and what that costs.
+
+## What a reasoner can be asked
+
+| Task | Question | Typical reasoner |
+|---|---|---|
+| **Materialization** | which triples are entailed? | rule engine (forward chaining) |
+| **Query answering** | which answers does this query have, counting entailed triples? | rewriting or backward chaining, or a query over a materialized graph |
+| **Consistency** | does the graph contradict itself? | any; rule engines find the clashes their rules cover |
+| **Classification** | what is the complete class hierarchy? | DL reasoner (tableau), or EL reasoner |
+| **Explanation** | why does this triple hold? | any that records which rule fired on which premises |
+
+## Forward chaining: compute everything up front
+
+A forward-chaining reasoner treats each entailment rule as *if these triples exist, add that triple*. For example, `rdfs:subClassOf` becomes:
+
+```
+IF  ?x a ?A  AND  ?A rdfs:subClassOf ?B   THEN  ?x a ?B
+```
+
+It applies every rule to the data and adds what the rules produce. The new triples can make more rules fire, so it repeats until a full round adds nothing. That stopping point is the **fixpoint**, and the result is the **closure** of the graph. Storing the closure is called **materialization**.
+
+- **Naive evaluation** re-runs every rule over all the data each round.
+- **Semi-naive evaluation** joins only against triples that are new since the last round, so it does not rediscover the same conclusions. It produces the same closure much faster.
+
+**Strengths**
+- Queries are plain lookups: the entailed triples are already there and indexed.
+- Every query sees the same, finished set of facts.
+- Recording which rule produced each triple, and from which premises, makes explanations cheap.
+
+**Costs**
+- The closure can be much larger than the input. A long transitive chain of n links produces about n² triples.
+- Work happens on write, not on read, and you pay it even for facts nobody queries.
+- The closure goes **stale** when the input changes. Additions can be handled incrementally, but deletions are hard: a derived triple may have other supports. Systems either recompute, or keep counts and dependency records (truth maintenance, DRed).
+- It only works if the closure is finite, which is exactly why OWL 2 RL forbids rules that would invent new individuals.
+
+## Backward chaining: work from the question
+
+A backward-chaining reasoner starts from a **goal**, such as `?x a ex:Document`. It looks for rules whose conclusion matches the goal and tries to prove their conditions, recursively, down to stored triples. Prolog works this way.
+
+**Query rewriting** is the same idea applied ahead of time to a whole query. Instead of proving goals one by one, the reasoner expands the query using the ontology before running it:
+
+```sparql
+# asked
+SELECT ?x WHERE { ?x a ex:Document }
+
+# run, after rewriting with  ex:Claim rdfs:subClassOf ex:Document
+SELECT ?x WHERE { { ?x a ex:Document } UNION { ?x a ex:Claim } }
+```
+
+**Strengths**
+- Nothing is stored, and nothing goes stale: every answer reflects the data as it is now.
+- No work is spent on facts nobody asks about.
+- It is the only option when you cannot write to the data, for example a relational database you only read.
+
+**Costs**
+- Reasoning cost is paid on **every** query, and rewritten queries can grow large (a `UNION` per subclass, per subproperty, per domain).
+- Recursion is the hard case. Transitive properties or rules that call themselves need loop detection or memoization ("tabling"), or must be excluded. This is why OWL 2 QL leaves out transitivity.
+- Explanations are possible, but have to be reconstructed per answer.
+
+Many systems are **hybrid**. They materialize the cheap, high-value part, such as class hierarchies, and leave the rest to query time, or run forward rules that generate backward ones. Apache Jena's rule engine supports forward, backward and hybrid modes.
+
+## Tableau reasoners
+
+Description-logic reasoners for OWL 2 DL, such as HermiT and Pellet, work differently again. To decide whether something follows, they try to build a **model**, a world that satisfies the ontology, in which it *doesn't* follow. If every attempt contradicts itself, the conclusion must hold. This is complete for OWL 2 DL and handles constructs rules cannot: disjunction, existentials that need new individuals, and `differentFrom` by contradiction. The worst case is exponential, so these reasoners are used on **ontologies** (the TBox: classify, find unsatisfiable classes) more than on large instance data.
+
+## Choosing
+
+| If you need | Prefer |
+|---|---|
+| fast, repeated queries over data you own, with explanations | forward chaining (OWL 2 RL, RDFS, rules) |
+| answers over data you cannot copy or that changes constantly | query rewriting (OWL 2 QL) |
+| to check an ontology itself: hierarchy, unsatisfiable classes | a DL or EL reasoner |
+| to reject bad data | not a reasoner; use [SHACL](/docs/background/rdfs-owl-shacl/) |
+
+## In this project
+
+- **Forward chaining** is the main mode. Each inference job reads a snapshot of its source graphs and computes the closure. It then publishes the result as one derived graph, with a record of the inputs it was built from.
+  - The native OWL 2 RL engine runs rounds to a fixpoint, evaluates its hottest rules semi-naively, and keeps the first justification of each triple for explanations.
+  - The OWL-RL and Jena sidecars (`jena-forward-v1`) also forward-chain.
+  - The `sparql-rules` provider runs its `CONSTRUCT` rules **once**, not to a fixpoint (profile `sparql-construct-once-v1`).
+- **Staleness** is detected, not repaired incrementally. When a source graph changes, the job reports `stale`, and a rebuild recomputes its closure from a fresh snapshot. Chained jobs can rebuild in a cascade.
+- **Query rewriting** happens in Ontop for the virtual SQL graph, which applies OWL 2 QL axioms when it translates a query into SQL.
+- **No tableau reasoner** is included. See [OWL and its profiles](/docs/background/owl-and-profiles/#what-owl-2-rl-cannot-conclude) for what that leaves out.
+- Details of each provider, the limits and the explanation format are in [Inference](/docs/internals/inference/).

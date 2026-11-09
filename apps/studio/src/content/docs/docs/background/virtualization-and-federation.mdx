@@ -1,0 +1,88 @@
+---
+title: Virtualization and federation
+description: Three ways to query data that lives elsewhere (copying it, virtualizing it through mappings, and federating queries across endpoints), and the trade-offs of each.
+sidebar:
+  order: 5
+---
+
+Most useful knowledge graphs need data that is not in the store: rows in a relational database, another team's SPARQL endpoint, a public dataset. There are three basic ways to reach it, and they differ in *when* the data moves and *who* does the work.
+
+## Three approaches
+
+| | **Copy (ETL / materialize)** | **Virtualize** | **Federate** |
+|---|---|---|---|
+| What happens | convert the source to RDF and load it | query the source in place through a mapping | split one query across several SPARQL endpoints |
+| Data moves | ahead of time, in bulk | at query time, only what the query needs | at query time, between endpoints |
+| Freshness | as of the last load | live | live |
+| Query speed | fastest; local indexes | as fast as the generated SQL | bounded by the slowest endpoint and the network |
+| Reasoning | full materialization possible | query rewriting (OWL 2 QL) | each endpoint's own, if any |
+| Fails when | the copy is stale or too big | the mapping is wrong or the database is slow | an endpoint is down, slow or returns too much |
+
+## Virtualization: a database seen as a graph
+
+A **virtual knowledge graph**, also called **ontology-based data access** (OBDA), lets you query a relational database with SPARQL without converting it. It needs three things:
+
+- **The source**, for example Postgres tables.
+- **A mapping** that says how rows become triples, written in **R2RML**, the W3C mapping language. A mapping might say: each row of `claims` is a resource with IRI `ex:Claim-{claim_id}`, typed `ex:Claim`, whose `policy_id` column becomes an `ex:hasPolicy` link.
+- **An ontology** that gives the mapped classes and properties their meaning.
+
+When a SPARQL query arrives, the system works in two steps:
+
+1. **Rewriting.** The ontology is applied to the query, the backward reasoning described in [Reasoners](/docs/background/reasoners/#backward-chaining-work-from-the-question). A query for `ex:Document` also asks for `ex:Claim`.
+2. **Unfolding.** The mapping turns each triple pattern into SQL over the right tables and columns.
+
+The database runs the SQL, and its rows are returned as SPARQL results. No triples are stored anywhere.
+
+Because step 1 must produce plain SQL, the ontology is limited to what SQL can express. That limit is the **OWL 2 QL** profile, designed for exactly this.
+
+**Strengths**
+- The data is always current.
+- Nothing is duplicated.
+- The database keeps its own security, transactions and owners.
+
+**Costs**
+- Every query pays the cost of translation plus the SQL.
+- Complex SPARQL can produce SQL the database plans badly.
+- Reasoning is limited to QL.
+- The mapping is a second schema to maintain.
+
+## Federation: one query, many endpoints
+
+**Federation** answers a single query from several SPARQL endpoints. Standard SPARQL 1.1 has a keyword for it:
+
+```sparql
+SELECT ?claim ?label WHERE {
+  ?claim a ex:Claim ; ex:hasPolicy ?policy .
+  SERVICE <https://partner.example/sparql> {
+    ?policy rdfs:label ?label
+  }
+}
+```
+
+The engine evaluates the local part and sends the `SERVICE` block to the remote endpoint, then joins the two. A federation engine has to make a few decisions:
+
+- **Source selection.** Which endpoints can answer which patterns? Either you say so with `SERVICE`, or the engine discovers it.
+- **Join strategy.** It can fetch both sides and join them, or send the local bindings along with the remote query ("bind join") so the remote side returns only matching rows.
+- **Failure.** If an endpoint is down, the query either fails or returns partial results (`SERVICE SILENT`).
+
+**Strengths**
+- No copy is made, and each owner keeps control of their data.
+- It works across organizations.
+
+**Costs**
+- Latency adds up across round trips.
+- Results are only as complete and trustworthy as each endpoint.
+- Remote endpoints may time out or limit results.
+- A store that will call any URL is a security risk, since a query could be used to reach internal services. Federation needs an allowlist.
+
+## Using them together
+
+The approaches combine. A common pattern is to federate across endpoints, one of which is a virtual graph over a database, and copy only what has to be reasoned over heavily. For example, fetch a reference ontology once, materialize its closure, and query live operational data through a virtual graph.
+
+## In this project
+
+- **Copy**: ingest RDF into a dataset with the CLI or the HTTP API (see [Command line](/docs/how-to-use/cli/)).
+- **Virtualize**: the virtual graph plugin queries Postgres through Ontop, with an R2RML mapping and an ontology, over a read-only database role.
+- **Federate**: the engine itself refuses `SERVICE`, so no ordinary query can reach the network. Federation is a separate plugin operation that hands the query to a Comunica sidecar, and only allowlisted endpoints are accepted, checked by both the plugin and the sidecar.
+- **Federate, then reason**: an inference job can take a federated or virtual query as an *outside input*. The fetched triples feed the reasoner but are not stored.
+- How each of these works, its limits and its configuration are in [Federation and virtualization](/docs/internals/federation/).

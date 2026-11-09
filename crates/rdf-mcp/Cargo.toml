@@ -1,0 +1,34 @@
+[package]
+name = "rdf-mcp"
+description = "Read-only MCP server that lets an AI agent discover the store and query it with SPARQL."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "rdf-mcp"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rmcp = { version = "3.9", features = ["server", "macros", "transport-io"] }
+schemars = "1.0"
+serde.workspace = true
+serde_json.workspace = true
+spargebra = "=0.4.8"
+tokio = { workspace = true, features = ["io-std", "sync", "time"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+oxrdf = "=0.3.5"
+proptest.workspace = true
+spareval = "=0.2.9"
+rmcp = { version = "3.9", features = ["client", "server", "macros", "transport-io"] }
+tokio = { workspace = true, features = ["io-std", "io-util", "sync", "time"] }

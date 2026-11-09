@@ -89,6 +89,14 @@ rule-tests:
 federation-test:
     python3 scripts/test/federation_e2e.py
 
+# Read-only MCP server for AI agents (stdio); needs the gateway on 127.0.0.1:7878.
+mcp:
+    cargo run --release -p rdf-mcp
+
+# MCP tools and the cross-plugin query examples, end to end against the running, seeded stack.
+mcp-test:
+    cargo test -p rdf-mcp --test live --test composition -- --ignored
+
 # Hot-reload dev loop: Studio HMR plus backend rebuild + restart on Rust changes.
 dev:
     bash scripts/dev.sh

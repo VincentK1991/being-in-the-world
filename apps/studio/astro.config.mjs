@@ -13,7 +13,7 @@ export default defineConfig({
     // The documentation lives in the same app, under /docs (see docs/specs/studio-docs.md).
     starlight({
       title: 'RDF Studio docs',
-      description: 'An RDF store built on Oxigraph, with a plugin architecture. What it is, how to use it, and how it works.',
+      description: 'An RDF store built on Oxigraph, with a plugin architecture. What it is, how to use it, how it works, and the ideas behind it.',
       customCss: ['./src/styles/docs.css'],
       social: [{ icon: 'github', label: 'Source on GitHub', href: 'https://github.com/VincentK1991/being-in-the-world' }],
       sidebar: [
@@ -21,6 +21,7 @@ export default defineConfig({
         { label: 'What it is', items: [{ autogenerate: { directory: 'docs/what-it-is' } }] },
         { label: 'How to use', items: [{ autogenerate: { directory: 'docs/how-to-use' } }] },
         { label: 'Internals', items: [{ autogenerate: { directory: 'docs/internals' } }] },
+        { label: 'Background', items: [{ autogenerate: { directory: 'docs/background' } }] },
       ],
       plugins: [
         // Fails the build on a broken internal link. Studio's own pages are not in the content

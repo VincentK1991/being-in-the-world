@@ -1,0 +1,71 @@
+---
+title: OWL and its profiles
+description: What OWL 2 adds to RDFS, the difference between OWL 2 DL and OWL 2 Full, and the three tractable profiles EL, QL and RL, with what each is for.
+sidebar:
+  order: 2
+---
+
+**OWL 2**, the Web Ontology Language, is the W3C's language for ontologies that need more than [RDFS](/docs/background/ontologies-and-rdfs/). It is written in RDF like everything else, but its terms have a much richer meaning, and that richness has a price: the more an ontology language can say, the harder it is for a program to work out everything that follows.
+
+OWL's answer is not one language but a family. This page goes from the most expressive member to the cheapest.
+
+## What OWL adds
+
+| Construct | Example | Lets a reasoner conclude |
+|---|---|---|
+| Equivalent and disjoint classes | `ex:Claim owl:disjointWith ex:Policy` | that a resource typed as both is a contradiction |
+| Class expressions | `ex:LargeClaim owl:equivalentClass [ owl:intersectionOf (ex:Claim [ a owl:Restriction; owl:onProperty ex:reserve; owl:someValuesFrom ex:Over1M ]) ]` | membership of a *defined* class from its definition |
+| Property characteristics | `ex:partOf a owl:TransitiveProperty` | `a partOf b`, `b partOf c` gives `a partOf c` |
+| Inverse properties | `ex:hasClaim owl:inverseOf ex:onPolicy` | each link in the other direction |
+| Functional and key properties | `ex:policyNumber a owl:FunctionalProperty`, `owl:hasKey` | that two IRIs with the same key are the same individual |
+| Identity | `owl:sameAs`, `owl:differentFrom` | merging what is known about two names |
+| Property chains | `ex:insuredBy owl:propertyChainAxiom (ex:hasPolicy ex:issuer)` | a link from following a path |
+| Cardinality | `owl:maxCardinality 1` | sameness, or a clash when the limit is exceeded |
+
+The open-world and no-unique-name assumptions from RDFS still hold. A `maxCardinality 1` property with two values does not mean the data is wrong; it means the two values are the same thing, unless they are known to be different, in which case the ontology is **inconsistent**.
+
+## Two semantics: DL and Full
+
+OWL 2 has two official ways of assigning meaning:
+
+- **Direct Semantics** treats an ontology as a description logic (*SROIQ*): classes are sets, properties are relations, and classes, properties and individuals are kept apart. Ontologies that meet the syntactic conditions for this are **OWL 2 DL**. Reasoning is **decidable**, so a complete reasoner always finishes, but the worst case is extremely expensive (2NExpTime-complete for consistency). Tableau reasoners such as HermiT and Pellet target this.
+- **RDF-Based Semantics** gives a meaning to any RDF graph at all, including ones that treat a class as an individual or redefine the vocabulary. That is **OWL 2 Full**. It is **undecidable**: no reasoner can be complete for it.
+
+In practice "OWL" in a data system almost always means one of the three profiles below.
+
+## The three profiles
+
+A **profile** is a syntactic subset of OWL 2 chosen so that reasoning becomes tractable for a particular kind of job. Each gives up different constructs.
+
+| | **OWL 2 EL** | **OWL 2 QL** | **OWL 2 RL** |
+|---|---|---|---|
+| Built for | large ontologies with many classes | querying big data held in a database | rule engines over RDF data |
+| Main task | **classification**: compute the whole class hierarchy | **query answering** by rewriting into SQL | **materialization**: compute all entailed facts |
+| Cost | polynomial in the size of the ontology | in the size of the data, as cheap as running SQL (AC⁰) | polynomial in the size of the data |
+| Keeps | existentials (`someValuesFrom`), intersections, property chains, transitivity, disjointness | subclass, subproperty, domain, range, inverse properties, disjointness, existentials on the superclass side | most of OWL, as long as it can be read as if-then rules: intersections, `hasValue`, `allValuesFrom` on the right, chains, keys, `sameAs`, functional and transitive properties |
+| Gives up | universals (`allValuesFrom`), negation, disjunction, inverse and functional properties | transitivity, property chains, functional properties, `sameAs` | existentials and disjunction on the right ("every claim *has some* policy"), reflexive properties |
+| Typical use | medical terminologies such as SNOMED CT; Gene Ontology | ontology-based data access over relational sources (Ontop) | triple stores with forward-chaining reasoners |
+
+The asymmetries are the interesting part.
+
+- **RL cannot invent individuals.** "Every claim has some policy" is an existential on the superclass side. To act on it a reasoner would have to create an anonymous policy for every claim without one. RL forbids that, so its rules only ever connect things that already exist, which is what makes a finite, polynomial closure possible.
+- **QL keeps exactly what can be pushed into SQL.** Subclass, domain and range turn into `UNION`s of table scans. Transitivity would need recursion, and `sameAs` would need equality reasoning across tables, so both are out.
+- **EL keeps existentials** because they are what biomedical terms are made of ("appendicitis is an inflammation *located in some* appendix"), and drops the constructs that make classification exponential.
+
+A profile is a promise about the **ontology**, not a mode switch. If an ontology uses a construct outside the profile, a profile reasoner either rejects it or silently ignores what it cannot handle. Both happen in the wild, so check which.
+
+## What OWL 2 RL cannot conclude
+
+Even on in-profile input, a rule-based RL reasoner is sound but deliberately incomplete compared with a DL reasoner:
+
+- it never derives `owl:differentFrom`, because that needs proof by contradiction ("if they were the same, the ontology would be inconsistent");
+- it does not conclude that complex class expressions exist or are subclasses of one another;
+- it does not reason about datatypes beyond simple cases, such as which values fit `xsd:short`.
+
+These are inherent to RL, not bugs. Closing them needs a DL reasoner.
+
+## In this project
+
+- The inference plugin computes **OWL 2 RL**, by the native engine (`owlrl-native`, profile `owl2rl-v1`) or the OWL-RL sidecar (`owlrl-core-v1`, `owlrl-full-v1`). The core profile admits only a short list of OWL terms and rejects the rest; the full profile and the native engine take all of OWL 2 RL. See [Inference](/docs/internals/inference/).
+- **OWL 2 QL** reasoning happens inside Ontop, for the virtual graph: a query for a superclass is rewritten to include its subclasses before it becomes SQL. See [Federation and virtualization](/docs/internals/federation/).
+- There is **no EL or DL reasoner**. The measured coverage, the gaps and the conditions under which a DL reasoner would be worth adding are in [`docs/owl-coverage.md`](https://github.com/VincentK1991/being-in-the-world/blob/main/docs/owl-coverage.md).

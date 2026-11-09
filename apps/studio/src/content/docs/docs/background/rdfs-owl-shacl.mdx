@@ -1,0 +1,90 @@
+---
+title: RDFS, OWL and SHACL
+description: Inference versus validation, open world versus closed world, and how to decide which of RDFS, OWL or SHACL a rule belongs in.
+sidebar:
+  order: 3
+---
+
+RDFS and OWL describe what the data **means**, so that a reasoner can add what follows. **SHACL** (the Shapes Constraint Language) describes what the data **must look like**, so that a validator can report what is wrong. They look similar, since all three are written as RDF about classes and properties, but they answer opposite questions.
+
+## The same rule, three ways
+
+Say every claim should have exactly one policy.
+
+**In OWL**, you might write:
+
+```turtle
+ex:Claim rdfs:subClassOf [
+  a owl:Restriction ;
+  owl:onProperty ex:hasPolicy ;
+  owl:cardinality 1
+] .
+```
+
+Now take a claim with no policy and another with two:
+
+```turtle
+ex:c1 a ex:Claim .
+ex:c2 a ex:Claim ; ex:hasPolicy ex:P1, ex:P2 .
+```
+
+An OWL reasoner reports **nothing wrong** with either.
+
+- `c1` has a policy that nobody has written down yet. That is the open world.
+- `c2`'s two policies must be the same policy, so the reasoner concludes `ex:P1 owl:sameAs ex:P2`. That is the missing unique name assumption.
+- It is a contradiction only if `P1` and `P2` are known to be different.
+
+**In SHACL**, you write a shape:
+
+```turtle
+ex:ClaimShape a sh:NodeShape ;
+  sh:targetClass ex:Claim ;
+  sh:property [
+    sh:path ex:hasPolicy ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class ex:Policy ;
+  ] .
+```
+
+A SHACL validator reports **two violations**: `c1` has 0 values, below the minimum, and `c2` has 2, above the maximum. If `P1` is not typed `ex:Policy`, it reports that too. It never adds a triple.
+
+**In RDFS** there is no way to say "exactly one". The closest is `ex:hasPolicy rdfs:domain ex:Claim`, which adds types and never rejects anything.
+
+## Open world versus closed world
+
+| | RDFS and OWL | SHACL |
+|---|---|---|
+| Question | what else is true? | is this data acceptable? |
+| A missing value | unknown, could be elsewhere | missing, a violation if required |
+| Too many values | maybe the same thing | a violation |
+| Wrong type on a value | the value gets that type | a violation |
+| Output | new triples (entailments) | a validation report |
+| Changes the data | adds derived triples | never |
+| Failure mode | inconsistency, when the ontology contradicts itself | violations, warnings and informational results |
+
+Neither is "better". Use OWL to integrate data and let the ontology fill in what follows. Use SHACL to protect a pipeline or an application from data it cannot handle. Many projects use both: the ontology to infer, and shapes to check the result.
+
+## Where a rule belongs
+
+- **Classification and hierarchies** ("a loss reserve is a reserve") belong in RDFS or OWL. Write them once and every query benefits.
+- **Identity** ("two policies with the same number are the same policy") belongs in OWL: `owl:hasKey` or a functional property.
+- **Required fields, counts and value ranges** ("a reserve must be a non-negative decimal") belong in SHACL. OWL cannot enforce them, and datatype reasoning in OWL 2 RL is weak.
+- **Business rules that compute something new** ("a claim over 1M is a large claim") can be OWL class definitions or rules in SPARQL `CONSTRUCT`. Rules are easier to read, test and explain; OWL is more portable.
+- **Disjointness** ("nothing is both a claim and a policy") works in both, with different outcomes: OWL reports the whole graph inconsistent, while SHACL (`sh:not`) reports the offending node.
+
+## Validating inferred data
+
+Validation and inference compose in a particular order.
+
+- **Validate before inference** to catch bad input, such as a malformed reserve amount, before it spreads into derived facts.
+- **Validate after inference** when the shapes depend on facts the ontology adds. For example, a shape that targets `ex:Document` needs claims to have been inferred as documents first.
+
+In the second case the result depends on the inferred graph being fresh, so check that before trusting the report.
+
+## In this project
+
+- RDFS and OWL reasoning run as **inference jobs** that publish to `urn:rdftool:derived:inference:<job>`. See [Inference](/docs/internals/inference/).
+- SHACL runs as **validation jobs** through Apache Jena's `jena-shacl` and publishes the standard report to `urn:rdftool:derived:shacl:<job>`. See [SHACL validation](/docs/internals/shacl/).
+- To validate inferred data, list the inference job's output graph among the SHACL job's data graphs. The two plugins do not coordinate freshness for you.
+- SHACL here **reports**; it does not block writes. A job's `fail_on` setting can turn a report into a failed `check`, which a pipeline can act on.

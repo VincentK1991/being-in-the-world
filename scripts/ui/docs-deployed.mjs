@@ -8,7 +8,8 @@ const base = process.env.RDF_UI_BASE || 'http://127.0.0.1:4321';
 const pages = ['what-it-is/overview', 'what-it-is/architecture', 'what-it-is/components', 'what-it-is/status-and-limits',
   'how-to-use/install', 'how-to-use/cli', 'how-to-use/studio', 'how-to-use/http-api', 'how-to-use/datasets', 'how-to-use/plugins',
   'internals/request-path', 'internals/storage', 'internals/plugin-architecture', 'internals/vector-index',
-  'internals/inference', 'internals/federation', 'internals/shacl', 'internals/testing'];
+  'internals/inference', 'internals/federation', 'internals/shacl', 'internals/testing',
+  'how-to-use/mcp', 'background/ontologies-and-rdfs', 'background/owl-and-profiles', 'background/rdfs-owl-shacl', 'background/reasoners', 'background/virtualization-and-federation'];
 const diagrams = { 'what-it-is/architecture': 1, 'internals/request-path': 1, 'internals/storage': 1, 'internals/plugin-architecture': 1, 'internals/vector-index': 1, 'internals/inference': 1 };
 const checks = [];
 const check = (name, ok) => { checks.push([name, ok]); console.log(`${ok ? 'PASS' : 'FAIL'} ${name}`); };
@@ -37,7 +38,7 @@ try {
   await mkdir('target/ui', { recursive: true });
   await page.screenshot({ path: 'target/ui/docs-storage-dark.png', fullPage: false });
   await page.setViewportSize({ width: 390, height: 900 });
-  for (const slug of ['internals/storage', 'internals/request-path', 'what-it-is/architecture', 'internals/inference', 'internals/testing', 'internals/federation']) {
+  for (const slug of ['internals/storage', 'internals/request-path', 'what-it-is/architecture', 'internals/inference', 'internals/testing', 'internals/federation', 'background/owl-and-profiles', 'background/rdfs-owl-shacl', 'background/reasoners']) {
     await page.goto(`${base}/docs/${slug}/`);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     check(`${slug} has no sideways scroll at phone width`, overflow <= 1);

@@ -26,9 +26,12 @@ aims to make that one system:
 - **A small core.** The engine does storage, parsing, the query policy and derived-graph bookkeeping.
   Anything that needs the network or heavy dependencies is a plugin or a sidecar.
 
-**Planned:** an MCP server that lets agents use the store directly. It will be read-only by default
-(search, query, explain), with writes as an explicit opt-in and dataset deletion never exposed. It is
-not built yet; today the interface is the SPARQL HTTP API and the CLI.
+**For AI agents:** `rdf-mcp` is a read-only MCP server. Its tools let an agent discover datasets,
+schemas, property functions and `SERVICE` endpoints, then query with SPARQL, with a dry run that
+flags misspelt terms. Results say which facts are asserted and which are inferred, and the reasoner
+can explain an inferred fact. One query can combine semantic search, inferred facts, the SQL virtual
+graph, other datasets and SHACL reports. Property tests check that the server's rewrites keep the
+meaning of the agent's query. See [`crates/rdf-mcp`](crates/rdf-mcp/README.md).
 
 ## Components
 
@@ -38,6 +41,7 @@ not built yet; today the interface is the SPARQL HTTP API and the CLI.
 | `rdf-engine` | The database library: query policy, property-function rewrite, derived graphs and refresh rules |
 | `rdf-server` | Axum HTTP server for one dataset, and a gateway that serves many at `/d/<name>/` |
 | `rdf-cli` | The `rdftool` command line |
+| `rdf-mcp` | Read-only MCP server for AI agents: orient tools plus SPARQL over every plugin |
 | `rdf-plugin-api` | The plugin SDK (v3), with no HTTP, Oxigraph or filesystem dependency |
 | Studio | Browser UI (Astro, React) for querying, browsing, plugins, and the documentation at `/docs/` |
 | Plugins | `semantic-search` (semantic and hybrid), `inference` (OWL 2 RL, explanations), `shacl`, `federation` and virtual graph, `catalog` |
@@ -46,12 +50,12 @@ not built yet; today the interface is the SPARQL HTTP API and the CLI.
 ## Status
 
 This is work in progress and **not yet a completed release**. The storage engine, query surface,
-plugins and Studio work end to end on a local stack and are covered by roughly 190 Rust tests, browser
-tests and a nightly live-stack run, but the project has no authentication or quotas (the server only binds
+plugins and Studio work end to end on a local stack and are covered by about 200 Rust tests (property tests included), browser
+tests, W3C conformance baselines and a nightly live-stack run, but the project has no authentication or quotas (the server only binds
 to loopback), conformance is partial (for example SPARQL 1.1 at about 82% of the W3C suite), and
 interfaces may still change. See [validation status](docs/runbook/2026-11-01-oxigraph-validation.md)
 for the open gates, [LICENSE](LICENSE) (Apache-2.0) with [third-party notices](THIRD_PARTY_NOTICES.md), and the documentation (`/docs/` in Studio, sources in
-`apps/studio/src/content/docs/`) for what it is, how to use it, and how it works inside.
+`apps/studio/src/content/docs/`) for what it is, how to use it, how it works inside, and background on ontologies, OWL profiles, SHACL, reasoners and federation.
 
 ## Linux / WSL setup
 
@@ -99,6 +103,19 @@ CLI output format. Stats output is JSON.
 Ordinary ingestion rolls back malformed input. `--bulk --memory-mb 256 --threads 2`
 opts into the engine bulk loader, which may leave partial progress on failure.
 The memory setting is a loader target, not a hard process memory limit.
+
+## Connect an AI agent (MCP)
+
+With the stack running, build the read-only MCP server and register it with your agent:
+
+```sh
+cargo build --release -p rdf-mcp
+claude mcp add rdf -- "$PWD/target/release/rdf-mcp"   # or point any MCP client at the binary (stdio)
+```
+
+It talks to the gateway on `127.0.0.1:7878` (`RDF_MCP_GATEWAY`; only loopback addresses are accepted).
+`just mcp-test` runs its live suites, including 11 queries that each combine several plugins. See
+[`crates/rdf-mcp`](crates/rdf-mcp/README.md) and the docs page "Connect an AI agent (MCP)".
 
 ## RDF Studio browser UI
 

@@ -51,6 +51,7 @@ test_all() {
     run 'federation and inference end to end' python3 scripts/test/federation_e2e.py
     run 'Studio inference panel (browser)' node scripts/ui/inference-deployed.mjs
     run 'Documentation site (browser)' node scripts/ui/docs-deployed.mjs
+    run 'MCP tools and cross-plugin queries' cargo test --locked -p rdf-mcp --test live --test composition -- --ignored
     run 'W3C conformance with reasoners' env CONFORMANCE_REASONERS=1 bash scripts/conformance.sh
     return "$failed"
 }

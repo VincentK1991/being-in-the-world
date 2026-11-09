@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc c25a3f2e00b745109750ef356282f624f678c58724e9f129c618926f1864dad6 # shrinks to p = Union(Graph(None, Triple(Var(1), 1, Var(0))), Triple(Var(0), 0, Var(0))), data = [(0, 1, Ok(0), Some(1))], selected = [2]
+cc ca9ea81318163055e1f93bc6e5be8256a016d403dc4a4ca085f650292c5453e7 # shrinks to p = Optional(Split(0, [0]), Triple(Var(0), 0, Var(0))), data = [], selected = []
+cc a2c2b1741230cb427c7f35fdac9904ede2bdc13013bfed32ef976184477146cf # shrinks to p = Optional(Triple(Var(1), 2, Var(2)), Filter(Split(0, [0]), 1, 1)), data = [(1, 2, Ok(0), None)]
+cc 0496ebe3775397d81a5429f12e3fcee9032da062ea42dd7214c5384014fcaaa2 # shrinks to p = Graph(None, Minus(Filter(Triple(Var(0), 0, Var(1)), 0, 0), Triple(Var(0), 0, Var(0)))), data = [(1, 0, Err(0), Some(0))]

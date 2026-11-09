@@ -27,17 +27,18 @@ The project is tested in layers, from fast and offline to slow and live. Each la
 
 ## Rust tests
 
-About 190 test functions across the workspace, run with `cargo nextest run --workspace --all-targets` (`just test`). Where they live:
+About 200 test functions across the workspace, run with `cargo nextest run --workspace --all-targets` (`just test`). Where they live:
 
 - **Parsers and model** (`rdf-io`, `rdf-model`): conformance tests that read W3C manifests for N-Triples, N-Quads, Turtle and TriG, plus language-tag cases, each paired with a **property test**.
 - **Store** (`rdf-store`): engine and catalog behaviour, an in-memory store, a legacy `redb` store kept for migration, and `comparison.rs`, which compares query results while preserving multiplicity, variable scope and blank-node identity.
 - **Engine** (`rdf-engine/tests`): property-function rewrite rules and refresh rules.
 - **CLI and server** (`rdf-cli/tests`): a live HTTP round trip with reopen, the gateway's dataset isolation, creation and deletion, and CLI output snapshots.
+- **MCP server** (`rdf-mcp/tests`): parser and rendering tests, and property tests. The property tests check that every rewrite the server applies to an agent's query keeps its meaning, against a reference evaluated by `spareval` (see [Connect an AI agent](/docs/how-to-use/mcp/#composing-plugins-in-one-query)). Two `#[ignore]` suites drive the tools over MCP against the live stack, one of them with 11 queries that each compose several plugins.
 - **Plugins:** each plugin has its own tests. Inference tests use a **stand-in reasoner** (a `Taxonomy` that does one subclass step) so chains, cascades, inconsistency and explanation freshness are checked offline, without any sidecar. The SHACL contract tests use a fake `Validator` to check that report-only keeps the data, thresholds are independent of `sh:conforms`, a concurrent source change does not publish, and reports survive a reopen.
 
 A handful of tests are marked `#[ignore]` because they need a live sidecar (`plugins/inference/tests/live.rs`, `plugins/shacl/tests/live.rs`, and others). They run in the live-stack job or by hand, for example `just shacl-test`.
 
-**Property tests** (`proptest`) are used where a rule must hold for all inputs: a parse and serialize round trip, and store invariants.
+**Property tests** (`proptest`) are used where a rule must hold for all inputs: a parse and serialize round trip, store invariants, and the MCP server's query rewrites. Counterexamples are saved in a `*.proptest-regressions` file next to the test and replayed first on every run, so commit those files. `PROPTEST_CASES=50000` runs a deeper search.
 
 **Lints are part of the tests.** CI runs `cargo fmt --check`, `cargo clippy -- -D warnings` with `unwrap_used` denied, and `cargo deny check` for dependency policy.
 
@@ -90,6 +91,7 @@ Query results are compared with `rdf_store::comparison`, which respects what the
 | `scripts/test/federation_e2e.py` | The virtual graph, cross-dataset `SERVICE` federation, and inference over both |
 | `scripts/ui/inference-deployed.mjs` | The inference panel: rebuild, rule tests, "Why?", a real clash and its recovery, a cascade |
 | `scripts/ui/docs-deployed.mjs` | This documentation, served by the real image |
+| `rdf-mcp` live and composition tests | Every MCP tool, and one-query compositions of search, inference, catalog, custom properties, virtual graph, federation and SHACL |
 | Conformance with reasoners | The entailment baselines, which need the sidecars |
 
 The workflow (`.github/workflows/live-stack.yml`) runs nightly and on demand, with a 90 minute limit. Container logs are collected whatever happens.
@@ -112,6 +114,7 @@ Weekly (`.github/workflows/extended-validation.yml`):
 |---|---|
 | A parser or the model | A conformance case or a property test beside the existing ones |
 | The engine or the property rewrite | A test in `rdf-engine/tests` |
+| How the MCP server rewrites queries | A case in the grammar of `rdf-mcp/tests/composition_props.rs`, and a worked query in `composition.rs` if it composes plugins |
 | A plugin | A test against an in-memory `Database` with a stand-in for any sidecar, plus an `#[ignore]` live test |
 | A reasoner | A rule test on the job; if behaviour changes, bump the identity |
 | Something the standard defines | Run the suite and update the baseline deliberately |

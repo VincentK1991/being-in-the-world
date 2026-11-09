@@ -1,0 +1,83 @@
+---
+title: Ontologies and RDFS
+description: What an ontology is, how RDF Schema describes classes and properties, and the open-world assumptions every reasoner on top of RDF makes.
+sidebar:
+  order: 1
+---
+
+The rest of this section assumes you know RDF: data is a set of triples, *subject, predicate, object*, where subjects and predicates are IRIs and objects are IRIs or literals. This page explains what an **ontology** adds to that, starting with the smallest ontology language, **RDF Schema** (RDFS).
+
+## Data and the description of data
+
+An RDF graph mixes two kinds of statement, and it helps to keep them apart:
+
+- **Instance data** (description logic calls it the *ABox*, for assertions) says things about individuals: claim 42 has policy P-7, its reserve is 5,000.
+- **Schema or ontology** (the *TBox*, for terminology) says things about the vocabulary: every claim is a document, `hasPolicy` links a claim to a policy, a loss reserve is a kind of reserve.
+
+```turtle
+@prefix ex:   <http://example.org/ins#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# ontology (TBox)
+ex:Claim        rdfs:subClassOf ex:Document .
+ex:LossReserve  rdfs:subClassOf ex:Reserve .
+ex:hasPolicy    rdfs:domain ex:Claim ;
+                rdfs:range  ex:Policy .
+
+# instance data (ABox)
+ex:claim42 ex:hasPolicy ex:P7 .
+```
+
+Both are triples in the same graph. Nothing stops you storing them in one graph, but this project's inference jobs make you name the *source graphs* explicitly, and keeping the ontology in its own named graph makes it easy to version and reuse.
+
+An **ontology** is the TBox part: a shared, machine-readable statement of what the terms in a domain mean and how they relate. Its job is not to store facts; it is to let software draw conclusions the data does not spell out.
+
+## What RDFS can say
+
+RDFS is a small vocabulary with a formal meaning. The terms that matter for reasoning:
+
+| Term | Says | What a reasoner concludes |
+|---|---|---|
+| `rdfs:subClassOf` | every A is a B | `x a A` gives `x a B`; chains are transitive |
+| `rdfs:subPropertyOf` | every p link is a q link | `x p y` gives `x q y` |
+| `rdfs:domain` | anything with a p link is a C | `x p y` gives `x a C` |
+| `rdfs:range` | anything a p link points to is a C | `x p y` gives `y a C` |
+
+From the example above, an RDFS reasoner concludes `ex:claim42 a ex:Claim`, `ex:claim42 a ex:Document` and `ex:P7 a ex:Policy`. None of those were written down.
+
+RDFS deliberately cannot say:
+
+- that two classes are **disjoint** (nothing is both a claim and a policy);
+- that a property has **at most one** value, or exactly one;
+- that two IRIs name the **same** thing;
+- that a property is transitive, symmetric or inverse of another;
+- that a class is **defined** by a condition ("a large claim is a claim with a reserve over 1M").
+
+Those need OWL; see [OWL and its profiles](/docs/background/owl-and-profiles/).
+
+## Domain and range are not constraints
+
+The most common surprise: `rdfs:domain` and `rdfs:range` do **not** reject data. If `ex:hasPolicy` has range `ex:Policy` and you write
+
+```turtle
+ex:claim42 ex:hasPolicy ex:Alice .
+```
+
+an RDFS reasoner does not complain that Alice is a person. It concludes `ex:Alice a ex:Policy`. That is the right reading of the standard, and usually not what the author meant. If you want "the object of `hasPolicy` must already be a policy", that is a **validation** rule, and the tool for it is SHACL; see [RDFS, OWL and SHACL](/docs/background/rdfs-owl-shacl/).
+
+## Two assumptions under every RDF reasoner
+
+**The open-world assumption.** A missing triple means *unknown*, not *false*. If the graph does not say claim 42 has a reserve, a reasoner does not conclude it has none; someone else's graph might say it does. This is what lets you merge RDF from many sources safely, and it is why ontologies cannot be used to check completeness.
+
+**No unique name assumption.** Two different IRIs may name the same thing unless something says otherwise. `ex:P7` and `other:policy-7` can be the same policy. OWL can state this (`owl:sameAs`) or derive it; RDFS never does.
+
+Both assumptions follow from the same design goal: RDF is for combining data you do not fully control. Validation languages like SHACL take the opposite, closed-world view on purpose.
+
+## Entailment, in one sentence
+
+When this documentation says a graph **entails** a triple, it means: every way of interpreting the IRIs that makes the graph true also makes that triple true. A **reasoner** is a program that computes some or all of the entailed triples, under a stated set of rules called an **entailment regime** (RDFS, OWL 2 RL, and so on). How a reasoner does that is the subject of [Reasoners](/docs/background/reasoners/).
+
+## In this project
+
+- RDFS reasoning is offered by the OWL-RL sidecar's `rdfs-v1` and `rdfs-v2` profiles, and by the Jena rules provider. The native engine computes OWL 2 RL, whose rules include the four in the table above, but it has no RDFS-only profile. Provider kinds and profiles are listed in [Inference](/docs/internals/inference/).
+- Inferred triples go to a separate derived graph, never into the graph you wrote, so asserted and entailed facts stay distinguishable.

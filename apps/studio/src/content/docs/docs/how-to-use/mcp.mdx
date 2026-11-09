@@ -1,0 +1,119 @@
+---
+title: Connect an AI agent (MCP)
+description: Give an agent such as Claude read-only access to the store through the rdf-mcp server, and how its tools help it write SPARQL.
+sidebar:
+  order: 7
+---
+import Src from '../../../../components/docs/Src.astro';
+
+`rdf-mcp` (<Src dir="crates/rdf-mcp" />) is a [Model Context Protocol](https://modelcontextprotocol.io) server. It lets an AI agent explore a dataset and query it with SPARQL. It is **read-only**: it can't change data, rebuild indexes or run jobs.
+
+## Run it
+
+The stack must be running (see [Install and run](/docs/how-to-use/install/)). Build the server once, then register it with your agent:
+
+```sh
+cargo build --release -p rdf-mcp
+claude mcp add rdf -- "$PWD/target/release/rdf-mcp"
+```
+
+For a client configured with JSON, such as Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "rdf": {
+      "command": "/absolute/path/to/target/release/rdf-mcp",
+      "env": { "RDF_MCP_GATEWAY": "http://127.0.0.1:7878" }
+    }
+  }
+}
+```
+
+The server talks MCP over stdio and calls the gateway over HTTP. It accepts only a loopback gateway address, because the store has no authentication. `just mcp` runs it from the repository.
+
+## The idea: orient, then write SPARQL
+
+SPARQL is the one interface to everything in a dataset:
+- stored facts;
+- facts inferred by the reasoner;
+- semantic search, through property functions;
+- the virtual SQL graph and other datasets, through `SERVICE`.
+
+So the tools are mostly there to help the agent **write good SPARQL**. It learns what exists, how the data really looks, and what is callable, then queries.
+
+| Step | Tool | What it gives the agent |
+|---|---|---|
+| Orient | `list_datasets`, `describe_dataset` | Datasets. Graphs, whether asserted or inferred and by which job. Inference jobs and their freshness, search indexes, SHACL jobs |
+| | `get_schema` | Classes and properties **as the data uses them**, with counts split into asserted and inferred, domains, ranges, labels, and a `PREFIX` block. `focus` and `samples` show one term in depth with real triples |
+| | `list_plugins` | Property functions with a ready-to-use example call |
+| | `list_endpoints` | The `SERVICE` targets it may use, what each is, and their main classes |
+| Query | `sparql_query` | Runs the query, or checks it with `dry_run` |
+| Help | `search_entities`, `describe_entity`, `reasoning` | Words to IRIs. Every triple about an IRI, tagged asserted or inferred. Proofs, clashes, job freshness and SHACL results |
+
+## What `sparql_query` does for the agent
+
+- **Merged graphs.** The engine's default graph is only the unnamed graph. By default the tool adds `FROM` and `FROM NAMED` for every asserted and inferred named graph, so `?x a ex:Vehicle` finds stored and inferred vehicles alike. `graphs` can narrow this to `asserted` or `inferred`, list graph IRIs, or choose `default` for the engine's plain behaviour. If the query has its own `FROM`, it is left alone.
+- **Search inside queries.** The engine does not allow property functions in a query that has `FROM`. The tool therefore evaluates each call site first, as the engine would, and joins the rows as a `VALUES` table. Semantic search and graph patterns then combine in one query.
+- **Routing.** A query with `SERVICE` is sent to the federation plugin, and only to allowlisted endpoints. Other queries run on the dataset.
+- **Any graph by name.** `graphs` decides what plain patterns read. `GRAPH <iri>` and `GRAPH ?g` can always reach every graph, including validation reports.
+- **Checks.** Every answer, and the whole answer of a dry run, lists:
+  - IRIs that occur nowhere in the dataset, with suggestions ("did you mean `insurance:Claim`?");
+  - wrong calls to property functions;
+  - graphs that don't exist;
+  - endpoints that aren't allowed;
+  - inferred graphs that are stale.
+
+  Most failed agent queries run without error but return nothing because of a misspelt term, and these checks catch them.
+
+Results use SPARQL syntax for terms (`<iri>`, `"text"@en`, `42`), so they can go straight into the next query.
+
+## Example
+
+An agent asked "which policies mention theft, and what type are they?" can do it in one query:
+
+```sparql
+SELECT DISTINCT ?policy ?type WHERE {
+  (?policy ?p ?note ?score) <urn:rdftool:search:hybrid> ("risk-notes" "jewelry theft" 3) .
+  ?policy a ?type .
+}
+```
+
+The search runs over the `risk-notes` index. `?policy a ?type` then reads the asserted and inferred graphs. If the agent misspells a class, the warnings name the right one.
+
+## Composing plugins in one query
+
+Each of these is one `sparql_query` call. They are run end to end, dry run first, by <Src file="crates/rdf-mcp/tests/composition.rs" /> against the demo data.
+
+| Combines | Query shape |
+|---|---|
+| Search + inference | `(?policy ?p ?note ?score) <urn:rdftool:search:hybrid> ("risk-notes" "jewelry theft" 3) . ?policy a ?type` |
+| Catalog + inference | `(?plugin ?kind ?job) <urn:rdftool:plugins:provides> ()`, then `GRAPH` on each job's derived graph to count its triples |
+| Custom property + data | `(?local) <urn:rdftool:property:split> ("Claim,Policy" ",")` builds class IRIs, which are then counted |
+| Virtual graph + local graphs | `SERVICE <http://ontop:8080/sparql> { ?policy ins:policyNumber ?n } GRAPH ?g { ?policy a ?type }` |
+| Virtual graph reasoning | `SERVICE <http://ontop:8080/sparql> { ?x a ins:Reserve }`: Ontop applies the ontology, so this works with nothing stored |
+| Search + another dataset | A local `search:hybrid` call, then `SERVICE <…/d/finance/query> { ?policy fin:costCentre ?c }` |
+| SQL + another dataset | Two `SERVICE` blocks, one to Ontop and one to the finance dataset |
+| Search at an endpoint | `SERVICE <…/query> { (?s ?p ?o ?score) search:hybrid (…) }`: the endpoint runs the function |
+| SHACL + data | The report graph's violations joined with the validated values in their own graph |
+| CONSTRUCT | New triples built from search hits and their types |
+| Inferred only | `graphs='inferred'`: only what the reasoner added |
+
+**Federation and search together.** The federation engine splits a basic graph pattern into single triples, which breaks a property-function call apart. So `sparql_query` evaluates local calls first, as it does for graph selection. A call written inside a `SERVICE` block is left for that endpoint to run.
+
+**Property tests.** <Src file="crates/rdf-mcp/tests/composition_props.rs" /> generates random queries over random data in several graphs, mixing `GRAPH`, `OPTIONAL`, `UNION`, `FILTER`, `BIND`, `MINUS`, nested groups and property-function calls. For each one it checks two things:
+
+- the rewritten query, with functions evaluated and graphs added, returns exactly what a reference query returns;
+- printing a parsed query back out keeps its meaning.
+
+The reference is built independently and evaluated by Oxigraph's own evaluator.
+
+**Printing a rewritten query.** These tests found a bug in spargebra 0.4.8, the SPARQL parser the engine uses. When it writes a parsed query back out, it drops the braces around a `FILTER` in some nested positions, for example inside an `OPTIONAL` group. Re-parsing then widens the filter's scope and changes the answer. The server writes queries out with its own <Src file="crates/rdf-mcp/src/sparql.rs" symbol="pub fn to_sparql" />, which puts each such filter back in its own group first. The two shapes found are kept as regression tests, and so are the saved counterexamples.
+
+## Limits
+
+- **Read-only.** Only the plugin operations listed in <Src file="crates/rdf-mcp/src/client.rs" symbol="READ_OPERATIONS" /> can be called.
+- **Result size.** At most 1,000 rows per query. Responses are capped at 4 MiB.
+- **Duplicates.** The same fact can be in several graphs, for example asserted and inferred, or inferred by two jobs. Use `SELECT DISTINCT`.
+- **The unnamed default graph** is read only with `graphs='default'`. `describe_dataset` says how many triples it has.
+- **Returned values are untrusted.** They are data from the store, and the server's instructions tell the agent to treat them as data, never as instructions.
