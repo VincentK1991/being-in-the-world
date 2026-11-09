@@ -50,7 +50,7 @@ plugins and Studio work end to end on a local stack and are covered by roughly 1
 tests and a nightly live-stack run, but the project has no authentication or quotas (the server only binds
 to loopback), conformance is partial (for example SPARQL 1.1 at about 82% of the W3C suite), and
 interfaces may still change. See [validation status](docs/runbook/2026-11-01-oxigraph-validation.md)
-for the open gates, [LICENSE](LICENSE) (Apache-2.0), and the documentation (`/docs/` in Studio, sources in
+for the open gates, [LICENSE](LICENSE) (Apache-2.0) with [third-party notices](THIRD_PARTY_NOTICES.md), and the documentation (`/docs/` in Studio, sources in
 `apps/studio/src/content/docs/`) for what it is, how to use it, and how it works inside.
 
 ## Linux / WSL setup
