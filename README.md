@@ -1,23 +1,26 @@
 # Local RDF store
 
-A local-first RDF database for one machine, built on [Oxigraph](https://github.com/oxigraph/oxigraph)
-(RocksDB) and extended through plugins. It keeps the core small and predictable: a SPARQL 1.1 store with
-isolated datasets, backup and restore, and a strict local-only query policy. Everything else, such as
-semantic search, reasoning, validation and federation, is an add-on that reads and writes through the
-engine rather than inside it.
+One SPARQL interface over everything you know about a domain: the facts you assert, the facts that
+follow from them, similar things found by meaning, and live rows from a SQL database. It is an RDF
+store built on [Oxigraph](https://github.com/oxigraph/oxigraph) (RocksDB), with a small, standard
+core and a plugin architecture for the rest.
 
 ## What it aims to do
 
-- Be a dependable place to keep RDF data on your own machine: load Turtle, TriG, N-Triples or N-Quads,
-  query and update with SPARQL, and keep unrelated projects apart as separate datasets.
-- Make knowledge graphs useful without leaving that store. Search by meaning, derive new facts with
-  OWL 2 RL, check data against SHACL shapes, expose a SQL database as a graph, and join other SPARQL
-  endpoints, each as an optional plugin.
-- Keep derived results honest. Inferred triples, validation reports and indexes live in separate
-  derived graphs with a record of what they were built from, so you can tell when they are stale and
-  never mix them up with the data you asserted.
-- Stay explainable and testable, from the request path down to the on-disk layout, with W3C
-  conformance baselines that can only improve.
+Knowledge-graph projects usually end up stitching together a triple store, a vector database, a
+reasoner, a validator and a federation layer, each with its own query language and its own idea of
+what is current. This project aims to make that one system you can reason about:
+
+- **One query surface.** Semantic search, inference results, validation reports and virtual SQL tables
+  are reachable from SPARQL, through plugin functions and derived graphs, not through a second API.
+- **Asserted and derived data stay apart.** Inferred triples, SHACL reports and indexes are written to
+  separate derived graphs together with a record of the inputs they were built from, so you can tell
+  when they are stale and never confuse them with what you stated.
+- **Answers you can explain.** The reasoner can show why a triple holds, as a proof traced back to the
+  asserted data, and inconsistencies are reported as results rather than silent failures.
+- **A core you can trust.** The engine does storage, parsing, the query policy and derived-graph
+  bookkeeping, and nothing else. Anything that needs the network or heavy dependencies is a plugin or a
+  sidecar, and W3C conformance baselines can only move up.
 
 ## Components
 
