@@ -1,17 +1,46 @@
 # Local RDF store
 
-Rust CLI and localhost service backed by pinned Oxigraph/RocksDB. Supports
-N-Triples, N-Quads, Turtle, TriG, SPARQL queries and updates, isolated logical
-datasets, legacy redb migration, and per-dataset backup/restore.
+A local-first RDF database for one machine, built on [Oxigraph](https://github.com/oxigraph/oxigraph)
+(RocksDB) and extended through plugins. It keeps the core small and predictable: a SPARQL 1.1 store with
+isolated datasets, backup and restore, and a strict local-only query policy. Everything else, such as
+semantic search, reasoning, validation and federation, is an add-on that reads and writes through the
+engine rather than inside it.
 
-The core implementation is under validation, **not yet a completed release**.
-See [validation status](docs/runbook/2026-11-01-oxigraph-validation.md) for open
-dependency and conformance gates.
+## What it aims to do
 
-Plugins add semantic and hybrid search (Qdrant), OWL 2 RL inference with explanations, SHACL
-validation, a virtual SQL graph (Ontop over Postgres) and `SERVICE` federation (Comunica). Studio
-serves documentation at `/docs/`: what it is, how to install and use it, and how it works
-(request path, storage, plugin architecture, vector index, inference, federation, SHACL, testing). Sources: `apps/studio/src/content/docs/`.
+- Be a dependable place to keep RDF data on your own machine: load Turtle, TriG, N-Triples or N-Quads,
+  query and update with SPARQL, and keep unrelated projects apart as separate datasets.
+- Make knowledge graphs useful without leaving that store. Search by meaning, derive new facts with
+  OWL 2 RL, check data against SHACL shapes, expose a SQL database as a graph, and join other SPARQL
+  endpoints, each as an optional plugin.
+- Keep derived results honest. Inferred triples, validation reports and indexes live in separate
+  derived graphs with a record of what they were built from, so you can tell when they are stale and
+  never mix them up with the data you asserted.
+- Stay explainable and testable, from the request path down to the on-disk layout, with W3C
+  conformance baselines that can only improve.
+
+## Components
+
+| Component | What it is |
+| --- | --- |
+| `rdf-store` | Oxigraph and RocksDB storage, datasets, backup and restore |
+| `rdf-engine` | The database library: query policy, property-function rewrite, derived graphs and refresh rules |
+| `rdf-server` | Axum HTTP server for one dataset, and a gateway that serves many at `/d/<name>/` |
+| `rdf-cli` | The `rdftool` command line |
+| `rdf-plugin-api` | The plugin SDK (v3), with no HTTP, Oxigraph or filesystem dependency |
+| Studio | Browser UI (Astro, React) for querying, browsing, plugins, and the documentation at `/docs/` |
+| Plugins | `semantic-search` (semantic and hybrid), `inference` (OWL 2 RL, explanations), `shacl`, `federation` and virtual graph, `catalog` |
+| Sidecars | Separate containers the plugins call: Qdrant and embeddings, OWL-RL and Jena reasoners, Jena SHACL, Ontop over Postgres, Comunica |
+
+## Status
+
+This is work in progress and **not yet a completed release**. The storage engine, query surface,
+plugins and Studio work end to end on a local stack and are covered by roughly 190 Rust tests, browser
+tests and a nightly live-stack run, but the project has no authentication or quotas (the server only binds
+to loopback), conformance is partial (for example SPARQL 1.1 at about 82% of the W3C suite), and
+interfaces may still change. See [validation status](docs/runbook/2026-11-01-oxigraph-validation.md)
+for the open gates, and the documentation (`/docs/` in Studio, sources in
+`apps/studio/src/content/docs/`) for what it is, how to use it, and how it works inside.
 
 ## Linux / WSL setup
 
