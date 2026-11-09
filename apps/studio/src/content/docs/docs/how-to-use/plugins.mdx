@@ -1,0 +1,90 @@
+---
+title: Using the plugins
+description: What each plugin does and the shortest working example of each.
+sidebar:
+  order: 6
+---
+import Src from '../../../../components/docs/Src.astro';
+import Adr from '../../../../components/docs/Adr.astro';
+
+A plugin gives you **operations** (called over HTTP) and, sometimes, **SPARQL properties** (called from a query). Each example below was run against the demo stack from [tier 3](/docs/how-to-use/install/#tier-3-sidecars-one-at-a-time). The Plugins page in Studio lists whatever your dataset has, and the [Components](/docs/what-it-is/components/) page has the full set.
+
+## Custom properties and the plugin catalog
+
+These need no sidecar, so they are good for trying the idea. A **property function** is written as a predicate with a list of outputs on the left and a list of inputs on the right:
+
+```sparql
+SELECT ?part WHERE { (?part) <urn:rdftool:property:split> ("a,b,c" ",") }
+```
+
+This returns three rows: `a`, `b` and `c`. The inputs must be constants.
+
+The catalog plugin lists what a dataset has. Because the function runs on whichever endpoint evaluates the query, a `SERVICE` call asks the remote dataset about itself:
+
+```sparql
+SELECT ?plugin ?version WHERE { (?plugin ?version) <urn:rdftool:plugins:available> () }
+SELECT ?kind ?name     WHERE { (?plugin ?kind ?name) <urn:rdftool:plugins:provides> () }
+```
+
+The second returns one row per operation, property function, index, job and virtual graph. A dataset without a plugin returns no rows, not an error, so a query can say "only if it has it". See <Adr n={13} slug="plugin-discovery" />.
+
+## Semantic search
+
+Finds literals by meaning, by keyword, or both. You declare an **index** in `semantic.json`: which predicates and graph to read, and whether it is `dense` or `hybrid`. Then build it and search:
+
+```sh
+curl http://127.0.0.1:4321/api/plugins/semantic-search/operations/rebuild \
+  -H 'Content-Type: application/json' -d '{"index":"risk-notes"}'
+```
+
+```sparql
+PREFIX search: <urn:rdftool:search:>
+SELECT ?subject ?object ?score WHERE {
+  (?subject ?predicate ?object ?score) search:hybrid ("risk-notes" "jewelry stolen in a break-in" 2)
+}
+```
+
+The modes are `matches`, `objects` and `subjects` (meaning, with a cosine score), and `lexical` and `hybrid` for indexes built in hybrid mode. The inputs are the index name, the text and how many results. An index goes stale when its data or configuration changes, and a search against a stale index fails until you rebuild. `status` says which. See <Src file="plugins/semantic-search/README.md" /> and <Adr n={9} slug="hybrid-search" />.
+
+## Inference
+
+An **inference job** reads some graphs, applies a reasoner, and writes what it deduces to its own graph, `urn:rdftool:derived:inference:<job>`. The reasoners are SPARQL `CONSTRUCT` rules, Jena rules, the owlrl sidecar, and a native OWL 2 RL engine.
+
+```sh
+curl http://127.0.0.1:4321/api/plugins/inference/operations/rebuild \
+  -H 'Content-Type: application/json' -d '{"job":"vehicles"}'
+```
+
+```sparql
+SELECT ?v WHERE { GRAPH <urn:rdftool:derived:inference:vehicles> { ?v a <https://example.org/Vehicle> } }
+```
+
+The other operations are `status` (ready, stale, missing, inconsistent or blocked), `lineage`, `test` (rule tests), `explain` (why a triple holds), and `jobs`. A job can read another job's output, so reasoning can be chained, and a rebuild can cascade through the chain. Studio's Inference panel wraps all of this. See <Src file="plugins/inference/README.md" /> and <Adr n={6} slug="inference-derived-graphs" />.
+
+## Virtual graph
+
+Reads a Postgres database as RDF, with no copy, through Ontop and an R2RML mapping. You query it through the plugin, in SPARQL:
+
+```sh
+curl http://127.0.0.1:4321/api/plugins/virtual-graph/operations/query \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"PREFIX ins: <http://data.world/schema/insurance/> SELECT ?policy ?number WHERE { ?policy ins:policyNumber ?number }"}'
+```
+
+In the demo this returns two policy numbers, read live from Postgres. Ontop also reasons over the sample's ontology at query time. See <Adr n={10} slug="virtual-graph-and-federation-plugins" />.
+
+## Federation
+
+Runs a query that uses `SERVICE` across datasets and endpoints, through Comunica. Only endpoints on an allowlist can be called:
+
+```sh
+curl http://127.0.0.1:4321/api/plugins/federation/operations/query \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"SELECT ?policy ?centre WHERE { SERVICE <http://host.docker.internal:7878/d/finance/query> { ?policy <https://finance.example.org/vocab#costCentre> ?centre } }"}'
+```
+
+This joins to the `finance` dataset and returns two cost centres. A `SERVICE` call to an address not on the allowlist is refused with `400`. You can combine all of the above in one query. See <Adr n={11} slug="composing-plugins" />.
+
+## SHACL validation
+
+Checks a dataset's data against SHACL shapes with Jena, writes a report as RDF, and can act as a gate that fails at a chosen severity. It is on the Plugins page in Studio.

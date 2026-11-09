@@ -14,6 +14,7 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
+rdf-plugin-shacl = { path = "../../plugins/shacl" }
 rdf-inference-providers = { path = "../../plugins/inference-providers" }
 rdf-plugin-inference = { path = "../../plugins/inference" }
 rdf-embedding-api = { path = "../../crates/rdf-embedding-api" }

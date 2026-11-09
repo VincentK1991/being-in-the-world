@@ -2,6 +2,7 @@
 mod explain;
 mod inputs;
 mod rule_tests;
+mod view;
 use anyhow::{Context, Result, bail, ensure};
 pub use inputs::{ExternalInput, Fetched, InputKind};
 use rdf_plugin_api::{Manifest, Plugin, ReadContext, SDK_VERSION};
@@ -33,6 +34,8 @@ pub struct Job {
     #[serde(default)]
     pub rules: Vec<String>,
     pub source_graphs: Vec<String>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub strict: bool,
     /// Extra RDF fetched from a sidecar at rebuild time (virtual graph or federation); never stored, only deduced from.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<ExternalInput>,
@@ -72,6 +75,9 @@ impl ReasonerRegistry {
 /// Providers compute deductions only; the host owns storage and publication.
 pub trait Reasoner: Send + Sync {
     fn identity(&self) -> Result<Value>;
+    fn diagnostics(&self, _profile: &str, _data: &str) -> Result<Value> {
+        Ok(json!({"issues":[],"datatype_checks":"provider-defined","consistency":"not-proved"}))
+    }
     fn infer(&self, profile: &str, ntriples: &str) -> Result<(String, Value)>;
     fn infer_rules(
         &self,
@@ -147,7 +153,11 @@ struct HttpReasoner {
 impl HttpReasoner {
     fn response(&self, response: reqwest::blocking::Response) -> Result<Value> {
         let status = response.status();
-        let value: Value = response.json().context("invalid reasoner response")?;
+        use std::io::Read;
+        let mut body = Vec::new();
+        response.take(32 * 1024 * 1024 + 1).read_to_end(&mut body)?;
+        ensure!(body.len() <= 32 * 1024 * 1024, "reasoner response exceeds 32 MiB");
+        let value: Value = serde_json::from_slice(&body).context("invalid reasoner response")?;
         ensure!(
             status.is_success(),
             "reasoner returned {status}: {}",
@@ -327,7 +337,11 @@ impl Inference {
         let Some(attempt) = status.as_object_mut().and_then(|s| s.remove("attempt")) else {
             return Ok(());
         };
-        if status["state"] == "ready" || attempt["fingerprint"] != fingerprint {
+        let (reasoner, _) = self.parts(job)?;
+        if status["state"] == "ready"
+            || attempt["fingerprint"] != fingerprint
+            || attempt["reasoner"] != reasoner.identity()?
+        {
             return Ok(());
         }
         let token = context.snapshot(&job.source_graphs)?.token;
@@ -436,6 +450,23 @@ impl Inference {
     }
     /// Rebuilds one job; the caller holds the gate.
     fn rebuild_one(&self, context: &dyn ReadContext, job: &Job) -> Result<Value> {
+        let guard = if depends_on(job).next().is_some() {
+            Some(context.publication_token()?)
+        } else {
+            None
+        };
+        let mut memo = std::collections::BTreeMap::new();
+        for dependency in depends_on(job) {
+            let upstream = self.job(dependency).context("unknown inference job")?;
+            let status = self.status(context, upstream, &mut memo, true)?;
+            if status["state"] != "ready" {
+                return Ok(json!({
+                    "job": job.name, "state": "blocked", "blocked_by": dependency,
+                    "dependency_state": status["state"],
+                    "note": "an upstream job is not ready; rebuild it first or use an upstream cascade",
+                }));
+            }
+        }
         let (reasoner, fingerprint) = self.parts(job)?;
         let source = context.snapshot(&job.source_graphs)?;
         let identity = reasoner.identity()?;
@@ -447,6 +478,11 @@ impl Inference {
         );
         let fetched = fetch_inputs(job)?;
         let merged = inputs::merge(&source.ntriples, &fetched)?;
+        let diagnostics = reasoner.diagnostics(&job.profile, &merged)?;
+        ensure!(
+            !job.strict || diagnostics["issues"].as_array().is_some_and(|v| v.is_empty()),
+            "ontology diagnostics rejected in strict mode: {diagnostics}"
+        );
         let (triples, actual) = match reasoner.infer_rules(&job.profile, &merged, &job.rules) {
             Ok(done) => done,
             Err(error) => {
@@ -459,7 +495,7 @@ impl Inference {
                     &job.name,
                     Some(json!({
                         "outcome": "inconsistent", "fingerprint": fingerprint,
-                        "source_token": source.token, "inputs": input_digests(&fetched),
+                        "source_token": source.token, "inputs": input_digests(&fetched), "reasoner":identity,
                         "clashes": inconsistent.clashes, "at": now(),
                     })),
                 )?;
@@ -470,12 +506,12 @@ impl Inference {
             }
         };
         ensure!(actual == identity, "reasoner identity changed during rebuild");
-        let mut metadata =
-            json!({"config_digest":fingerprint,"reasoner":identity,"profile":job.profile});
+        let mut metadata = json!({"config_digest":fingerprint,"reasoner":identity,"profile":job.profile,"diagnostics":diagnostics,"consistency":"no-clash-detected","input_coherence":"best-effort-observations"});
         if !fetched.is_empty() {
             metadata["inputs"] = fetched.iter().map(Fetched::record).collect();
         }
-        let mut result = context.publish(&job.name, &source, &triples, metadata)?;
+        let mut result =
+            context.publish_checked(&job.name, &source, &triples, metadata, guard.as_deref())?;
         result["state"] = json!("ready");
         Ok(result)
     }
@@ -513,54 +549,32 @@ impl Inference {
                 .map(Some)
                 .with_context(|| format!("rebuild of job {name} failed"))
         };
-        let inconsistent = |outcome: &Option<Value>| {
-            outcome.as_ref().is_some_and(|result| result["state"] == "inconsistent")
-        };
-        // After an inconsistent job, nothing that reads it runs: its output was not refreshed.
-        let mut blocked_by: Option<String> = None;
+        let record_step =
+            |name: &str, outcome: Option<Value>, steps: &mut Vec<Value>, ran: &mut Vec<Value>| {
+                let action = match outcome.as_ref().and_then(|v| v["state"].as_str()) {
+                    Some("inconsistent") => "inconsistent",
+                    Some("blocked") => "blocked",
+                    Some(_) => {
+                        ran.push(json!({"job": name}));
+                        "rebuilt"
+                    }
+                    None => "skipped",
+                };
+                let mut step = json!({"job": name, "action": action});
+                if action == "blocked" {
+                    step["blocked_by"] =
+                        outcome.as_ref().expect("blocked outcome")["blocked_by"].clone();
+                }
+                steps.push(step);
+            };
         for name in &upstream {
-            if blocked_by.is_some() {
-                steps.push(json!({"job": name, "action": "blocked", "blocked_by": blocked_by}));
-                continue;
-            }
-            let outcome = attempt(name, false)?;
-            let action = if inconsistent(&outcome) {
-                blocked_by = Some(name.clone());
-                "inconsistent"
-            } else if outcome.is_some() {
-                ran.push(json!({"job": name}));
-                "rebuilt"
-            } else {
-                "skipped"
-            };
-            steps.push(json!({"job": name, "action": action}));
+            record_step(name, attempt(name, false)?, &mut steps, &mut ran);
         }
-        let mut result = match &blocked_by {
-            Some(name) => json!({
-                "job": job.name, "state": "blocked", "blocked_by": name,
-                "note": "an upstream job is inconsistent; fix it and rebuild again",
-            }),
-            None => attempt(&job.name, true)?.context("job was not rebuilt")?,
-        };
-        if result["state"] == "inconsistent" {
-            blocked_by = Some(job.name.clone());
-        }
+        // Every attempt checks its own dependencies, even without an upstream cascade.
+        // Independent branches may still run when a sibling branch is blocked.
+        let mut result = attempt(&job.name, true)?.context("job was not rebuilt")?;
         for name in &downstream {
-            if blocked_by.is_some() {
-                steps.push(json!({"job": name, "action": "blocked", "blocked_by": blocked_by}));
-                continue;
-            }
-            let outcome = attempt(name, false)?;
-            let action = if inconsistent(&outcome) {
-                blocked_by = Some(name.clone());
-                "inconsistent"
-            } else if outcome.is_some() {
-                ran.push(json!({"job": name}));
-                "rebuilt"
-            } else {
-                "skipped"
-            };
-            steps.push(json!({"job": name, "action": action}));
+            record_step(name, attempt(name, false)?, &mut steps, &mut ran);
         }
         if cascade.is_some() {
             result["cascade"] =
@@ -590,6 +604,10 @@ impl Inference {
                 || status["metadata"]["reasoner"] != reasoner.identity()?)
         {
             status["state"] = json!("stale");
+        }
+        if status["state"] != "missing" && status["generation"].is_null() {
+            status["state"] = json!("stale");
+            status["migration_required"] = json!("rebuild to record generation");
         }
         // Outside data is not part of the store's source token, so re-read it and compare digests.
         if !inputs && !job.inputs.is_empty() {
@@ -718,11 +736,30 @@ impl Plugin for Inference {
                 "test".into(),
                 "explain".into(),
                 "jobs".into(),
+                "check".into(),
+                "view-query".into(),
             ],
             properties: vec![],
         }
     }
     fn invoke(&self, context: &dyn ReadContext, operation: &str, input: Value) -> Result<Value> {
+        if operation == "view-query" {
+            return self.view_query(context, input);
+        }
+        if operation == "check" {
+            let object = input.as_object().context("expected object")?;
+            ensure!(object.len() == 1, "check expects job");
+            let job = self
+                .job(input["job"].as_str().context("job required")?)
+                .context("unknown inference job")?;
+            let status = self.status(context, job, &mut std::collections::BTreeMap::new(), true)?;
+            ensure!(
+                status["state"] == "ready",
+                "inference readiness check failed: {}",
+                status["state"]
+            );
+            return Ok(status);
+        }
         if operation == "explain" {
             return self.explain(context, &input);
         }

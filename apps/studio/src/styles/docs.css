@@ -1,0 +1,32 @@
+/* Studio's palette for the documentation site: forest #14352b, accent #24785b, glow #6fe0b5. */
+:root {
+  --sl-color-accent-low: #d9efe5;
+  --sl-color-accent: #1f6b50;
+  --sl-color-accent-high: #124634;
+  --sl-color-white: #ffffff;
+  --sl-content-width: 50rem;
+}
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #12382b;
+  --sl-color-accent: #3aa57c;
+  --sl-color-accent-high: #8fe8c4;
+  --sl-color-white: #ffffff;
+}
+/* Diagrams are inline SVG that take their colours from these variables, so they follow the theme. */
+:root {
+  --dg-ink: #14352b; --dg-muted: #5b6f68; --dg-line: #8aa39a; --dg-fill: #eef6f2; --dg-fill-2: #fff7e6;
+  --dg-accent: #1f6b50; --dg-accent-fill: #d9efe5; --dg-warn: #a35c00; --dg-bg: #ffffff;
+}
+:root[data-theme='dark'] {
+  --dg-ink: #e6f4ee; --dg-muted: #a5bbb2; --dg-line: #5f7d71; --dg-fill: #17302a; --dg-fill-2: #3a2e14;
+  --dg-accent: #6fe0b5; --dg-accent-fill: #12382b; --dg-warn: #f0b45a; --dg-bg: #0f1f1a;
+}
+.diagram { margin: 1.5rem 0; }
+.diagram svg { width: 100%; height: auto; max-width: 100%; display: block; }
+.diagram figcaption { color: var(--sl-color-gray-3); font-size: var(--sl-text-sm); margin-top: 0.5rem; }
+.warning-box { border: 1px solid var(--dg-warn); border-inline-start-width: 0.35rem; border-radius: 0.5rem; padding: 0.75rem 1rem; margin: 1.25rem 0; }
+.glance { background: var(--sl-color-accent-low); border-radius: 0.5rem; padding: 0.75rem 1rem; margin: 1rem 0 1.5rem; }
+.glance > :first-child { margin-top: 0; } .glance > :last-child { margin-bottom: 0; }
+.src-ref { text-decoration: none; }
+.src-ref code { font-size: 0.85em; }
+.src-symbol { color: var(--sl-color-gray-3); }

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use spargebra::{Query, SparqlParser};
-use std::time::Duration;
+use std::{io::Read, time::Duration};
 
 const MAX_BYTES: usize = 16 * 1024 * 1024;
 
@@ -48,12 +48,18 @@ pub struct Fetched {
     pub query_digest: String,
     pub triples: usize,
     pub digest: String,
+    #[serde(default)]
+    pub etag: Option<String>,
+    #[serde(default)]
+    pub last_modified: Option<String>,
+    #[serde(default)]
+    pub fetched_at: u64,
     #[serde(skip)]
     pub ntriples: String,
 }
 impl Fetched {
     pub fn record(&self) -> Value {
-        json!({"name": self.name, "kind": self.kind, "query_digest": self.query_digest, "triples": self.triples, "digest": self.digest})
+        json!({"name": self.name, "kind": self.kind, "query_digest": self.query_digest, "triples": self.triples, "digest": self.digest,"etag":self.etag,"last_modified":self.last_modified,"fetched_at":self.fetched_at,"coherence":"best-effort-observation"})
     }
 }
 fn digest(value: &str) -> String {
@@ -119,7 +125,14 @@ impl ExternalInput {
         let response =
             request.send().with_context(|| format!("input {} is unavailable", self.name))?;
         let status = response.status();
-        let bytes = response.bytes()?;
+        let etag = response.headers().get("etag").and_then(|h| h.to_str().ok()).map(str::to_owned);
+        let last_modified = response
+            .headers()
+            .get("last-modified")
+            .and_then(|h| h.to_str().ok())
+            .map(str::to_owned);
+        let mut bytes = Vec::new();
+        response.take(MAX_BYTES as u64 + 1).read_to_end(&mut bytes)?;
         ensure!(bytes.len() <= MAX_BYTES, "input {} exceeds 16 MiB", self.name);
         let text = String::from_utf8(bytes.to_vec()).context("input returned invalid UTF-8")?;
         ensure!(
@@ -129,6 +142,7 @@ impl ExternalInput {
             text.chars().take(500).collect::<String>()
         );
         let text = if self.kind == InputKind::Sparql { turtle_to_ntriples(&text)? } else { text };
+        let text = canonical_remote(&text)?;
         let mut lines: Vec<String> = text
             .lines()
             .map(str::trim)
@@ -140,6 +154,9 @@ impl ExternalInput {
         let ntriples = lines.join("\n");
         Ok(Fetched {
             name: self.name.clone(),
+            etag,
+            last_modified,
+            fetched_at: super::now(),
             kind: self.kind,
             query_digest: digest(&self.query),
             triples: lines.len(),
@@ -297,5 +314,79 @@ mod tests {
             .fetch(0)
             .is_err()
         );
+    }
+}
+
+/// Bound the costly symmetric-blank-node case explicitly; never compare changing
+/// remote blank-node labels as if they were persistent identifiers.
+fn canonical_remote(text: &str) -> Result<String> {
+    use oxrdf::dataset::{CanonicalizationAlgorithm, CanonicalizationHashAlgorithm};
+    use oxrdf::{Dataset, GraphName, NamedOrBlankNode, Quad, Term};
+    let mut graph = Dataset::new();
+    let mut blanks = std::collections::BTreeSet::new();
+    for (count, t) in oxttl::NTriplesParser::new().for_slice(text.as_bytes()).enumerate() {
+        ensure!(count < 100_000, "remote input exceeds 100000 triples");
+        let t = t?;
+        if let NamedOrBlankNode::BlankNode(b) = &t.subject {
+            blanks.insert(b.as_str().to_owned());
+        }
+        if let Term::BlankNode(b) = &t.object {
+            blanks.insert(b.as_str().to_owned());
+        }
+        ensure!(
+            blanks.len() <= 8,
+            "remote canonicalization exceeds the 8 blank-node safety limit; use stable IRIs"
+        );
+        graph.insert(Quad::new(t.subject, t.predicate, t.object, GraphName::DefaultGraph).as_ref());
+    }
+    graph.canonicalize(CanonicalizationAlgorithm::Rdfc10 {
+        hash_algorithm: CanonicalizationHashAlgorithm::Sha256,
+    });
+    let mut lines = graph
+        .iter()
+        .map(|q| format!("{} {} {} .", q.subject, q.predicate, q.object))
+        .collect::<Vec<_>>();
+    lines.sort();
+    Ok(lines.join("\n"))
+}
+
+#[cfg(test)]
+mod canonical_tests {
+    use super::*;
+    #[test]
+    fn remote_blank_node_labels_do_not_affect_freshness() -> Result<()> {
+        let a = canonical_remote("_:a <urn:p> _:b .\n_:b <urn:q> \"hello\"@en .")?;
+        let b = canonical_remote("_:second <urn:q> \"hello\"@en .\n_:first <urn:p> _:second .")?;
+        assert_eq!(a, b);
+        assert_ne!(a, canonical_remote("_:a <urn:p> _:b .\n_:b <urn:q> \"other\"@en .")?);
+        let excessive =
+            (0..9).map(|i| format!("_:n{i} <urn:p> 1 .")).collect::<Vec<_>>().join("\n");
+        assert!(canonical_remote(&excessive).is_err());
+        Ok(())
+    }
+    #[test]
+    fn oversized_remote_body_is_stopped_before_parsing() -> Result<()> {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
+        let endpoint = format!("http://{}/sparql", listener.local_addr()?);
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept");
+            let mut request = [0; 8192];
+            let _ = stream.read(&mut request);
+            write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: text/turtle\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",MAX_BYTES+8192).expect("header");
+            let chunk = [b'a'; 8192];
+            for _ in 0..(MAX_BYTES / 8192 + 1) {
+                if stream.write_all(&chunk).is_err() {
+                    break;
+                }
+            }
+        });
+        let input: ExternalInput = serde_json::from_value(
+            json!({"name":"large","kind":"sparql","endpoint":endpoint,"query":"CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }"}),
+        )?;
+        let result = input.fetch(0);
+        server.join().expect("server");
+        assert!(format!("{:#}", result.expect_err("bounded body")).contains("exceeds 16 MiB"));
+        Ok(())
     }
 }

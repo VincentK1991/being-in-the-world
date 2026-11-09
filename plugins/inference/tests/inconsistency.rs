@@ -111,6 +111,59 @@ fn a_rule_test_can_expect_an_inconsistency() -> Result<()> {
 }
 
 #[test]
+fn direct_rebuilds_block_missing_stale_and_inconsistent_dependencies_without_publication()
+-> Result<()> {
+    let db = database()?;
+    let missing = run(&db, "rebuild", json!({"job":"downstream"}))?;
+    assert_eq!(missing["state"], "blocked");
+    assert_eq!(missing["dependency_state"], "missing");
+    assert_eq!(run(&db, "status", json!({"job":"downstream"}))?["state"], "missing");
+    let old = run(&db, "rebuild", json!({"job":"downstream", "cascade":"upstream"}))?;
+    assert_eq!(old["state"], "ready");
+    db.update("INSERT DATA { GRAPH <urn:data> { <urn:rex> a <urn:Cat> } }")?;
+    let stale = run(&db, "rebuild", json!({"job":"downstream"}))?;
+    assert_eq!(stale["state"], "blocked");
+    assert_eq!(stale["dependency_state"], "stale");
+    assert_eq!(run(&db, "rebuild", json!({"job":"animals"}))?["state"], "inconsistent");
+    let direct = run(&db, "rebuild", json!({"job":"downstream"}))?;
+    assert_eq!(direct["state"], "blocked");
+    assert_eq!(direct["dependency_state"], "inconsistent");
+    let blocked = run(&db, "rebuild", json!({"job":"downstream", "cascade":"downstream"}))?;
+    assert_eq!(blocked["state"], "blocked");
+    assert_eq!(blocked["blocked_by"], "animals");
+    assert_eq!(blocked["dependency_state"], "inconsistent");
+    assert_eq!(blocked["ran"], json!([]));
+    let status = run(&db, "status", json!({"job":"downstream"}))?;
+    assert_eq!(status["output_digest"], old["output_digest"]);
+    assert_eq!(status["source_token"], old["source_token"]);
+    db.update("DELETE DATA { GRAPH <urn:data> { <urn:rex> a <urn:Cat> } }")?;
+    assert_eq!(
+        run(&db, "rebuild", json!({"job":"downstream", "cascade":"upstream"}))?["state"],
+        "ready"
+    );
+    Ok(())
+}
+
+#[test]
+fn cascades_report_blocked_jobs_without_skipping_independent_branches() -> Result<()> {
+    let mut config = config()?;
+    config.jobs[1].source_graphs.push("urn:rdftool:derived:inference:healthy".into());
+    config.jobs.push(serde_json::from_value(
+        json!({"name":"healthy","profile":"strict","source_graphs":["urn:healthy"]}),
+    )?);
+    let mut db = Database::memory()?;
+    db.register(Inference::with_reasoner(config, Arc::new(Strict))?)?;
+    db.update("INSERT DATA { GRAPH <urn:data> { <urn:rex> a <urn:Dog>, <urn:Cat> } GRAPH <urn:healthy> { <urn:fido> a <urn:Dog> } }")?;
+    let result = run(&db, "rebuild", json!({"job":"downstream","cascade":"upstream"}))?;
+    assert_eq!(result["state"], "blocked");
+    assert_eq!(result["blocked_by"], "animals");
+    assert_eq!(result["ran"], json!([{"job":"healthy"}]));
+    assert_eq!(run(&db, "status", json!({"job":"healthy"}))?["state"], "ready");
+    assert_eq!(run(&db, "status", json!({"job":"downstream"}))?["state"], "missing");
+    Ok(())
+}
+
+#[test]
 fn the_clash_record_survives_a_restart_and_a_successful_rebuild_clears_it() -> Result<()> {
     let dir = tempfile::tempdir()?;
     {
@@ -128,5 +181,32 @@ fn the_clash_record_survives_a_restart_and_a_successful_rebuild_clears_it() -> R
     assert_eq!(run(&reopened, "rebuild", json!({"job": "animals"}))?["state"], "ready");
     let meta = "ASK { GRAPH <urn:rdftool:derived:inference:animals:metadata> { ?s <urn:rdftool:attempt> ?o } }";
     assert_eq!(reopened.query_json(meta)?["boolean"], false, "publishing cleared the record");
+    Ok(())
+}
+
+#[test]
+fn provider_upgrade_invalidates_an_old_clash_record() -> Result<()> {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    struct Versioned(Arc<AtomicUsize>);
+    impl Reasoner for Versioned {
+        fn identity(&self) -> Result<Value> {
+            Ok(json!({"profiles":["strict"],"revision":self.0.load(Ordering::SeqCst)}))
+        }
+        fn infer(&self, p: &str, d: &str) -> Result<(String, Value)> {
+            let (out, _) = Strict.infer(p, d)?;
+            Ok((out, self.identity()?))
+        }
+    }
+    let version = Arc::new(AtomicUsize::new(1));
+    let mut db = Database::memory()?;
+    db.register(Inference::with_reasoner(config()?, Arc::new(Versioned(version.clone())))?)?;
+    db.update("INSERT DATA { GRAPH <urn:data> { <urn:x> a <urn:Dog> } }")?;
+    run(&db, "rebuild", json!({"job":"animals"}))?;
+    db.update("INSERT DATA { GRAPH <urn:data> { <urn:x> a <urn:Cat> } }")?;
+    assert_eq!(run(&db, "rebuild", json!({"job":"animals"}))?["state"], "inconsistent");
+    version.store(2, Ordering::SeqCst);
+    let status = run(&db, "status", json!({"job":"animals"}))?;
+    assert_eq!(status["state"], "stale");
+    assert!(status.get("clashes").is_none());
     Ok(())
 }

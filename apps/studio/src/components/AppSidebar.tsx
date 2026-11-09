@@ -7,6 +7,7 @@ const icons = {
   datasets: <><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" /></>,
   plugins: <><path d="M9 3v4M15 3v4M7 7h10v5a5 5 0 0 1-10 0V7zM12 17v4" /></>,
   query: <><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M7 10l3 2.5L7 15M12.5 15H17" /></>,
+  docs: <><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15z" /><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3M9 7.5h6M9 11h6" /></>,
 };
 const Icon = ({name}: {name: keyof typeof icons}) => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">{icons[name]}</svg>;
 
@@ -40,6 +41,8 @@ export default function AppSidebar({active, connectionId, connection, children}:
         {item('datasets', '/datasets', 'Datasets')}
         {item('plugins', '/plugins', 'Plugins')}
         {item('query', '/workspace', 'SPARQL workspace', 'query-workspace-link')}
+        {/* The documentation is a separate Starlight site in this app, so this is a plain link, never the current page. */}
+        {item('docs', '/docs/', 'Documentation', 'docs-link')}
       </nav>
       {!collapsed && children && <div className="mt-6 min-h-0 flex-1 overflow-y-auto px-4 pb-4">{children}</div>}
       <div className="mt-auto px-4 py-3 text-xs text-emerald-100/70" title={collapsed ? connection : undefined}><span id={connectionId} className={collapsed ? 'sr-only' : undefined}>{connection}</span>{collapsed && <span aria-hidden="true" className={`block text-center ${connection.startsWith('●') ? 'text-emerald-300' : 'text-amber-300'}`}>●</span>}</div>

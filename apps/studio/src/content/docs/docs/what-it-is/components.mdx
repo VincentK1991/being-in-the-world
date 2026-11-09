@@ -1,0 +1,58 @@
+---
+title: Components
+description: The crates, plugins and sidecars, what each one owns, and the ports they use.
+sidebar:
+  order: 3
+---
+import Src from '../../../../components/docs/Src.astro';
+
+{/* Phase 2 replaces these hand-written tables with ones generated from a catalog snapshot (docs/specs/studio-docs.md, D8). */}
+
+## Rust crates
+
+| Crate | Owns |
+|---|---|
+| <Src dir="crates/rdf-model" /> | RDF terms and language-tag handling. |
+| <Src dir="crates/rdf-io" /> | Parsers for N-Triples, N-Quads, Turtle and TriG, with W3C conformance tests. |
+| <Src dir="crates/rdf-store" /> | The Oxigraph store, the dataset catalog, the local-only query policy, backup, restore and the legacy redb migration. |
+| <Src dir="crates/rdf-plugin-api" /> | The plugin SDK: traits and types only, with no HTTP or storage dependency. |
+| <Src dir="crates/rdf-engine" /> | The `Database`: query preparation, property-function rewrite, plugin hosting, refresh rules, derived graphs. |
+| <Src dir="crates/rdf-server" /> | The HTTP API and the dataset gateway. |
+| <Src dir="crates/rdf-cli" /> | The `rdftool` binary, which wires everything together at startup. |
+| <Src dir="crates/rdf-embedding-api" /> | The trait that embedding providers implement. |
+| <Src dir="crates/rdf-testkit" /> | The W3C conformance runner and the differential tests. |
+
+The crates `rdf-reasoner`, `rdf-vec`, `sparql-eval`, `sparql-opt` and `sparql-syntax` are leftovers from the earlier custom engine. The workspace excludes them, and nothing builds them.
+
+## Plugins
+
+| Plugin | What it adds |
+|---|---|
+| <Src dir="plugins/semantic-search" /> | Vector and hybrid search over literals, backed by Qdrant. |
+| <Src dir="plugins/embedding-providers" /> | Providers that turn text into vectors: the local model service, or an OpenAI-compatible API. |
+| <Src dir="plugins/inference" /> | Inference jobs: sources, chaining, staleness, rebuilds, rule tests, explanations. |
+| <Src dir="plugins/inference-providers" /> | The reasoners the jobs can use: SPARQL rules, Jena rules, OWL-RL, and the native OWL 2 RL engine. |
+| <Src dir="plugins/federation" /> | The federation plugin (`SERVICE` across endpoints) and the virtual-graph plugin (Postgres through Ontop). |
+| <Src dir="plugins/custom-properties" /> | Example relations (`split`, `tokens`) that show the SDK. |
+| <Src dir="plugins/catalog" /> | Lets a query ask which plugins a dataset has. |
+| <Src dir="plugins/dataset-summary" /> | A small operation that counts a dataset's content. |
+
+A SHACL validation plugin, with a Studio panel, sits alongside these. It was added most recently, and this page will list it when it is documented in full.
+
+## Sidecars and ports
+
+All ports are published on `127.0.0.1` by default. The backend container reaches them through relays on the same port numbers.
+
+| Service | Port | Image or source | Health check |
+|---|---|---|---|
+| Studio and docs (nginx) | 4321 | `deploy/local/ui.Dockerfile` | `GET /health` |
+| Backend (gateway) | 7878 | `deploy/local/backend.Dockerfile` | `GET /health` |
+| owlrl reasoner | 18082 | <Src file="sidecars/inference/server.py" /> | `GET /health` |
+| Jena (rules and SHACL) | 18083 | <Src file="sidecars/jena-rules/server.py" /> | `GET /health` |
+| Qdrant | 16333 | `qdrant/qdrant:v1.20.0` | `GET /healthz` |
+| Embeddings | 18081 | <Src file="sidecars/semantic/embeddings/server.py" /> | `GET /health` |
+| Postgres | 15432 | `postgres:16-alpine` | `pg_isready` |
+| Ontop | 18090 | <Src file="sidecars/federation/ontop/Dockerfile" /> | `GET /sparql?query=...` |
+| Comunica | 18095 | <Src file="sidecars/federation/comunica/server.mjs" /> | `GET /health` |
+
+Inside the backend container, the engine itself listens on `127.0.0.1:7879` and a relay publishes it on 7878. The engine refuses any other bind address.

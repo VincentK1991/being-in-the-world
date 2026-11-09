@@ -1,0 +1,2 @@
+@prefix ex: <urn:shacl:example:> .
+ex:claim1 a ex:Claim ; ex:reserve -10 .

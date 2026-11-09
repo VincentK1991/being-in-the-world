@@ -1,0 +1,181 @@
+---
+title: Inference
+description: How the inference plugin, the host engine and the reasoners divide the work; the job lifecycle, OWL 2 RL, explanations, outside inputs and rule tests.
+sidebar:
+  order: 5
+verified:
+  commit: e94d66a
+  refs:
+    - plugins/inference/src/lib.rs
+    - plugins/inference-providers/src/owl2rl.rs
+---
+import Diagram from '../../../../components/docs/Diagram.astro';
+import Src from '../../../../components/docs/Src.astro';
+import Adr from '../../../../components/docs/Adr.astro';
+
+Inference here means **materialised** deduction: a job reads some graphs, a reasoner computes new triples, and the result is stored as a named graph. Nothing is inferred implicitly when you query. Ordinary `SELECT` queries see only what is stored, and there is an explicit `view-query` operation when you want asserted and derived data together.
+
+<Diagram name="inference-flow" caption="One rebuild of one job. The plugin orchestrates, the host owns the data, the provider only turns text into text." />
+
+## Who does what
+
+The work is split three ways, on purpose.
+
+| Part | Owns | Never does |
+|---|---|---|
+| **Inference plugin** (<Src dir="plugins/inference" />) | Job configuration, ordering, staleness, cascades, explanations, rule tests | Open the store or write a triple |
+| **Host engine** (`rdf-engine`, the `ReadContext`) | Reading snapshots, the write lock, atomic publication, the stored record | Know what a rule is |
+| **Reasoner provider** (a `Reasoner`) | Computing deductions from N-Triples text | Read or write anything but its arguments |
+
+This is the SDK's contract from [Plugin architecture](/docs/internals/plugin-architecture/) used for a real purpose: the plugin gets read access and one write path (`publish`), and the engine stays ignorant of reasoning. See <Adr n={6} slug="inference-derived-graphs" /> and <Adr n={7} slug="inference-rule-providers" />.
+
+### The `Reasoner` trait
+
+Defined in <Src file="plugins/inference/src/lib.rs" symbol="Reasoner" />. A provider implements:
+
+| Method | Purpose |
+|---|---|
+| `identity()` | A JSON description: engine, version, supported `profiles`, protocol, output policy. It is part of the job's fingerprint. |
+| `diagnostics(profile, data)` | Issues found in the ontology (advisory unless the job is `strict`) |
+| `infer(profile, ntriples)` | Deductions as N-Triples, plus the identity again |
+| `infer_rules(profile, ntriples, rules)` | The same with the job's rules (SPARQL `CONSTRUCT` text, or Jena rules) |
+| `explain(profile, ntriples, rules, target)` | How one triple follows: each derivation's rule, bindings and premises. `None` when the provider records no justifications |
+| `explains()` | Whether `explain` is available, so a UI can know before asking |
+
+A provider that finds the data contradictory returns the typed error `Inconsistent` with a list of clashes. That is not a failure; the plugin turns it into a result (see below).
+
+### The four provider kinds
+
+The registry is built in <Src file="plugins/inference-providers/src/lib.rs" symbol="registry" />. Which kind a job uses is set by its `provider` entry in `inference.json`.
+
+| Kind | Runs | Profiles | What it is for |
+|---|---|---|---|
+| `owlrl-native` | In process | `owl2rl-v1` | OWL 2 RL, with justifications. The default for the bundled OWL jobs |
+| `sparql-rules` | In process | `sparql-construct-once-v1` | Your own `CONSTRUCT` rules, run once each over the snapshot |
+| `owlrl` | Sidecar (Python, RDFLib OWL-RL) | `rdfs-v1`, `owlrl-core-v1`, `rdfs-v2`, `owlrl-full-v1` | The reference implementation and RDFS |
+| `jena-rules` | Sidecar (Java, Jena) | `jena-forward-v1` | Jena forward-chaining rules |
+
+The two sidecar kinds share one HTTP adapter (<Src file="plugins/inference/src/lib.rs" symbol="HttpReasonerFactory" />): `POST /infer` with `{profile, ntriples, rules}`, and `GET /health` for the identity. Both only accept loopback addresses. The Jena sidecar runs each request in a short-lived Java subprocess with a 384 MB heap and a 60 second limit, and answers 504 if it is exceeded.
+
+## A job
+
+A job (<Src file="plugins/inference/src/lib.rs" symbol="Job" />) is configuration:
+
+| Field | Meaning |
+|---|---|
+| `name` | The job's name; also its derived graph |
+| `provider`, `profile` | Which reasoner and which of its profiles |
+| `source_graphs` | The graphs it reads. Another job's output graph is allowed |
+| `rules` | Rule texts, for providers that take them |
+| `inputs` | Outside data fetched at rebuild time (see below) |
+| `strict` | Fail on ontology diagnostics instead of only reporting them |
+| `tests` | Rule tests; not part of the fingerprint |
+
+The result lives in `urn:rdftool:derived:inference:<name>`, with a sibling `:metadata` graph, exactly as described under [derived graphs](/docs/internals/plugin-architecture/#derived-graphs). A job's **fingerprint** is a SHA-256 of the job and its provider's configuration. A change to either, or to the reasoner's reported identity, makes the stored result stale.
+
+## Rebuilding
+
+<Src file="plugins/inference/src/lib.rs" symbol="rebuild_one" /> is the heart of it. In order:
+
+1. **Guard.** If the job depends on another job, take a `publication_token`, a fingerprint of the whole dataset, to use at the end.
+2. **Dependencies.** Each upstream job must be `ready`. If one is not, the result is `state: blocked` with `blocked_by`, and nothing runs.
+3. **Snapshot.** `snapshot(source_graphs)` returns the graphs merged as N-Triples with a token.
+4. **Identity check.** The reasoner's identity must list the job's profile.
+5. **Outside inputs.** Fetch each one and merge it into the data.
+6. **Diagnostics.** In `strict` mode, any issue stops the rebuild.
+7. **Reason.** Call `infer_rules`.
+8. **Clash?** If the provider returned `Inconsistent`, call `record_attempt` and return `state: inconsistent` with the clashes. The derived graph is **left exactly as it was**.
+9. **Identity again.** The identity must be unchanged between the start and the end of the call, so a sidecar that was swapped mid-run can't mislabel the result.
+10. **Publish.** `publish_checked` verifies that the sources still match the snapshot (and that the dataset's guard token is unchanged when the job has dependencies), then replaces the graph and its metadata in one transaction.
+
+If anything changed while the reasoner was running, step 10 refuses with "source changed during computation; rebuild required". The previous graph is still intact. Only one rebuild runs at a time per plugin; a second one fails at once with "inference rebuild already running".
+
+### Cascades
+
+`rebuild` takes an optional `cascade` of `upstream`, `downstream` or `both`. The plugin works out the job's dependency order, rebuilds the jobs around it **that are not ready**, and skips those that are. An unchanged result stops the cascade, because a job downstream of it stays `ready`. Each step is reported as `rebuilt`, `skipped`, `blocked` or `inconsistent`. A blocked branch does not stop independent branches. The jobs it ran are listed in `ran`, which is how the engine's [refresh rules](/docs/internals/plugin-architecture/#refresh-rules) know to fire. See <Adr n={15} slug="chained-inference-jobs" />.
+
+## States
+
+`status` computes a state; none of it is a flag someone has to set.
+
+| State | Meaning |
+|---|---|
+| `missing` | No derived graph yet |
+| `ready` | The stored sources, output and fingerprint all match the present |
+| `stale` | The sources changed, the output was edited, the fingerprint or reasoner identity changed, an outside input changed, or an upstream job is not ready |
+| `blocked` | A rebuild was refused because an upstream job is not ready |
+| `inconsistent` | The last attempt found a clash, and nothing has changed since |
+
+The host computes the first part: *is the stored graph still what the last publication wrote, from sources that still have the same token?* That also catches anyone who edits the derived graph by hand. The plugin adds what the host can't see: the fingerprint, outside inputs, and upstream jobs that are stale but have not been rebuilt yet.
+
+`inconsistent` is kept as a record in the job's metadata graph (the `urn:rdftool:attempt` predicate), so it survives a restart. It applies only while the source token, the outside inputs and the configuration are still the ones that clashed; change any of them and the state recomputes. A later successful publish clears the record.
+
+`status` re-reads outside inputs by default, which can take seconds each. Pass `{"inputs": false}` for a quick overview.
+
+## Operations
+
+| Operation | Does |
+|---|---|
+| `rebuild` | Run a job, optionally with a cascade |
+| `status` | One job's state, or all of them in dependency order |
+| `jobs` | The configured jobs, their dependencies and capabilities. No reasoner is called |
+| `lineage` | Upstream and downstream jobs and a rebuild order |
+| `check` | Fail unless the job is `ready`, so a pipeline can gate on freshness |
+| `test` | Run a job's rule tests, or every job's |
+| `explain` | Why a derived triple holds |
+| `view-query` | Run a query over sources plus deductions |
+
+## OWL 2 RL, natively
+
+The native engine (<Src file="plugins/inference-providers/src/owl2rl.rs" />) implements the OWL 2 RL/RDF rule tables for equality, properties, classes, class axioms and schema. It does not implement the datatype rules, so a few W3C cases that need datatype reasoning fail. The design and its measurements are in <Adr n={20} slug="full-owl2-rl" />.
+
+How it runs:
+
+- **Interned triples.** Terms become small integers, and triples are stored in several indexes keyed by those integers. Rules are joins over them.
+- **A fixpoint.** Rules run in rounds until no new triple appears. The hottest rules (equality copying, domain and range, subproperty, transitivity, subclass) are **semi-naive**: after the first round they only join triples that were new in the last round, which is what turned a 500-node transitive chain from 1.5 s into 0.6 s.
+- **First justification kept.** For every derived triple the engine remembers the rule and the triples it matched. It keeps only the first derivation it finds, so an explanation is *a* valid proof, not every proof.
+- **Clashes.** Contradictions (disjoint classes sharing a member, a functional property with two values, and so on) become clash records with the rule and the premises. Two different values of one datatype for a functional property are caught too.
+- **Output policy.** Nothing is said about RDF, RDFS, OWL or XSD terms the input never mentions, and nothing that holds of every resource. Otherwise every job would fill with noise like `x a owl:Thing`. The policy's version, `output_policy: 2`, is in the identity, so changing it makes old results stale.
+
+Limits: 100,000 input triples; `max_triples` derived triples (default and maximum 200,000); `cancel_after_seconds` (default 30, allowed 1 to 60); at most 100 clashes reported, and proofs of at most 200 nodes and depth 12.
+
+The RDFLib OWL-RL sidecar implements the same profile in Python and is kept as the reference. On the bundled ACME data, every native deduction is also an owlrl deduction (254 of 254). On a 60,000-triple synthetic ontology the native engine took 0.16 s and the sidecar 42.8 s, close to the sidecar's 60 s limit, so the native engine is the right choice for anything large.
+
+## Explanations
+
+`explain` takes a triple and answers *why*. The plugin first finds which graphs hold it. If it is only in a source graph, it is asserted. If it is in a job's derived graph, the plugin:
+
+1. Checks the job is genuinely `ready`, using the same rules as `status`, so it won't explain a result that no longer matches.
+2. Takes a snapshot of the job's sources, fetches its outside inputs, and **re-runs the reasoner's `explain`** on that data for that one triple.
+3. For each premise, walks one level deeper: if another job derived it, the explanation nests; otherwise it traces the leaf to the graph or outside input it was asserted in.
+
+Depth is 1 to 5, a lookup budget stops runaway walks and sets `truncated`, and a premise already seen is marked `repeated`. A provider that records no justifications answers that it can't explain. See <Adr n={17} slug="explaining-deductions" />.
+
+## Outside inputs
+
+A job can reason over data that is not in the store: a virtual graph or a federated query. Each input in `inputs` has a `name`, a `kind` (`sparql` for a SPARQL endpoint such as Ontop, `federation` for the Comunica sidecar), a loopback `endpoint`, a `CONSTRUCT` or `DESCRIBE` `query`, and a timeout (default 60 s).
+
+At rebuild the plugin runs the query, converts the result to N-Triples and merges it with the snapshot. The triples are **never stored**. The derived graph holds only deductions. What is recorded in the metadata is the query's digest, the triple count and a digest of the content, so `status` can re-fetch and compare. The consistency of remote data is "best-effort observations": nothing makes a remote source and the local store agree at one instant. See <Adr n={12} slug="inference-with-outside-inputs" /> and [Federation and virtualization](/docs/internals/federation/).
+
+## Query-time reasoning
+
+`view-query` answers a query over the **set union of** each involved job's source graphs, its upstream jobs' graphs, and its derived graphs, as one snapshot. It requires every involved job to be `ready` (or `stale` with `allow_stale`), checks that the dataset did not change while the view was assembled, and returns which generation of each job it used. Remote inputs' assertions are *not* included, only their deductions. This is an operation, not a property of ordinary queries, on purpose: it keeps the cost and the freshness question visible. See <Adr n={16} slug="rule-tests-and-query-time-reasoning" />.
+
+## Rule tests
+
+A job can carry `tests`: given this Turtle, the job must produce exactly this. Each test has `given`, `expect`, `absent`, `exact` and `inconsistent`. They run the job's **own** provider, profile and rules on the supplied data. Nothing is read from or written to the store, so tests are fast and safe to run anywhere. Up to 50 tests per job, 64 KiB per text. Editing a test never makes the job stale, because tests aren't part of the fingerprint. Run them with `test`, or `just rule-tests` for every job on a running stack. See [Testing](/docs/internals/testing/).
+
+## Operating it
+
+- If a job is `stale` and you don't know why, `status` names it: `stale_inputs`, `stale_upstream`, or a changed fingerprint.
+- `inconsistent` means fix the data or the ontology. Look at `clashes`: each has a message, the terms involved and, for the native engine, the rule and premises.
+- Rebuild order matters for chains. Use `cascade: "upstream"`.
+- A rebuild of a native job on a few thousand triples is milliseconds; a sidecar job pays an HTTP round trip and the sidecar's speed.
+
+## Extending it
+
+To add a reasoner, implement `Reasoner`, write a `ReasonerFactory`, and register it by kind in `registry()`. Because providers only exchange text, a new reasoner needs no change in the plugin or the engine. Bump the identity whenever its behaviour changes, so old results read as stale instead of silently meaning something else.
+
+## Sources
+
+<Src file="plugins/inference/src/lib.rs" /> · <Src file="plugins/inference/src/explain.rs" /> · <Src file="plugins/inference/src/inputs.rs" /> · <Src file="plugins/inference/src/rule_tests.rs" /> · <Src file="plugins/inference/src/view.rs" /> · <Src file="plugins/inference-providers/src/lib.rs" /> · <Src file="plugins/inference-providers/src/owl2rl.rs" /> · <Src file="sidecars/inference/server.py" /> · <Src file="sidecars/jena-rules/server.py" />

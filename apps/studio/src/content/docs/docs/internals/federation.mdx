@@ -1,0 +1,125 @@
+---
+title: Federation and virtualization
+description: How SERVICE federation and the SQL virtual graph work, why they are plugins, what the allowlist enforces, and how they feed inference.
+sidebar:
+  order: 6
+verified:
+  commit: e94d66a
+  refs:
+    - plugins/federation/src/lib.rs
+    - sidecars/federation/comunica/server.mjs
+---
+import Src from '../../../../components/docs/Src.astro';
+import Adr from '../../../../components/docs/Adr.astro';
+
+Two different ideas share one plugin crate, <Src dir="plugins/federation" />:
+
+- **Virtualization** presents data that lives elsewhere (rows in Postgres) as RDF, without copying it. That is the **virtual graph**.
+- **Federation** answers one query from several SPARQL endpoints with `SERVICE`. That is the **federation** plugin.
+
+They are separate plugins with separate configuration, and they can be used together. The design is in <Adr n={10} slug="virtual-graph-and-federation-plugins" /> and <Adr n={14} slug="federation-reliability" />.
+
+## Why this is not built into the engine
+
+The engine refuses `SERVICE` and `LOAD` outright. [The local-only policy](/docs/internals/request-path/#3-the-local-only-policy-runs) rejects them at parse time, and the Oxigraph dependency is compiled without its HTTP client, so the dataset server can't reach the network by accident. Federation therefore has to be an **explicit** act: you call an operation that names the sidecar, and the sidecar, not the database, makes the outbound calls. That keeps the question "what can this process talk to?" answerable by reading two config files.
+
+## The virtual graph
+
+```
+client ── POST /api/plugins/virtual-graph/operations/query ──► dataset server
+                                                                  │  (plugin: virtual-graph)
+                                                                  ▼
+                                              Ontop sidecar  (SPARQL endpoint, R2RML mapping)
+                                                                  │  SQL, read-only role
+                                                                  ▼
+                                                              Postgres
+```
+
+**Ontop** is a virtual knowledge graph engine. It holds an **R2RML mapping** that says how table rows become triples (<Src file="sidecars/federation/ontop/mapping.ttl" />: each mapping builds subject IRIs from a template over table columns, such as `Claim-{claim_identifier}`, and gives them classes and predicates), and an **ontology** (<Src file="sidecars/federation/ontop/ontology.ttl" />). When a SPARQL query arrives, Ontop rewrites it to SQL, runs the SQL, and returns RDF-shaped results. No triples are stored anywhere. The data is fresh on every query and the cost is whatever Postgres charges for the generated SQL.
+
+Because the ontology is loaded into Ontop, it also does **query-time reasoning** over the virtual data: a query for a superclass is rewritten to include subclasses before it becomes SQL.
+
+**Read-only by construction.** Ontop connects as `ontop_ro`, a Postgres role granted `SELECT` only (<Src file="sidecars/federation/postgres/roles.sql" />). A bug in a mapping or a query can't change the source database. The demo credentials are local-only values in the compose files.
+
+The plugin (<Src file="plugins/federation/src/lib.rs" symbol="VirtualGraph" />) is thin:
+
+| Operation | Does |
+|---|---|
+| `status` | Runs `SELECT (COUNT(*) …)` and reports `ready` with the triple count and latency, or `unavailable` with the error |
+| `query` | Forwards a SPARQL query to the endpoint (`Accept: text/turtle` for `CONSTRUCT`/`DESCRIBE`, SPARQL JSON otherwise) |
+
+The plugin refuses a query that contains `SERVICE`: a virtual graph is one source. It is configured in `virtual.json` (`name`, `endpoint`, optional `description` and `timeout_secs`), registered only if that file exists, and the endpoint must be a loopback `http://` address.
+
+## SERVICE federation
+
+```
+client ── operation: federation/query {"query": "... SERVICE <ep> {…} ..."} ──► dataset server
+                                       │ 1. parse, find every SERVICE IRI
+                                       │ 2. each must be in this dataset's allowlist
+                                       ▼
+                        Comunica sidecar  POST /sparql {query, source}
+                                       │ 3. check again against its own allowlist
+                                       │ 4. evaluate; SERVICE clauses go to their endpoints
+                                       ▼
+              other datasets (via the gateway) · Ontop · any listed SPARQL endpoint
+```
+
+**Comunica** is a federated SPARQL engine. The sidecar (<Src file="sidecars/federation/comunica/server.mjs" />) wraps it and decides **what it may contact**.
+
+### Two allowlists
+
+The check happens twice, in two processes, so that neither one is the only barrier.
+
+1. **The plugin** parses the query into algebra (<Src file="plugins/federation/src/lib.rs" symbol="service_targets" />), walks every pattern including `FILTER EXISTS`, `OPTIONAL`, `MINUS` and aggregates, and rejects the query if any `SERVICE` target is not in the dataset's `allow` list, or if it is a variable (`SERVICE ?x`).
+2. **The sidecar** parses the query again with a different parser and enforces its own list, `allow.json`. It also refuses anything that is not a read query, `FROM` and `FROM NAMED`, a `source` not on the list, and does not follow redirects (`redirect: 'error'`).
+
+A query with no `SERVICE` is refused unless the dataset has a `local_source`, because there would be nothing to federate.
+
+The two lists could drift. The source of truth is each dataset's `federation.json`; `allow.json` is **generated** from the union of them by `scripts/federation/sync_allowlist.py`, and `just allowlist-check` fails `just ci` if it is out of date. The plugin's `status` also asks the running sidecar for its list (`GET /allowed`) and reports `state: "misconfigured"` with `missing_in_sidecar` when this dataset allows something the sidecar would refuse.
+
+### `local_source`
+
+Comunica can read the **local dataset** as a source. With `local_source` set to the gateway's `/query` URL, a query can mix patterns that run on the local data with `SERVICE` calls to other datasets. The sidecar always adds an empty second source. Without it, Comunica would push the whole query, `SERVICE` clauses included, down to the lone local endpoint, which rejects them. The empty source keeps evaluation inside Comunica: patterns outside `SERVICE` see only the local source, and each `SERVICE` goes to its own endpoint.
+
+The backend is in a container and the sidecar reaches it through `host.docker.internal`; that is why the allowlist holds those addresses, and why the datasets of one gateway federate with each other through the gateway's `/d/<name>/query` routes.
+
+### What the sidecar fixes up
+
+Comunica has quirks that the sidecar and the engine work around. They are listed in <Adr n={14} slug="federation-reliability" />, and are the kind of thing to look for when federated results are wrong:
+
+- A `GRAPH` block inside `SERVICE` is ignored by Comunica, so rows vanish. The sidecar wraps such bodies in a sub-`SELECT`.
+- Comunica pushes a `FILTER` down as a group, which can split the list of a property function call. The engine merges the blocks back when every filter only uses variables its own block binds.
+- Comunica's `httpRequests` counter is process-wide and mixes every dataset's queries, so the sidecar strips it. Set `FEDERATION_DEBUG=1` to log the outbound requests while debugging.
+
+### Reliability
+
+The plugin's HTTP client drops idle connections after 2 s, retries a failed (not timed-out) request once, and says which sidecar was unavailable. The reason: Node closes idle connections after 5 s while the Rust client used to keep them for 90 s, so a request could reuse a connection that had just been closed. The sidecar keeps connections for 65 s. Timeouts are 1 to 600 s (default 60), connect is 5 s, and nothing goes through a proxy. A timeout reaches you as a 504 from the sidecar; other sidecar failures are 502.
+
+### Federation is read-only
+
+The sidecar accepts only read queries. There is no way to write to a remote endpoint through it.
+
+## Putting them to work
+
+**In inference.** A job's `inputs` can point at the virtual graph (`kind: sparql`) or at the federation sidecar (`kind: federation`). The rows become triples that reasoning can use, but they are not stored; see [Inference](/docs/internals/inference/#outside-inputs). The bundled `acme-live` job reasons over the virtual graph, and `portfolio-risk` over a federated query across datasets.
+
+**With refresh rules.** `refresh.json` can say "after inference job `portfolio-risk` rebuilds, rebuild the `risk-notes` vector index", so an index of derived data follows its source. See [refresh rules](/docs/internals/plugin-architecture/#refresh-rules).
+
+**From the catalog.** The catalog plugin's `urn:rdftool:plugins:provides` function can itself be called through `SERVICE`, so one dataset can ask another what it offers. That is what the Service Description returned by `GET /query` is for.
+
+## Operating it
+
+- `status` on both plugins is the first thing to check. `unavailable` is a sidecar problem; `misconfigured` is an allowlist mismatch. Run `python3 scripts/federation/sync_allowlist.py` and restart the sidecar.
+- `endpoint is not registered for federation` means the IRI isn't in `federation.json`. Add it, regenerate the allowlist, restart Comunica.
+- A virtual graph that is `ready` but slow is a SQL problem. Use Ontop's own tools on the generated SQL.
+- Remote data can change between two calls. Anything built from it is "best-effort observations", and the metadata of derived graphs says so.
+
+## Extending it
+
+- **A new SPARQL source** is configuration: add the IRI to `federation.json`, regenerate `allow.json`.
+- **A new virtual source** is an Ontop mapping, or a different SPARQL endpoint behind a new `virtual.json`.
+- **A different federation engine** is a new sidecar that speaks the same `POST /sparql` contract, with the same two-list rule.
+
+## Sources
+
+<Src file="plugins/federation/src/lib.rs" /> · <Src file="sidecars/federation/comunica/server.mjs" /> · <Src dir="sidecars/federation/ontop" /> · <Src file="scripts/federation/sync_allowlist.py" /> · <Src file="deploy/local/tenants/default/federation.json" /> · <Src file="deploy/local/tenants/default/virtual.json" />

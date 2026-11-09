@@ -1,0 +1,101 @@
+---
+title: Install
+description: Install and run the store in three tiers, from the bare CLI to the full stack.
+sidebar:
+  order: 1
+---
+import Src from '../../../../components/docs/Src.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+You can stop after any tier. Each ends with a check that tells you it works.
+
+:::danger[There is no authentication, so keep it on your machine]
+The server binds to loopback (`127.0.0.1`) and refuses any other address. Anyone who can reach it can read, change and delete every dataset. Do not forward its ports, reverse-proxy it, or set `RDF_PUBLISH_HOST=0.0.0.0` outside a throwaway CI machine. The passwords you will see in the demo stack, such as Postgres's `rdf-local-only`, are local-only demo values. See [Status and limits](/docs/what-it-is/status-and-limits/).
+:::
+
+## Tier 1: the CLI and the server
+
+You need Rust 1.93 or later, and a C++ toolchain, because Oxigraph builds RocksDB from source.
+
+<Steps>
+
+1. **Install the toolchain and tools.** On Debian or Ubuntu, <Src file="scripts/setup-linux.sh" /> installs Clang, libclang, CMake, pkg-config, `cargo-nextest` and `cargo-deny`:
+
+   ```sh
+   bash scripts/setup-linux.sh
+   ```
+
+2. **Build.** The first build compiles RocksDB and takes several minutes.
+
+   ```sh
+   cargo build --locked -p rdf-cli
+   ```
+
+   The binary is `target/debug/rdftool`.
+
+3. **Load data and query it.**
+
+   ```sh
+   target/debug/rdftool ingest --from crates/rdf-cli/tests/fixtures/phase3/basic.ttl --to ./mydb
+   target/debug/rdftool query --source ./mydb 'SELECT ?s ?p ?o WHERE { ?s ?p ?o }'
+   ```
+
+   `ingest` prints `ingest complete`. `query` prints SPARQL results as JSON, with two rows for this file.
+
+4. **Start the server.**
+
+   ```sh
+   target/debug/rdftool serve --db ./mydb --bind 127.0.0.1:7878
+   ```
+
+</Steps>
+
+**Check it works.** In another terminal:
+
+```sh
+curl http://127.0.0.1:7878/health
+curl http://127.0.0.1:7878/query -H 'Content-Type: application/sparql-query' \
+     -H 'Accept: text/csv' -d 'SELECT ?s ?p ?o WHERE { ?s ?p ?o }'
+```
+
+The first prints `ok`. The second prints the rows as CSV.
+
+This server has the built-in plugins only (`custom-properties`, `dataset-summary` and `plugin-catalog`). The others need configuration, and most need a sidecar, which is tier 3.
+
+## Tier 2: the Docker backend and Studio
+
+This adds the gateway (many datasets from one address) and the Studio browser app. You need Docker with Compose v2 (`--wait` support) and [`just`](https://github.com/casey/just). The `justfile` uses `zsh`.
+
+```sh
+just backend   # builds the binary, then the backend image, and starts it on :7878
+just ui        # builds Studio and these docs, and serves them on :4321
+```
+
+`just backend` builds `target/debug/rdftool` first, because the backend image copies that binary in. The image is an Ubuntu 22.04 development image, not a portable release build. On WSL, the recipes call <Src file="scripts/docker-compose.sh" />, which falls back to Docker Desktop's Windows CLI when the Linux socket is stale.
+
+**Check it works.** Open `http://127.0.0.1:4321`. Studio loads, and `curl http://127.0.0.1:4321/health` prints `ok`. The data lives in a Docker volume (`rdf-data`) and survives restarts. `just down` stops the containers and keeps the volume.
+
+## Tier 3: sidecars, one at a time
+
+Each sidecar enables one group of plugins. Start only the ones you want.
+
+| You want | Start | Check |
+|---|---|---|
+| Reasoning (owlrl and Jena) and SHACL | `just inference` | `curl http://127.0.0.1:18082/health` and `curl http://127.0.0.1:18083/health` |
+| Semantic search, on a CPU | `just semantic-cpu` | `curl http://127.0.0.1:16333/healthz` and `curl http://127.0.0.1:18081/health` |
+| Semantic search, on an NVIDIA GPU | `just semantic-gpu` | The same checks. The embeddings response names the device. |
+| Virtual graph and federation | `just federation` | `curl http://127.0.0.1:18095/health` |
+
+Notes:
+
+- **Semantic search** downloads the embedding model on first start, so the wait can be several minutes. The vectors and the model cache live in Docker volumes.
+- **`just federation`** downloads the Postgres JDBC driver, starts Postgres, loads the ACME insurance sample into it (<Src file="scripts/seed/acme_postgres.py" />), builds Ontop and Comunica, and creates two demo datasets (`claims` and `finance`).
+- **A plugin appears only where it is configured.** The bundled `default` dataset is configured in <Src dir="deploy/local/tenants/default" />. Other datasets get what their own tenant directory has.
+
+To load sample data and run the examples, `just demo` imports the example graphs and checks the inference and search results against the expected output.
+
+## If something does not start
+
+- `just status` lists the containers, and `just logs` follows the UI and backend logs.
+- A port already in use is the usual cause. The table on the [Components](/docs/what-it-is/components/) page lists every port.
+- The backend must be rebuilt after a Rust change: run `cargo build --locked -p rdf-cli`, then `just backend` again.

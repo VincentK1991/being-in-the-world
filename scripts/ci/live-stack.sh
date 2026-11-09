@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Bring the whole local stack up from nothing, seed it, and run every live suite against it:
-# rule tests, the federation/inference end-to-end checks, the Studio inference panel in a browser,
+# rule tests, the federation/inference end-to-end checks, the Studio inference panel and documentation in a browser,
 # and W3C conformance with the reasoner sidecars. Used by .github/workflows/live-stack.yml.
 #
 # Ports are published on RDF_PUBLISH_HOST, which CI sets to 0.0.0.0: on plain Linux, containers
@@ -50,6 +50,7 @@ test_all() {
     run 'rule tests' python3 scripts/test/rule_tests.py
     run 'federation and inference end to end' python3 scripts/test/federation_e2e.py
     run 'Studio inference panel (browser)' node scripts/ui/inference-deployed.mjs
+    run 'Documentation site (browser)' node scripts/ui/docs-deployed.mjs
     run 'W3C conformance with reasoners' env CONFORMANCE_REASONERS=1 bash scripts/conformance.sh
     return "$failed"
 }

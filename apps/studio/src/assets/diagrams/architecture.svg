@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="arch-t arch-d">
+  <title id="arch-t">System architecture</title>
+  <desc id="arch-d">A browser talks to nginx, which serves Studio and the docs and proxies to a gateway on port 7878. The gateway starts one dataset server per dataset. Each dataset server contains an HTTP layer, the engine with its query policy and plugins, and an Oxigraph store on disk. Plugins call sidecars: Qdrant with an embeddings service, the OWL-RL and Jena reasoners, Ontop over Postgres, and Comunica for federation.</desc>
+  <defs>
+    <marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--dg-accent,#1f6b50)"/></marker>
+    <style>
+      .dg-box{fill:var(--dg-fill,#eef6f2);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-acc{fill:var(--dg-accent-fill,#d9efe5);stroke:var(--dg-accent,#1f6b50);stroke-width:1.6}
+      .dg-warm{fill:var(--dg-fill-2,#fff7e6);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-group{fill:none;stroke:var(--dg-line,#8aa39a);stroke-width:1.3;stroke-dasharray:6 4}
+      .dg-t{font:600 13px system-ui,sans-serif;fill:var(--dg-ink,#14352b)}
+      .dg-s{font:400 11px system-ui,sans-serif;fill:var(--dg-muted,#5b6f68)}
+      .dg-ar{stroke:var(--dg-accent,#1f6b50);stroke-width:1.6;fill:none;marker-end:url(#arch-arrow)}
+      .dg-ln{stroke:var(--dg-line,#8aa39a);stroke-width:1.4;fill:none}
+    </style>
+  </defs>
+  <rect width="900" height="470" fill="var(--dg-bg,#fff)" rx="8"/>
+
+  <rect class="dg-box" x="20" y="195" width="100" height="56" rx="8"/>
+  <text class="dg-t" x="70" y="220" text-anchor="middle">Browser</text>
+  <text class="dg-s" x="70" y="237" text-anchor="middle">Studio, curl, CLI</text>
+
+  <rect class="dg-box" x="150" y="175" width="130" height="96" rx="8"/>
+  <text class="dg-t" x="215" y="198" text-anchor="middle">nginx :4321</text>
+  <text class="dg-s" x="215" y="216" text-anchor="middle">Studio and /docs files</text>
+  <text class="dg-s" x="215" y="231" text-anchor="middle">proxies /api, /d/,</text>
+  <text class="dg-s" x="215" y="246" text-anchor="middle">/query, /update, /store</text>
+
+  <rect class="dg-box" x="310" y="175" width="130" height="96" rx="8"/>
+  <text class="dg-t" x="375" y="198" text-anchor="middle">gateway :7878</text>
+  <text class="dg-s" x="375" y="216" text-anchor="middle">routes /d/&lt;name&gt;/</text>
+  <text class="dg-s" x="375" y="231" text-anchor="middle">starts one server</text>
+  <text class="dg-s" x="375" y="246" text-anchor="middle">per dataset on demand</text>
+
+  <rect class="dg-group" x="470" y="30" width="250" height="410" rx="10"/>
+  <text class="dg-s" x="482" y="48">one dataset server (rdftool serve)</text>
+
+  <rect class="dg-box" x="490" y="62" width="210" height="52" rx="8"/>
+  <text class="dg-t" x="595" y="84" text-anchor="middle">HTTP layer (Axum)</text>
+  <text class="dg-s" x="595" y="101" text-anchor="middle">4 operation permits, body limit</text>
+
+  <rect class="dg-acc" x="490" y="134" width="210" height="96" rx="8"/>
+  <text class="dg-t" x="595" y="156" text-anchor="middle">Engine (Database)</text>
+  <text class="dg-s" x="595" y="174" text-anchor="middle">parse, local-only policy,</text>
+  <text class="dg-s" x="595" y="189" text-anchor="middle">property-function rewrite,</text>
+  <text class="dg-s" x="595" y="204" text-anchor="middle">refresh rules, derived graphs</text>
+
+  <rect class="dg-box" x="490" y="250" width="210" height="62" rx="8"/>
+  <text class="dg-t" x="595" y="272" text-anchor="middle">Plugins</text>
+  <text class="dg-s" x="595" y="289" text-anchor="middle">search, inference, SHACL, federation,</text>
+  <text class="dg-s" x="595" y="303" text-anchor="middle">virtual graph, catalog</text>
+
+  <rect class="dg-warm" x="490" y="332" width="210" height="88" rx="8"/>
+  <text class="dg-t" x="595" y="354" text-anchor="middle">Oxigraph store</text>
+  <text class="dg-s" x="595" y="372" text-anchor="middle">RocksDB directory, one per dataset</text>
+  <text class="dg-s" x="595" y="387" text-anchor="middle">11 column families: term text,</text>
+  <text class="dg-s" x="595" y="402" text-anchor="middle">nine quad and triple indexes, graph list</text>
+
+  <rect class="dg-box" x="765" y="62" width="120" height="62" rx="8"/>
+  <text class="dg-t" x="825" y="84" text-anchor="middle">Qdrant</text>
+  <text class="dg-s" x="825" y="101" text-anchor="middle">+ embeddings</text>
+  <text class="dg-s" x="825" y="115" text-anchor="middle">vectors, search</text>
+
+  <rect class="dg-box" x="765" y="146" width="120" height="62" rx="8"/>
+  <text class="dg-t" x="825" y="168" text-anchor="middle">Reasoners</text>
+  <text class="dg-s" x="825" y="185" text-anchor="middle">owlrl, Jena</text>
+  <text class="dg-s" x="825" y="199" text-anchor="middle">(Jena also SHACL)</text>
+
+  <rect class="dg-box" x="765" y="230" width="120" height="62" rx="8"/>
+  <text class="dg-t" x="825" y="252" text-anchor="middle">Ontop</text>
+  <text class="dg-s" x="825" y="269" text-anchor="middle">SQL as RDF over</text>
+  <text class="dg-s" x="825" y="283" text-anchor="middle">Postgres</text>
+
+  <rect class="dg-box" x="765" y="314" width="120" height="62" rx="8"/>
+  <text class="dg-t" x="825" y="336" text-anchor="middle">Comunica</text>
+  <text class="dg-s" x="825" y="353" text-anchor="middle">SERVICE federation</text>
+  <text class="dg-s" x="825" y="367" text-anchor="middle">across endpoints</text>
+
+  <path class="dg-ar" d="M120 223H148"/>
+  <path class="dg-ar" d="M280 223H308"/>
+  <path class="dg-ar" d="M440 223H470"/>
+  <path class="dg-ar" d="M595 114V132"/>
+  <path class="dg-ar" d="M595 230V248"/>
+  <path class="dg-ar" d="M650 312V330"/>
+  <path class="dg-ln" d="M700 281H742V93"/>
+  <path class="dg-ar" d="M742 93H763"/>
+  <path class="dg-ar" d="M742 177H763"/>
+  <path class="dg-ar" d="M742 261H763"/>
+  <path class="dg-ar" d="M742 345H763"/>
+  <path class="dg-ln" d="M742 93V345"/>
+  <text class="dg-s" x="20" y="455">Sidecars are separate containers. A dataset without a plugin's configuration simply does not offer it.</text>
+</svg>

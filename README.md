@@ -6,7 +6,12 @@ datasets, legacy redb migration, and per-dataset backup/restore.
 
 The core implementation is under validation, **not yet a completed release**.
 See [validation status](docs/runbook/2026-11-01-oxigraph-validation.md) for open
-dependency and conformance gates. Reasoning, vectors and virtual SQL are deferred.
+dependency and conformance gates.
+
+Plugins add semantic and hybrid search (Qdrant), OWL 2 RL inference with explanations, SHACL
+validation, a virtual SQL graph (Ontop over Postgres) and `SERVICE` federation (Comunica). Studio
+serves documentation at `/docs/`: what it is, how to install and use it, and how it works
+(request path, storage, plugin architecture, vector index, inference, federation, SHACL, testing). Sources: `apps/studio/src/content/docs/`.
 
 ## Linux / WSL setup
 

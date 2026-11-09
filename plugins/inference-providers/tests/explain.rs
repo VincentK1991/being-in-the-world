@@ -214,3 +214,53 @@ mod across_jobs {
         Ok(())
     }
 }
+
+#[test]
+fn explanations_do_not_fabricate_premises_for_untraced_branches() -> Result<()> {
+    let data = "<urn:x> <urn:p> <urn:y> .\n<urn:x> <urn:q> <urn:y> .";
+    for body in [
+        "{ <urn:x> <urn:p> <urn:y> FILTER(false) } UNION { <urn:x> <urn:q> <urn:y> }",
+        "<urn:x> <urn:q> <urn:y> OPTIONAL { <urn:x> <urn:p> <urn:y> FILTER(false) }",
+        "<urn:x> <urn:q> <urn:y> MINUS { <urn:x> <urn:p> <urn:y> FILTER(false) }",
+    ] {
+        let rules = vec![format!("CONSTRUCT {{ <urn:x> <urn:flag> true }} WHERE {{ {body} }}")];
+        let result = reasoner()?
+            .explain(
+                "sparql-construct-once-v1",
+                data,
+                &rules,
+                "<urn:x> <urn:flag> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> .",
+            )?
+            .expect("supported");
+        assert!(!result.is_empty());
+        for proof in result {
+            assert_eq!(proof["incomplete"], true, "{body}");
+            assert!(!premises(&proof).iter().any(|line| line.contains("<urn:p>")), "{proof}");
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn expensive_explanations_are_rejected_before_execution() -> Result<()> {
+    let provider = SparqlFactory.create(&json!({"cancel_after_seconds":1}))?;
+    let data =
+        (0..100).map(|i| format!("<urn:s{i}> <urn:p> <urn:o> .")).collect::<Vec<_>>().join("\n");
+    let patterns = (0..7).map(|i| format!("?s{i} <urn:p> ?o{i} .")).collect::<Vec<_>>().join(" ");
+    let rule = format!(
+        "CONSTRUCT {{ <urn:r> <urn:count> ?n }} WHERE {{ SELECT (COUNT(*) AS ?n) WHERE {{ {patterns} }} }}"
+    );
+    let began = std::time::Instant::now();
+    assert!(
+        provider
+            .explain(
+                "sparql-construct-once-v1",
+                &data,
+                &[rule],
+                "<urn:r> <urn:count> \"0\"^^<http://www.w3.org/2001/XMLSchema#integer> ."
+            )
+            .is_err()
+    );
+    assert!(began.elapsed() < std::time::Duration::from_secs(10));
+    Ok(())
+}

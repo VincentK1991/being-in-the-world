@@ -43,6 +43,9 @@ jobs:
           npm run build --prefix apps/studio
           npm audit --prefix apps/studio
 
+      - name: Documentation references
+        run: python3 scripts/docs/check_paths.py
+
       - name: Compiler check
         run: cargo check --workspace --all-targets
 

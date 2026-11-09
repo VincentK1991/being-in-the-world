@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import AppSidebar from './AppSidebar';
+import ShaclPanel from './ShaclPanel';
 import InferencePanel from './InferencePanel';
 import { getPlugins, type Plugin, type Property } from '../lib/api';
 import { selectedDataset } from '../lib/dataset';
@@ -31,6 +32,7 @@ export default function PluginsPage() {
         </header>
         {error && <p role="alert" className="notice error">{error}</p>}
         {!plugins && !error && <p className="text-sm text-slate-500">Loading…</p>}
+        {plugins?.some(p => p.id === 'shacl') && <ShaclPanel />}
         {plugins?.some(p => p.id === 'inference' && p.operations.includes('jobs')) && <InferencePanel />}
         {plugins && !plugins.length && <p className="card p-5 text-sm text-slate-500">No plugins are loaded for this dataset.</p>}
         <ul id="plugin-list" className="space-y-5">{plugins?.map(p => <li key={p.id} className="card p-5" aria-label={`Plugin ${p.id}`}>

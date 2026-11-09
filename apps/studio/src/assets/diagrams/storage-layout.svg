@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="st-t st-d">
+  <title id="st-t">How a dataset is stored</title>
+  <desc id="st-d">A database root holds a catalog file, a lock file and one directory per dataset named by a UUID. Each directory is an Oxigraph RocksDB store with eleven column families: id2str for long strings, dspo, dpos and dosp for default-graph triples, spog, posg, ospg, gspo, gpos and gosp for named-graph quads, and graphs for the list of named graphs. Which family answers a pattern depends on which terms are known.</desc>
+  <defs>
+    <style>
+      .dg-box{fill:var(--dg-fill,#eef6f2);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-acc{fill:var(--dg-accent-fill,#d9efe5);stroke:var(--dg-accent,#1f6b50);stroke-width:1.6}
+      .dg-warm{fill:var(--dg-fill-2,#fff7e6);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-t{font:600 13px system-ui,sans-serif;fill:var(--dg-ink,#14352b)}
+      .dg-s{font:400 11.5px system-ui,sans-serif;fill:var(--dg-muted,#5b6f68)}
+      .dg-m{font:500 12px ui-monospace,Menlo,Consolas,monospace;fill:var(--dg-ink,#14352b)}
+    </style>
+  </defs>
+  <rect width="900" height="540" fill="var(--dg-bg,#fff)" rx="8"/>
+
+  <text class="dg-t" x="24" y="30">On disk (per database root)</text>
+  <rect class="dg-box" x="24" y="42" width="250" height="150" rx="8"/>
+  <text class="dg-m" x="38" y="66">catalog.json</text><text class="dg-s" x="38" y="82">name to UUID, version 1</text>
+  <text class="dg-m" x="38" y="106">catalog.lock</text><text class="dg-s" x="38" y="122">serialises catalog changes</text>
+  <text class="dg-m" x="38" y="146">&lt;uuid&gt;/</text><text class="dg-s" x="38" y="162">one RocksDB store per dataset,</text>
+  <text class="dg-s" x="38" y="177">so datasets share nothing</text>
+
+  <text class="dg-t" x="24" y="226">A quad is a term in each slot</text>
+  <rect class="dg-warm" x="24" y="238" width="250" height="150" rx="8"/>
+  <text class="dg-s" x="38" y="260">every term is 17 bytes:</text>
+  <text class="dg-m" x="38" y="280">1 byte type + 16 bytes</text>
+  <text class="dg-s" x="38" y="302">strings up to 15 bytes live inline</text>
+  <text class="dg-s" x="38" y="318">longer ones, and every IRI, become a</text>
+  <text class="dg-s" x="38" y="334">128-bit SipHash key; the text goes</text>
+  <text class="dg-s" x="38" y="350">into id2str. Numbers, dates and</text>
+  <text class="dg-s" x="38" y="366">booleans are encoded by value.</text>
+
+  <text class="dg-t" x="310" y="30">11 column families (0.5.13)</text>
+  <rect class="dg-acc" x="310" y="42" width="270" height="44" rx="8"/>
+  <text class="dg-m" x="324" y="62">id2str</text><text class="dg-s" x="324" y="78">hash to text, for IRIs and long strings</text>
+
+  <rect class="dg-box" x="310" y="98" width="270" height="86" rx="8"/>
+  <text class="dg-t" x="324" y="118">default graph (triples)</text>
+  <text class="dg-m" x="324" y="140">dspo   dpos   dosp</text>
+  <text class="dg-s" x="324" y="160">three orderings of the same triples</text>
+  <text class="dg-s" x="324" y="175">written when the graph is the default</text>
+
+  <rect class="dg-box" x="310" y="196" width="270" height="118" rx="8"/>
+  <text class="dg-t" x="324" y="216">named graphs (quads)</text>
+  <text class="dg-m" x="324" y="238">spog   posg   ospg</text>
+  <text class="dg-s" x="324" y="254">graph last: graph not known</text>
+  <text class="dg-m" x="324" y="276">gspo   gpos   gosp</text>
+  <text class="dg-s" x="324" y="292">graph first: graph known</text>
+
+  <rect class="dg-box" x="310" y="326" width="270" height="44" rx="8"/>
+  <text class="dg-m" x="324" y="346">graphs</text><text class="dg-s" x="324" y="362">the set of named graphs that exist</text>
+
+  <text class="dg-t" x="616" y="30">Which family answers a pattern</text>
+  <rect class="dg-box" x="616" y="42" width="260" height="328" rx="8"/>
+  <text class="dg-s" x="630" y="64">known terms</text><text class="dg-s" x="745" y="64">default / named</text>
+  <text class="dg-m" x="630" y="90">s</text><text class="dg-m" x="745" y="90">dspo / spog</text>
+  <text class="dg-m" x="630" y="118">s p</text><text class="dg-m" x="745" y="118">dspo / spog</text>
+  <text class="dg-m" x="630" y="146">p</text><text class="dg-m" x="745" y="146">dpos / posg</text>
+  <text class="dg-m" x="630" y="174">p o</text><text class="dg-m" x="745" y="174">dpos / posg</text>
+  <text class="dg-m" x="630" y="202">o</text><text class="dg-m" x="745" y="202">dosp / ospg</text>
+  <text class="dg-m" x="630" y="230">s o</text><text class="dg-m" x="745" y="230">dosp / ospg</text>
+  <text class="dg-m" x="630" y="258">graph g</text><text class="dg-m" x="745" y="258">gspo, gpos, gosp</text>
+  <text class="dg-s" x="630" y="290">The first family is searched for the</text>
+  <text class="dg-s" x="630" y="305">default graph, the second for named</text>
+  <text class="dg-s" x="630" y="320">graphs; a query over all graphs reads</text>
+  <text class="dg-s" x="630" y="335">both and chains the results.</text>
+  <text class="dg-s" x="630" y="355">Prefix scans use the leading terms.</text>
+
+  <text class="dg-s" x="24" y="416">A named-graph quad is written to six families and its terms to id2str; a default-graph triple to three.</text>
+  <text class="dg-s" x="24" y="436">Deleting a graph removes its index entries but does not clear id2str (a TODO in the Oxigraph source).</text>
+  <text class="dg-s" x="24" y="470">Derived graphs and their metadata are ordinary named graphs in the same store:</text>
+  <text class="dg-m" x="24" y="492">urn:rdftool:derived:&lt;plugin&gt;:&lt;job&gt;   and   urn:rdftool:derived:&lt;plugin&gt;:&lt;job&gt;:metadata</text>
+</svg>

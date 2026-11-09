@@ -1797,6 +1797,7 @@ dependencies = [
  "rdf-plugin-federation",
  "rdf-plugin-inference",
  "rdf-plugin-semantic-search",
+ "rdf-plugin-shacl",
  "rdf-server",
  "rdf-store",
  "rdf-testkit",
@@ -1841,6 +1842,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "spargebra",
+ "uuid",
 ]
 
 [[package]]
@@ -1935,6 +1937,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "oxiri",
+ "oxrdf",
  "oxttl",
  "rdf-engine",
  "rdf-plugin-api",
@@ -1962,6 +1965,21 @@ dependencies = [
  "sha2 0.10.9",
  "tempfile",
  "uuid",
+]
+
+[[package]]
+name = "rdf-plugin-shacl"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "oxiri",
+ "rdf-engine",
+ "rdf-plugin-api",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
 ]
 
 [[package]]

@@ -99,8 +99,13 @@ impl Inference {
         if !walk.seen.insert((job.name.clone(), triple.to_owned())) {
             return Ok(json!({"job": job.name, "graph": graph, "repeated": true}));
         }
+        let published = context.derived_status(&job.name)?;
         let (reasoner, _) = self.parts(job)?;
-        let state = context.derived_status(&job.name)?["state"].clone();
+        // Storage integrity alone misses provider/config changes, stale upstream
+        // jobs and outside inputs. Use the same complete policy as `status`.
+        let state =
+            self.status(context, job, &mut std::collections::BTreeMap::new(), true)?["state"]
+                .clone();
         let source = context.snapshot(&job.source_graphs)?;
         let fetched = fetch_inputs(job)?;
         let merged = inputs::merge(&source.ntriples, &fetched)?;
@@ -109,6 +114,8 @@ impl Inference {
                 "job": job.name, "graph": graph, "profile": job.profile, "state": state, "supported": false,
                 "note": "this reasoner does not record why it deduced a triple; the job and the graphs it read are known",
                 "source_graphs": job.source_graphs,
+                "generation":published["generation"], "published_source_token":published["source_token"],
+                "recorded_proof":false,"explanation_mode":"provider-does-not-explain",
             }));
         };
         let mut described = Vec::new();
@@ -121,6 +128,10 @@ impl Inference {
         Ok(json!({
             "job": job.name, "graph": graph, "profile": job.profile, "state": state, "supported": true,
             "stale": state != "ready", "derivations": described,
+            "explanation_mode":"reconstructed-current-data", "recorded_proof":false,
+            "generation":published["generation"], "published_source_token":published["source_token"],
+            "evaluated_source_token":source.token, "published_inputs":published["metadata"]["inputs"],
+            "evaluated_inputs":fetched.iter().map(super::Fetched::record).collect::<Vec<_>>(),
         }))
     }
 

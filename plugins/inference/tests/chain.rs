@@ -217,3 +217,68 @@ fn jobs_and_status_for_all_list_every_job_in_rebuild_order() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn publication_rejects_a_dependency_change_during_reasoning() -> Result<()> {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    struct Mutating {
+        db: Database,
+        armed: Arc<AtomicBool>,
+    }
+    impl Reasoner for Mutating {
+        fn identity(&self) -> Result<Value> {
+            Taxonomy.identity()
+        }
+        fn infer(&self, profile: &str, data: &str) -> Result<(String, Value)> {
+            let result = Taxonomy.infer(profile, data)?;
+            if self.armed.load(Ordering::SeqCst) {
+                self.db.update("INSERT DATA { GRAPH <urn:data> { <urn:new> a <urn:Dog> } }")?;
+            }
+            Ok(result)
+        }
+    }
+    let mut db = Database::memory()?;
+    db.update("INSERT DATA { GRAPH <urn:data> { <urn:rex> a <urn:Dog> } }")?;
+    let armed = Arc::new(AtomicBool::new(false));
+    db.register(Inference::with_reasoner(
+        config(chain())?,
+        Arc::new(Mutating { db: db.clone(), armed: armed.clone() }),
+    )?)?;
+    let before = run(&db, "rebuild", json!({"job":"living","cascade":"upstream"}))?;
+    armed.store(true, Ordering::SeqCst);
+    let error = run(&db, "rebuild", json!({"job":"living"}))
+        .expect_err("concurrent dependency mutation must reject publication");
+    assert!(format!("{error:#}").contains("dataset changed during dependency evaluation"));
+    let after = run(&db, "status", json!({"job":"living"}))?;
+    assert_eq!(after["state"], "stale");
+    assert_eq!(after["output_digest"], before["output_digest"]);
+    assert_eq!(after["source_token"], before["source_token"]);
+    Ok(())
+}
+
+#[test]
+fn explicit_view_requires_ready_jobs_and_queries_a_deduplicated_snapshot() -> Result<()> {
+    let db = database()?;
+    let query =
+        json!({"job":"living","query":"ASK { <urn:rex> a <urn:Dog>, <urn:Animal>, <urn:Living> }"});
+    assert!(run(&db, "view-query", query.clone()).is_err());
+    run(&db, "rebuild", json!({"job":"living","cascade":"upstream"}))?;
+    let result = run(&db, "view-query", query.clone())?;
+    assert_eq!(result["results"]["boolean"], true);
+    assert!(result["generations"][0]["generation"].is_string());
+    assert_eq!(run(&db, "check", json!({"job":"living"}))?["state"], "ready");
+    let count = run(
+        &db,
+        "view-query",
+        json!({"job":"living","query":"SELECT (COUNT(*) AS ?n) WHERE { ?s ?p ?o }"}),
+    )?;
+    assert_eq!(count["results"]["results"]["bindings"][0]["n"]["value"], "3");
+    db.update("INSERT DATA { GRAPH <urn:data> { <urn:new> a <urn:Dog> } }")?;
+    assert!(run(&db, "view-query", query.clone()).is_err());
+    assert!(run(&db, "check", json!({"job":"living"})).is_err());
+    let mut permissive = query;
+    permissive["allow_stale"] = json!(true);
+    assert_eq!(run(&db, "view-query", permissive)?["generations"][0]["state"], "stale");
+    assert!(run(&db,"view-query",json!({"job":"living","allow_stale":true,"query":"SELECT * FROM <urn:other> WHERE { ?s ?p ?o }"})).is_err());
+    Ok(())
+}

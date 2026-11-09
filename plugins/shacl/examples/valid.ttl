@@ -1,0 +1,3 @@
+@prefix ex: <urn:shacl:example:> .
+ex:claim1 a ex:Claim ; ex:policy ex:policy1 ; ex:reserve 100 ;
+    ex:description "A storm damaged the roof." ; ex:reference "CL-001" .

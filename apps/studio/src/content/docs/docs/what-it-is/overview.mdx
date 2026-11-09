@@ -1,0 +1,55 @@
+---
+title: Overview
+description: What this RDF store is, why it is built on Oxigraph, and what the plugin architecture adds.
+sidebar:
+  order: 1
+---
+import Src from '../../../../components/docs/Src.astro';
+import Adr from '../../../../components/docs/Adr.astro';
+
+This is a **local RDF store**: a database for graph data in the RDF model, queried with SPARQL. It is built on [Oxigraph](https://github.com/oxigraph/oxigraph), with a **plugin architecture** that adds capabilities the core does not have: semantic search, reasoning, validation, virtual graphs over SQL, and federation across endpoints.
+
+It is for developers. You run it on your own machine, load data, query it, and extend it. It ships as a command-line tool (`rdftool`), an HTTP server, and a browser app called Studio.
+
+<div className="glance">
+
+**In one paragraph.** Data lives in Oxigraph's RocksDB store, one store per dataset. A small Rust engine sits in front of it. It enforces a local-only query policy and lets plugins add operations and SPARQL functions. Plugins that need heavy machinery (vector search, reasoners, SQL mapping) talk to sidecar containers. Everything a plugin computes is written back as ordinary RDF, so you can query it like any other data.
+
+</div>
+
+## What you get
+
+| Capability | What it does | Where it comes from |
+|---|---|---|
+| **RDF and SPARQL** | Load Turtle, N-Triples, N-Quads, TriG. Query and update with SPARQL 1.1. | Oxigraph, pinned at 0.5.13 (<Adr n={1} slug="oxigraph-core" />) |
+| **Datasets** | Isolated stores that share nothing, served from one address. | The gateway (<Adr n={8} slug="dataset-isolation-gateway" />) |
+| **Semantic search** | Find literals by meaning, by keyword, or both, from SPARQL. | Semantic-search plugin, Qdrant, an embeddings service |
+| **Reasoning** | Materialize what follows from your data (OWL 2 RL, SPARQL rules, Jena rules) into a graph. | Inference plugin and its providers |
+| **Validation** | Check data against SHACL shapes. | SHACL plugin, Jena |
+| **Virtual graph** | Read a Postgres database as RDF without copying it. | Virtual-graph plugin, Ontop |
+| **Federation** | Join across datasets and endpoints with `SERVICE`. | Federation plugin, Comunica |
+| **Custom properties** | Your own relations, callable from SPARQL. | Custom-properties plugin and the plugin SDK |
+
+## Why Oxigraph
+
+The first version of this project had its own parser, query evaluator and optimizer. They were replaced by Oxigraph, which already passes most of the W3C test suites and has a mature RocksDB storage layer (<Adr n={1} slug="oxigraph-core" />). The project keeps its own code for what Oxigraph does not do: dataset management, the local-only policy, plugin hosting, and everything in the plugins.
+
+Oxigraph is pinned, with network-fetching features turned off. The [status page](/docs/what-it-is/status-and-limits/) says where Oxigraph's behavior shows through, for example how it normalizes number literals.
+
+## Why plugins
+
+Reasoning, vector search and SQL mapping each depend on large, specialised software, and most users need only some of them. The core stays small, and each capability is a plugin that a dataset opts into by configuration. A dataset without a plugin's configuration does not offer it, and it can ask any dataset which plugins it has (see [Plugin architecture](/docs/internals/plugin-architecture/)).
+
+The design rules that follow from this:
+
+- **Local first.** The server binds to loopback only. The core engine never makes outbound network calls. Federation is a plugin with an explicit allowlist.
+- **Plugins are trusted code.** They are compiled in, with no sandbox. The SDK keeps them honest by giving them only a read context and a way to publish derived graphs.
+- **Derived data is RDF.** An inference result, a SHACL report and a search index's metadata are all named graphs in the same store. Backup, SPARQL and other plugins treat them like any other graph.
+- **Datasets are isolated.** Each dataset is its own store, and its own server process.
+
+## Where to go next
+
+- A picture of how the parts fit: [Architecture](/docs/what-it-is/architecture/).
+- To try it: [Install](/docs/how-to-use/install/).
+- To understand it: [Request path](/docs/internals/request-path/), then [Storage](/docs/internals/storage/).
+- Decisions and their history are in the ADRs, starting at <Adr n={2} slug="engine-plugins-and-studio" />.

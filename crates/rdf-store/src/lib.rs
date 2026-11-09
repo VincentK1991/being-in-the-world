@@ -393,3 +393,5 @@ mod redb_store;
 pub use oxigraph;
 
 pub use redb_store::RedbQuadStorage;
+
+pub mod work_budget;

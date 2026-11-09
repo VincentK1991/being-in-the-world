@@ -265,6 +265,12 @@ The `owlrl-native` provider computes OWL 2 RL in process, with no sidecar. Its p
   functional or max-1 property are a clash when they share a datatype and differ in value.
 - **Explanations:** it is the one OWL provider that can explain, described next.
 
+Property-chain evaluation allows at most 100,000 intermediate paths. Exceeding
+that budget fails the rebuild and preserves the previous output; incomplete
+paths never become deductions. Native reasoner identity includes `rules_revision`;
+revision 2 fixes chain overflow, so previously built native outputs become stale
+and need a rebuild.
+
 `explain` on a native job returns the rule (`prp-dom`, `cax-sco`, ...), its text and the
 premises. A premise the job itself deduced first appears as
 `{"triple": ..., "deduced_in_job": {"rule": ..., "premises": [...]}}`, explained in turn down to
@@ -319,6 +325,12 @@ deductions (usually together with the asserted graphs, since a job's output hold
 - `lineage` returns what a job reads and what reads it, each with its state, and the order to rebuild in.
 - One rebuild runs at a time; a cascade holds that slot for all of its jobs.
 
+Every rebuild, including one without a cascade, requires all upstream jobs to be
+ready. Otherwise it returns `state: blocked`, `blocked_by`, and `dependency_state`
+without replacing output or metadata. Rebuild upstream first or request an
+`upstream`/`both` cascade. Cascades do not report blocked jobs as successfully
+rebuilt, and independent branches can continue when another branch is blocked.
+
 See [ADR 0015](../../docs/adr/0015-chained-inference-jobs.md).
 
 ## Rule tests
@@ -362,7 +374,114 @@ that assert it.
 
 - The explanation is computed by re-running the rules over what the job reads now, so a job that is out of date says
   `stale: true` and its trail may differ from what was published.
+  Its state uses the full job-status policy: selected data, configuration, provider
+  identity, upstream readiness, and freshly checked outside inputs. It does not
+  treat an intact stored output as proof that the inference job is current.
 - SPARQL rule jobs and native OWL 2 RL jobs name the rule and premises. Jobs on the OWL-RL and Jena sidecars answer
   `supported: false` with the graphs they read, because those sidecars return conclusions without justifications.
 - Premises that depend on property paths, `GRAPH` blocks or blank nodes are marked `incomplete` or left untraced.
 - One call makes at most 400 premise lookups (`truncated` is set when it stops early).
+
+### Correctness safeguards
+
+Native rule revision 3 detects self-`differentFrom` and repeated individuals in
+`AllDifferent` lists. Literal inequality is conservative: strings/language values,
+booleans and supported numeric values can establish clashes; other value spaces
+(including dateTime and binary) remain undecided instead of being compared by
+spelling. This avoids false clashes but is not complete datatype reasoning.
+
+A dependent rebuild captures a host publication guard before checking upstream
+readiness. The host checks that guard while holding its mutation lock, together
+with the selected-source token, before committing output and metadata. A local
+write during this interval rejects publication and requires a retry. This initial
+guard covers the entire local dataset, including empty graph membership and
+metadata, so even unrelated local writes may require a retry. It does not provide
+an atomic snapshot across remote endpoints.
+
+SPARQL explanations do not claim evidence from untraced UNION, OPTIONAL, MINUS or
+correlated branches. Such patterns, and filters whose condition evidence is not
+recorded, set `incomplete: true`. The UI shows the incomplete-premise warning;
+a deduction can be correct while its explanation is incomplete.
+
+## Operational contract (native revision 4)
+
+`ready` means that published materialization is current, **not** that the ontology
+has been proved consistent or that every OWL entailment was computed. Successful
+outputs record `consistency: no-clash-detected`, diagnostic coverage, and the
+unchecked datatype IRIs. Native datatype entailment remains partial. Domain and
+range infer types; missing values and distinct IRIs are not automatically errors.
+Use SHACL for required values and application identity constraints.
+
+### Ontology diagnostics
+
+A job may set `"strict": true` to reject reported ontology issues before reasoning.
+The default is warning mode: the issues are saved in publication metadata and
+shown in Studio. Diagnostics include malformed/cyclic/multi-valued RDF lists,
+incorrectly typed cardinalities, unsupported cardinalities, selected unsupported
+logical constructs, and imports. This is a finite-profile diagnostic pass, not a
+complete OWL structural validator. Unsupported cardinality spellings and ambiguous
+lists are not interpreted by choosing an arbitrary value.
+
+Clash records include the reasoner identity. Upgrading a provider invalidates an
+old clash instead of treating it as a current result. Blocked/inconsistent rebuilds
+do not fire their own refresh actions. Successful jobs within a cascade may still
+fire theirs. Follow-up results that are blocked/inconsistent are reported as
+unsuccessful, even when the operation returned a JSON response.
+
+### Freshness-checked queries
+
+Use the `view-query` operation instead of manually checking status and then querying:
+
+```sh
+target/debug/rdftool plugin --source http://127.0.0.1:7878 \
+  --plugin inference --operation view-query --input \
+  '{"job":"reserve-summary","query":"SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 20"}'
+```
+
+The default graph is the set union of the job's and its ancestors' selected local
+assertions and deductions; duplicate triples count once. Metadata graphs are
+excluded. Remote assertions are not copied into this view. The response names
+the selected graphs, generations, freshness states and snapshot token.
+
+All jobs must be ready by default. `"allow_stale": true` allows explicitly labelled
+stale generations, but never missing/inconsistent jobs. The local snapshot and
+readiness checks are protected by the host guard; changes after capture do not
+alter the query's private snapshot. Remote freshness is best effort, not a
+transaction spanning databases. SELECT/ASK only, no FROM, GRAPH, SERVICE, paths or
+EXISTS; a conservative million-candidate work preflight can reject affordable
+queries too. Results are capped at 16 MiB. A 30-second cancellation token is also
+used, but engine cancellation is cooperative, not a guaranteed hard deadline.
+Ordinary SPARQL remains available with its existing semantics and does not apply
+this view or freshness checks implicitly.
+
+`check {"job":"..."}` fails with a nonzero CLI exit / HTTP error unless the job is
+ready. It gates a workflow; it does not lock subsequent client actions.
+
+### Remote inputs and execution limits
+
+Remote graphs use RDF Dataset Canonicalization 1.0 (SHA-256) before fingerprinting,
+so serialization order and blank-node labels do not manufacture staleness.
+Canonicalization is explicitly limited to **8 blank nodes per input** and 100,000
+triples to bound expensive symmetric inputs. Larger anonymous graphs fail; use
+stable IRIs. No partial graph is accepted. Fetch metadata records ETag,
+Last-Modified when supplied, fetch time, and best-effort observation semantics.
+Inputs are streamed with a 16 MiB limit; provider JSON is streamed with a 32 MiB
+limit. These limits apply before parsing or retaining a full oversized response.
+
+Native rule loops check their deadlines cooperatively. Intermediate conclusions,
+key combinations, chain paths and clashes are bounded; exceeding computation
+budgets fails rather than publishing a partial closure. SPARQL explanations use
+provider cancellation settings and the same conservative work preflight as views.
+An input that is too costly to explain returns an execution error, not a fabricated
+or silently truncated proof. This does not claim process isolation or hard memory
+limits for arbitrary queries against the ordinary SPARQL endpoint.
+
+### Generation-labelled explanations
+
+Every publication has a UUID generation. Older outputs without one become stale
+and must be rebuilt. `explain` returns `generation`, `published_source_token`,
+`evaluated_source_token`, published/evaluated external observations, and
+`explanation_mode: reconstructed-current-data` with `recorded_proof: false`.
+Studio displays this distinction, diagnostic coverage and incomplete-premise
+warnings. These are not archived historical proofs: only the latest output is
+stored. Incomplete/truncated explanations remain explicitly labelled.

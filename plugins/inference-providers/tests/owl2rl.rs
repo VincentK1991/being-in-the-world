@@ -62,6 +62,36 @@ fn clashes(text: &str) -> Vec<Value> {
 const LIST_AB: &str =
     "_:l1 rdf:first ex:A\n_:l1 rdf:rest _:l2\n_:l2 rdf:first ex:B\n_:l2 rdf:rest rdf:nil";
 
+fn branching_chain(width: usize) -> String {
+    let mut data = nt(
+        "ex:chain owl:propertyChainAxiom _:l1\n_:l1 rdf:first ex:p1\n_:l1 rdf:rest _:l2\n_:l2 rdf:first ex:p2\n_:l2 rdf:rest _:l3\n_:l3 rdf:first ex:p3\n_:l3 rdf:rest rdf:nil",
+    );
+    for i in 0..width {
+        data.push_str(&format!(
+            "\n<urn:ex:s{i}> <urn:ex:p1> <urn:ex:hub> .\n<urn:ex:hub> <urn:ex:p2> <urn:ex:t{i}> ."
+        ));
+    }
+    data
+}
+
+#[test]
+fn property_chains_require_every_link_and_overflow_fails_instead_of_using_prefixes() -> Result<()> {
+    let data = branching_chain(2);
+    let (out, _) = reasoner()?.infer(NativeOwlRl::PROFILE, &data)?;
+    assert!(!out.lines().any(|line| line.split_whitespace().nth(1) == Some("<urn:ex:chain>")));
+    let (out, _) = reasoner()?
+        .infer(NativeOwlRl::PROFILE, &format!("{data}\n<urn:ex:t0> <urn:ex:p3> <urn:ex:end> ."))?;
+    assert!(out.contains("<urn:ex:s0> <urn:ex:chain> <urn:ex:end> ."));
+    assert!(!out.contains("<urn:ex:s0> <urn:ex:chain> <urn:ex:t0> ."));
+    // 647 input triples used to yield 102400 false relationships, with no p3 edges.
+    let error = reasoner()?
+        .infer(NativeOwlRl::PROFILE, &branching_chain(320))
+        .expect_err("path overflow must abort");
+    assert!(error.to_string().contains("100000 intermediate paths"), "{error:#}");
+    assert!(error.downcast_ref::<Inconsistent>().is_none());
+    Ok(())
+}
+
 #[test]
 fn class_expressions_chains_keys_and_restrictions() -> Result<()> {
     let found = derived(&format!(
@@ -199,7 +229,34 @@ mod in_a_job {
     use super::*;
     use rdf_engine::Database;
     use rdf_inference_providers::registry;
+    use rdf_plugin_api::ReadContext;
     use rdf_plugin_inference::{Config, Inference};
+
+    #[test]
+    fn property_chain_overflow_preserves_the_previous_published_output() -> Result<()> {
+        let config: Config = serde_json::from_value(json!({
+            "providers": {"native": {"kind": "owlrl-native", "config": {}}},
+            "jobs": [{"name": "taxonomy", "provider": "native", "profile": "owl2rl-v1", "source_graphs": ["urn:data"]}]
+        }))?;
+        let mut db = Database::memory()?;
+        db.register(Inference::with_registry(config, &registry()?)?)?;
+        db.update(&format!("INSERT DATA {{ GRAPH <urn:data> {{ <urn:ex:Dog> <{RDFS}subClassOf> <urn:ex:Animal> . <urn:ex:rex> a <urn:ex:Dog> }} }}"))?;
+        let old = db.invoke("inference", "rebuild", json!({"job":"taxonomy"}))?;
+        db.import(
+            branching_chain(320).as_bytes(),
+            rdf_engine::RdfFormat::NTriples,
+            Some(rdf_engine::NamedNode::new("urn:data")?),
+        )?;
+        let error =
+            db.invoke("inference", "rebuild", json!({"job":"taxonomy"})).expect_err("overflow");
+        assert!(format!("{error:#}").contains("intermediate paths"));
+        let status = db.invoke("inference", "status", json!({"job":"taxonomy"}))?;
+        assert_eq!(status["state"], "stale");
+        assert_eq!(status["output_digest"], old["output_digest"]);
+        assert_eq!(status["source_token"], old["source_token"]);
+        assert_eq!(db.query_json("ASK { GRAPH <urn:rdftool:derived:inference:taxonomy> { <urn:ex:rex> a <urn:ex:Animal> } }")?["boolean"],true);
+        Ok(())
+    }
 
     #[test]
     fn a_job_explains_its_deduction_down_to_the_asserted_facts() -> Result<()> {
@@ -230,4 +287,69 @@ mod in_a_job {
         assert!(inner.iter().all(|p| p["asserted_in"] == json!(["urn:data"])), "{inner:?}");
         Ok(())
     }
+}
+
+#[test]
+fn self_difference_and_repeated_all_different_members_are_clashes() {
+    assert_eq!(clashes("ex:x owl:differentFrom ex:x")[0]["rule"], "eq-diff1");
+    for property in ["members", "distinctMembers"] {
+        let data = format!(
+            "ex:d a owl:AllDifferent\nex:d owl:{property} _:l1\n_:l1 rdf:first ex:x\n_:l1 rdf:rest _:l2\n_:l2 rdf:first ex:x\n_:l2 rdf:rest rdf:nil"
+        );
+        assert!(!clashes(&data).is_empty(), "{property}");
+    }
+}
+
+#[test]
+fn unsupported_value_spaces_do_not_produce_false_clashes() {
+    let xsd = "http://www.w3.org/2001/XMLSchema#";
+    for (kind, a, b) in [
+        ("dateTime", "2020-01-01T00:00:00Z", "2019-12-31T19:00:00-05:00"),
+        ("hexBinary", "0A", "0a"),
+        ("token", " a ", "a"),
+        ("unknown", "a", "b"),
+    ] {
+        let values = format!("ex:x ex:p \"{a}\"^^<{xsd}{kind}>\nex:x ex:p \"{b}\"^^<{xsd}{kind}>");
+        for header in [
+            "ex:p a owl:FunctionalProperty".to_owned(),
+            format!(
+                "_:r owl:onProperty ex:p\n_:r owl:maxCardinality \"1\"^^<{xsd}nonNegativeInteger>\nex:x a _:r"
+            ),
+        ] {
+            assert!(clashes(&format!("{header}\n{values}")).is_empty(), "{kind}");
+        }
+    }
+}
+
+#[test]
+fn strict_ontology_diagnostics_reject_unsupported_and_malformed_structures() -> Result<()> {
+    use rdf_engine::{Database, NamedNode, RdfFormat};
+    use rdf_inference_providers::registry;
+    use rdf_plugin_inference::{Config, Inference};
+    let data = nt(
+        "_:r owl:maxCardinality \"0\"\n_:r owl:onProperty ex:p\nex:x a _:r\nex:x ex:p ex:y\nex:class owl:intersectionOf _:l\n_:l rdf:first ex:A\n_:l rdf:first ex:B\n_:l rdf:rest rdf:nil\nex:ontology owl:imports ex:remote",
+    );
+    assert!(
+        reasoner()?.diagnostics(NativeOwlRl::PROFILE, &data)?["issues"]
+            .as_array()
+            .is_some_and(|v| v.len() >= 3)
+    );
+    for strict in [true, false] {
+        let cfg: Config = serde_json::from_value(
+            json!({"providers":{"native":{"kind":"owlrl-native","config":{}}},"jobs":[{"name":"test","provider":"native","profile":"owl2rl-v1","source_graphs":["urn:data"],"strict":strict}]}),
+        )?;
+        let mut db = Database::memory()?;
+        db.register(Inference::with_registry(cfg, &registry()?)?)?;
+        db.import(data.as_bytes(), RdfFormat::NTriples, Some(NamedNode::new("urn:data")?))?;
+        let result = db.invoke("inference", "rebuild", json!({"job":"test"}));
+        if strict {
+            assert!(result.is_err());
+        } else {
+            let result = result?;
+            assert_eq!(result["state"], "ready");
+            assert_eq!(result["metadata"]["diagnostics"]["datatype_checks"], "partial");
+            assert_eq!(result["metadata"]["consistency"], "no-clash-detected");
+        }
+    }
+    Ok(())
 }

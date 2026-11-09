@@ -1,0 +1,12 @@
+---
+// A reference to a file (and optionally a symbol in it) or a directory in this repository. The
+// documentation build cannot see the repo, so `scripts/docs/check_paths.py` (just docs-check) proves
+// the path and symbol exist; this component only renders the link.
+interface Props { file?: string; dir?: string; symbol?: string; }
+const { file, dir, symbol } = Astro.props;
+if (!file && !dir) throw new Error('<Src> needs file or dir');
+const repo = 'https://github.com/VincentK1991/being-in-the-world/';
+const path = (file ?? dir) as string;
+const href = repo + (dir ? 'tree/main/' : 'blob/main/') + path;
+---
+<a class="src-ref" href={href} title={symbol ? `${symbol} in ${path}` : path}><code>{path}{dir && '/'}</code>{symbol && <span class="src-symbol"> · <code>{symbol}</code></span>}</a>

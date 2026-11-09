@@ -24,7 +24,7 @@ impl Plugin for Recorder {
         if input["fail"] == true {
             bail!("asked to fail");
         }
-        Ok(json!({"ok": true}))
+        Ok(json!({"ok": true,"state":input["state"]}))
     }
 }
 fn database(rules: Value) -> Result<(Database, Arc<Mutex<Vec<String>>>)> {
@@ -103,6 +103,17 @@ fn rules_for_jobs_a_cascade_also_ran_fire_too() -> Result<()> {
     // The call itself was for another job; the rule is for one the cascade also ran.
     let result = db.invoke("jobs", "run", json!({"job": "upstream"}))?;
     assert_eq!(result["refreshed"][0]["ok"], true);
+    assert_eq!(calls.lock().expect("lock").len(), 2);
+    Ok(())
+}
+
+#[test]
+fn blocked_and_inconsistent_outcomes_do_not_refresh() -> Result<()> {
+    let (db, calls) = database(serde_json::from_str(RULE)?)?;
+    for state in ["blocked", "inconsistent"] {
+        let result = db.invoke("jobs", "run", json!({"job":"risk","state":state}))?;
+        assert!(result.get("refreshed").is_none());
+    }
     assert_eq!(calls.lock().expect("lock").len(), 2);
     Ok(())
 }

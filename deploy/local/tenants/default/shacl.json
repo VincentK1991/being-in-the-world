@@ -1,0 +1,9 @@
+{
+  "endpoint": "http://127.0.0.1:18083",
+  "jobs": [{
+    "name": "claims-example",
+    "data_graphs": ["urn:shacl:example:data"],
+    "shapes_graphs": ["urn:shacl:example:shapes"],
+    "fail_on": "violation"
+  }]
+}

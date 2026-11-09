@@ -1,0 +1,43 @@
+---
+title: Studio tour
+description: "The browser app: graph explorer, SPARQL workspace, datasets and plugins."
+sidebar:
+  order: 3
+---
+import Src from '../../../../components/docs/Src.astro';
+
+Studio is a browser app (Astro, React, D3) that talks to the same HTTP API you can call yourself. It needs no login, because there is none, so keep it on loopback. After [tier 2](/docs/how-to-use/install/#tier-2-the-docker-backend-and-studio) it is at `http://127.0.0.1:4321`.
+
+The sidebar has five entries. Along the top, a bar shows the dataset you are working in. Every page works on that dataset.
+
+## Graph explorer
+
+The home page draws your data as a graph. Resources are nodes, and you open a node to see what hangs off it. It is built for browsing the class hierarchy and the things connected to it.
+
+- **Import data** loads a Turtle, N-Triples, TriG or N-Quads file (up to the server's body limit, 16 MiB by default). The button **Try animal example** loads a small sample.
+- **Find a node** searches by name. **Collapse all**, **Re-layout** and **Fit** manage the canvas, and zoom buttons change the scale.
+- Selecting a node opens an inspector with its properties, its subclasses and its incoming relationships. Each is a link to another node.
+
+## SPARQL workspace
+
+A query editor with results underneath.
+
+- **Start with** is a list of ready-made queries, grouped: Explore, Discovery, Custom properties, Semantic search, Inference, Provenance, Virtual graph, Federation and Composed. Queries that need a plugin the dataset lacks are left out of the list. The queries are in <Src file="apps/studio/src/lib/queries.ts" />.
+- **Run on** chooses where the query runs: this dataset, or, when those plugins are loaded, through federation (`SERVICE` allowed) or the virtual graph (Ontop).
+- **Run** (or Ctrl or ⌘ plus Enter) accepts `SELECT`, `ASK`, `CONSTRUCT` and `DESCRIBE`. Results are paged at 50 rows, so add a `LIMIT` to bound a large query.
+- The left panel lists the dataset's graphs (click one to query it), the last eight queries (kept in your browser's local storage), and a data overview with a refresh button.
+
+## Datasets
+
+Lists every dataset with its size and whether its server is running. You can create one, make it the active one for the whole app (Use), and delete it. Below the list, it shows the content and the plugins of the active dataset. See [Datasets](/docs/how-to-use/datasets/).
+
+## Plugins
+
+Lists every plugin loaded for the active dataset, with its operations and its SPARQL properties, and an example of how to call each property. Two plugins have their own panels:
+
+- **Inference** shows every job with its state (ready, stale, missing, inconsistent or blocked). For a selected job it can rebuild it, optionally with the jobs it reads or the jobs that read it, and run its rule tests. It lists what clashed when the data was inconsistent, and the first deduced triples, each with a **Why?** button that shows the rule and the facts behind it.
+- **SHACL validation** runs a validation job and lists its findings.
+
+## Documentation
+
+The Documentation entry opens these pages.

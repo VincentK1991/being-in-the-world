@@ -1,0 +1,265 @@
+{
+  "specName": "studio-docs",
+  "timestamp": "2026-11-08",
+  "status": "spec-written",
+  "capturedAtCommit": "e94d66a",
+  "baseline": {
+    "derivedFrom": "interview",
+    "capturedAtCommit": "e94d66a",
+    "claims": [
+      {
+        "id": "C1",
+        "type": "component",
+        "area": "Placement",
+        "quote": "Astro 7.4.4, output: 'static', React islands, Tailwind v4",
+        "expectedPaths": [
+          "apps/studio/astro.config.mjs",
+          "apps/studio/package.json"
+        ],
+        "searchTerms": [
+          "output: 'static'",
+          "@astrojs/react",
+          "tailwindcss"
+        ]
+      },
+      {
+        "id": "C2",
+        "type": "component",
+        "area": "Placement",
+        "quote": "The UI image copies only apps/studio/ (deploy/local/ui.Dockerfile, then npm run check && npm run build, then nginx)",
+        "expectedPaths": [
+          "deploy/local/ui.Dockerfile"
+        ],
+        "searchTerms": [
+          "COPY apps/studio/",
+          "npm run check && npm run build"
+        ]
+      },
+      {
+        "id": "C3",
+        "type": "endpoint",
+        "area": "Placement",
+        "quote": "The dev proxy and nginx route ^/d/, /api, /query, /update, /store, /health and /metrics to the backend",
+        "expectedPaths": [
+          "apps/studio/astro.config.mjs",
+          "deploy/local/nginx.conf"
+        ],
+        "searchTerms": [
+          "^/d/",
+          "proxy_pass"
+        ]
+      },
+      {
+        "id": "C4",
+        "type": "constraint",
+        "area": "Placement",
+        "quote": "Studio pages import global.css one by one",
+        "expectedPaths": [
+          "apps/studio/src/pages/plugins.astro",
+          "apps/studio/src/styles/global.css"
+        ],
+        "searchTerms": [
+          "global.css"
+        ]
+      },
+      {
+        "id": "C5",
+        "type": "component",
+        "area": "Placement",
+        "quote": "Studio's AppSidebar gets a Docs item",
+        "expectedPaths": [
+          "apps/studio/src/components/AppSidebar.tsx"
+        ],
+        "searchTerms": [
+          "AppSidebar"
+        ]
+      },
+      {
+        "id": "C6",
+        "type": "data-model",
+        "area": "Storage depth",
+        "quote": "Oxigraph 0.5.13 ... column families are declared there (id2str, spog, posg, ospg, gspo, and the d* and graphs families)",
+        "expectedPaths": [],
+        "searchTerms": [
+          "ID2STR_CF",
+          "SPOG_CF",
+          "GRAPHS_CF"
+        ]
+      },
+      {
+        "id": "C7",
+        "type": "data-model",
+        "area": "Storage depth",
+        "quote": "derived graphs and their metadata graph, attempt records",
+        "expectedPaths": [
+          "crates/rdf-engine/src/derived.rs"
+        ],
+        "searchTerms": [
+          "urn:rdftool:derived:",
+          "urn:rdftool:attempt",
+          "urn:rdftool:metadata"
+        ]
+      },
+      {
+        "id": "C8",
+        "type": "constraint",
+        "area": "Security",
+        "quote": "RDF_PUBLISH_HOST=0.0.0.0 is for throwaway CI runners",
+        "expectedPaths": [
+          "deploy/local/compose.yml",
+          "scripts/ci/live-stack.sh"
+        ],
+        "searchTerms": [
+          "RDF_PUBLISH_HOST"
+        ]
+      }
+    ]
+  },
+  "coverageMap": {
+    "Users": "done",
+    "Content source": "done",
+    "Information architecture": "done",
+    "Storage depth": "done",
+    "Placement & navigation": "done",
+    "Visual design & diagrams": "done",
+    "Install scope": "done",
+    "Accuracy & drift": "done",
+    "Phasing": "done",
+    "Security posture": "done"
+  },
+  "qaLog": [
+    {
+      "area": "Users",
+      "question": "After reading the Internals section, what should a developer be able to DO?",
+      "answer": "All three, as separate tracks",
+      "options": [
+        "Contribute and write plugins",
+        "Operate and debug",
+        "Evaluate the design",
+        "All three, as separate tracks"
+      ]
+    },
+    {
+      "area": "Content source",
+      "question": "Where does the documentation text live?",
+      "answer": "Write new pages, link to ADRs",
+      "options": [
+        "Write new pages, link to ADRs",
+        "Import the existing Markdown",
+        "Hybrid: new narrative, imported reference"
+      ]
+    },
+    {
+      "area": "Information architecture",
+      "question": "How should the three sections be split?",
+      "answer": "Three sections, Internals separate",
+      "options": [
+        "Three sections, Internals separate (Recommended)",
+        "Two sections, how it works inside How to use",
+        "Three sections, with a fourth Reference later"
+      ]
+    },
+    {
+      "area": "Storage depth",
+      "question": "How should the Storage page treat Oxigraph's own internals?",
+      "answer": "Document it, verified against pinned 0.5.13",
+      "options": [
+        "Document it, verified against pinned 0.5.13",
+        "Summarize, then link upstream",
+        "Only what we build"
+      ]
+    },
+    {
+      "area": "Placement & navigation",
+      "question": "Where does the documentation live, and how do people reach it from Studio?",
+      "answer": "Inside Studio at /docs, linked from the sidebar",
+      "options": [
+        "Inside Studio at /docs, linked from the sidebar (Recommended)",
+        "Separate Astro project on its own port",
+        "Inside Studio, but docs open in a new tab"
+      ]
+    },
+    {
+      "area": "Visual design & diagrams",
+      "question": "How are the diagrams made?",
+      "answer": "Hand-authored SVG files",
+      "options": [
+        "Hand-authored SVG files",
+        "Mermaid, rendered in the browser",
+        "Mermaid rendered at build time",
+        "Mostly ASCII in code blocks"
+      ]
+    },
+    {
+      "area": "Install scope",
+      "question": "How far does the install and use guide go?",
+      "answer": "Tiered: core, then Studio, then each sidecar",
+      "options": [
+        "Tiered: core, then Studio, then each sidecar",
+        "Core CLI and Studio only",
+        "Full stack in one guide"
+      ]
+    },
+    {
+      "area": "Accuracy & drift",
+      "question": "Which guards keep the docs true?",
+      "answer": [
+        "Link and path check that fails the build",
+        "'Verified against' stamp per Internals page",
+        "Executable examples in the nightly CI job",
+        "Generated reference tables"
+      ],
+      "options": [
+        "Link and path check that fails the build",
+        "'Verified against' stamp per Internals page",
+        "Executable examples in the nightly CI job",
+        "Generated reference tables"
+      ]
+    },
+    {
+      "area": "Phasing",
+      "question": "All at once, or phased so something useful ships early?",
+      "answer": "Phase it: scaffold and core first",
+      "options": [
+        "Phase it: scaffold and core first (Recommended)",
+        "Everything in one pass",
+        "Content first, guards after"
+      ]
+    },
+    {
+      "area": "Security posture",
+      "question": "How must the docs treat the lack of auth, the loopback-only design, and the demo credentials?",
+      "answer": "Prominent warning plus a Status and limits page",
+      "options": [
+        "Prominent warning plus a Status and limits page",
+        "Status and limits page only",
+        "Document it and also add runtime guard rails"
+      ]
+    },
+    {
+      "area": "Process",
+      "question": "Red-team pass?",
+      "answer": "No, skip",
+      "options": [
+        "Yes, attack the spec",
+        "No, skip",
+        "Not done yet, keep interviewing"
+      ]
+    },
+    {
+      "area": "Process",
+      "question": "Publish a visual spec preview as a Claude Artifact?",
+      "answer": "Markdown spec only",
+      "options": [
+        "Markdown spec only",
+        "Artifact preview, then markdown"
+      ]
+    }
+  ],
+  "driftLedger": [],
+  "previewUrl": null,
+  "sourceIssue": null,
+  "feedbackRounds": [],
+  "redTeamStatus": "skipped",
+  "redTeamFindings": null
+}

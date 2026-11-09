@@ -1,0 +1,59 @@
+---
+title: Status and limits
+description: What works, what does not, and the known gaps. Read this before relying on it.
+sidebar:
+  order: 4
+---
+import Src from '../../../../components/docs/Src.astro';
+
+This is a local development tool, not a hosted service. Treat what follows as the honest list of its limits.
+
+:::danger[There is no authentication]
+Anyone who can reach the server can read, change and delete any dataset. The server therefore binds to loopback only and refuses any other address. Do not put it behind a reverse proxy or publish its ports on a network. The setting `RDF_PUBLISH_HOST=0.0.0.0`, used by the nightly CI job, is only for a throwaway runner. Never use it on your own machine or a shared host.
+:::
+
+## Not built
+
+- **Authentication, authorization and quotas.** Any client can use any dataset, and nothing limits the size of a dataset.
+- **Idle shutdown.** A dataset server, once started, keeps running until its dataset is deleted or the gateway stops.
+- **Fact-level provenance recorded at publish time.** An inference result does not remember its own justification. The `explain` operation recomputes one from current data on request.
+- **Parallel or incremental rebuilds.** Inference cascades run one job after another, and a rebuild recomputes the whole job. A cascade that fails part way rolls back nothing.
+- **An HTTP protocol test runner.** The W3C SPARQL protocol and graph store tests are not run.
+
+## Behavior to know about
+
+- **Oxigraph rewrites some literals as it stores them.** `"01"^^xsd:integer` comes back as `1`, `"1.0e0"^^xsd:double` as `"1"^^xsd:double`, and a `+00:00` time zone as `Z`. The values are right, but the text of a literal is not preserved exactly. Pattern matching treats `"01"` and `"1"` as the same term.
+- **`SERVICE` and `LOAD` are refused by the core engine.** Federation is a plugin, and loading remote data is not offered.
+- **Search vectors are not in backups.** RDF backup and restore leave the Qdrant data alone. Back up the Qdrant volume separately, and rebuild an index after a restore if needed.
+- **Old vector collections stay.** A rebuild builds a new Qdrant collection and switches an alias to it. It does not delete the previous collection, which stays until the dataset is deleted.
+- **Property functions have limits.** At most 64 calls per query, 10,000 rows and 8 MiB of rows, and they work only in queries, not in updates, `GRAPH` blocks or property paths.
+- **Reasoners differ.** OWL-RL and Jena jobs cannot explain a deduction. The native OWL 2 RL engine can. Details are in the next section.
+
+## Standards conformance
+
+Measured against the W3C test suites. Every case that does not pass is listed with a cause in `tests/conformance/`, and a regression fails the check. The full report is <Src file="docs/conformance.md" />.
+
+| Suite | Result |
+|---|---|
+| RDF syntaxes (N-Triples, N-Quads, Turtle, TriG, RDF/XML), 993 cases | 991 pass. The 2 failures are `rdf:XMLLiteral` canonicalization. |
+| SPARQL 1.0 and 1.1 evaluation, through Oxigraph, 1,156 cases | 952 pass, 44 fail, 22 equal only by value, 138 not run. |
+| The same, through this project's engine | 949 pass. The difference is `SERVICE` and `LOAD`, which the policy refuses. |
+| Entailment (RDF Semantics, SPARQL entailment regimes, OWL 2 RL tests), 244 cases | 59 pass with the original OWL-RL profile, 155 with the full profile, 134 with the native engine. |
+
+Reading the SPARQL numbers: 36 of the non-passing cases come from Oxigraph's literal normalization, 18 are tests added to the W3C suite after the pinned Oxigraph release, and 68 are protocol tests with no runner.
+
+## Reasoning limits
+
+The fuller OWL 2 RL reasoning (the `owlrl-full-v1` profile and the native engine) covers most of what rules can do. What it cannot do, in any rule-based reasoner:
+
+- derive `owl:differentFrom` conclusions that need proof by contradiction;
+- conclude that a class expression exists, for example a complement or a restriction class;
+- reason about datatypes, so ill-typed literals such as `"abc"^^xsd:integer` go unnoticed;
+- classify an ontology's own class hierarchy. That needs a description-logic reasoner, which this project does not include.
+
+Ontop reasons at query time over the virtual graph, but only in OWL 2 QL (ranges, domains, subclass and subproperty). See <Src file="docs/owl-coverage.md" /> for the analysis.
+
+## Operational notes
+
+- **The live-stack CI job** has run against the local stack but has not yet run on a GitHub runner. The first run settles whether a cold start from nothing works.
+- **Oxigraph upgrades** are deliberate. The storage page names the version it was checked against, and an upgrade means re-checking it.

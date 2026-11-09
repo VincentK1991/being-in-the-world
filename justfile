@@ -22,7 +22,11 @@ test:
 deny:
     cargo deny check
 
-ci: fmt-check check clippy test deny allowlist-check
+ci: fmt-check check clippy test deny allowlist-check docs-check
+
+# The documentation's references to repository files, symbols and ADRs must exist.
+docs-check:
+    python3 scripts/docs/check_paths.py
 
 # The Comunica allowlist is generated from the dataset configs; fail if it drifted.
 allowlist-check:
@@ -41,6 +45,16 @@ ui:
 inference:
     bash scripts/docker-compose.sh -f sidecars/inference/compose.yml up -d --build --wait
     bash scripts/docker-compose.sh -f sidecars/jena-rules/compose.yml up -d --build --wait
+
+# Start the Jena SHACL Core validator (shares the existing Jena rules sidecar).
+shacl:
+    bash scripts/docker-compose.sh -f sidecars/jena-rules/compose.yml up -d --build --wait
+
+# Validate SHACL with the real Jena provider and the deployed HTTP workflow.
+shacl-test:
+    cargo test --locked -p rdf-plugin-shacl
+    cargo test --locked -p rdf-plugin-shacl --test live -- --ignored
+    python3 scripts/test/shacl_e2e.py
 
 # Start Qdrant and local CUDA embeddings (requires NVIDIA GPU support).
 semantic-gpu:

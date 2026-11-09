@@ -1,0 +1,123 @@
+---
+title: Vector index
+description: How semantic and hybrid search store their data in Qdrant, how a rebuild stays safe, and how staleness is detected.
+sidebar:
+  order: 4
+verified:
+  commit: e94d66a
+  refs:
+    - plugins/semantic-search/src/lib.rs
+---
+import Diagram from '../../../../components/docs/Diagram.astro';
+import Src from '../../../../components/docs/Src.astro';
+import Adr from '../../../../components/docs/Adr.astro';
+
+<Diagram name="vector-index" caption="Rebuild writes a new collection and swaps an alias; search goes through the alias and maps points back to RDF terms." />
+
+The vector index is **not in the RDF store**. It lives in Qdrant, a separate service, and the semantic-search plugin (<Src file="plugins/semantic-search/src/lib.rs" />) keeps the two in step. The RDF store is the source of truth; the index is always something you can rebuild from it. Design: <Adr n={4} slug="semantic-search-sidecars" />, <Adr n={5} slug="embedding-provider-extensions" />, <Adr n={9} slug="hybrid-search" />.
+
+## What gets indexed
+
+Each index in `semantic.json` selects **literals**, chosen by a SPARQL query the plugin builds (<Src file="plugins/semantic-search/src/lib.rs" symbol="corpus" />):
+
+- Subject is an IRI, object is a literal of type `xsd:string` or `rdf:langString`. Numbers, dates and blank-node subjects are skipped.
+- Optionally limited to certain `predicates` and to one `graph` (`"default"`, an IRI, or all graphs when omitted).
+- Empty literals are skipped. A literal over 64 KiB fails the build.
+- At most `max_entries` (default 100,000). Exceeding it **fails the rebuild** instead of truncating.
+
+Each selected `(subject, predicate, object, graph)` becomes an *entry*. The entries are sorted by their JSON text, so the order never depends on how the store enumerates, and a digest of that list is the **source digest**.
+
+## What is stored in Qdrant
+
+One *collection* per build, named `rdfvs_<dataset>_<index>_<uuid>`:
+
+- `<dataset>` is the first 32 hex characters of a SHA-256 of the dataset identity, so two datasets never share a collection.
+- `<index>` is the first 16 hex characters of a SHA-256 of the index name.
+- `<uuid>` is a fresh UUID for this build.
+
+A fixed *alias* sits in front, with the same name minus the UUID. The plugin reads and searches through the alias only.
+
+**Points**, one per entry:
+
+| Part | Value |
+|---|---|
+| id | The first 16 bytes of a SHA-256 of the entry's JSON, formatted as a UUID. The same entry always gets the same id. |
+| vector | The embedding of the literal text. Cosine distance. Stored on disk. |
+| sparse vector | Hybrid mode only; see below. |
+| payload | `kind: "literal"`, `subject_key` (subject IRI), `object_key` (a digest of the object term), and the full `entry` so a hit can be turned back into RDF terms without asking the store. Payload is stored on disk. |
+
+The payload fields `kind`, `subject_key` and `object_key` are indexed as keywords, so filters and grouping are fast.
+
+**The manifest point.** Point id `0` is not an entry. It has `kind: "manifest"` and carries: the schema number (2), the dataset identity, a digest of the index configuration, the source digest, the entry count, and the **model profile** (model name, dimension and so on). Every search filters on `kind = literal`, so the manifest never appears in results.
+
+## Rebuilding safely
+
+<Src file="plugins/semantic-search/src/lib.rs" symbol="rebuild" /> works like a blue-green deploy:
+
+1. Take the rebuild lock. A second rebuild on the same plugin fails at once with "semantic rebuild already running".
+2. Check the embedding service is healthy and get its profile.
+3. Read the corpus and its digest.
+4. Create a **new** collection with the right vector layout.
+5. Embed the literals in batches of 32 and upsert the points.
+6. Write the manifest point.
+7. Count the points. It must be exactly entries + 1.
+8. Read the corpus again. The digest must be unchanged. If the RDF changed during the build, fail with "RDF changed during rebuild; retry".
+9. Switch the alias to the new collection in one Qdrant call (delete the old alias and create the new one, together).
+
+If any of steps 4 to 8 fails, the new collection is deleted and the alias still points to the old one. Searches in progress never see a half-built index.
+
+:::caution[Old collections are not deleted]
+After step 9 the previous collection stays in Qdrant. The rebuild response reports it as `previous_collection`. Nothing removes it except deleting the dataset (`purge_dataset`, which drops every collection with the dataset's prefix). Rebuild often and you accumulate full copies of the index. Delete old ones in Qdrant yourself. This is listed on [Status and limits](/docs/what-it-is/status-and-limits/).
+:::
+
+## Staleness: ready, stale, missing
+
+`status` compares the manifest with the present:
+
+- **missing**: no alias exists.
+- **ready**: the schema, dataset, configuration digest, source digest and model profile all match.
+- **stale**: any of them differs. Changing the RDF, the index configuration or the embedding model makes it stale.
+
+`search` goes further and **refuses** a stale index (with "rebuild required") rather than returning results from out-of-date vectors. It also re-reads the corpus on each search to compare digests, so a search costs a SPARQL scan of the selected literals. For large indexes that is the dominant cost of a cheap query; keep `predicates` and `graph` tight.
+
+## Search
+
+Operation: `search` with `index`, `text`, `limit` (1 to 100) and `mode`. In SPARQL, the property functions `urn:rdftool:search:<mode>` do the same.
+
+| Mode | How |
+|---|---|
+| `matches` | Embed the query, ask Qdrant for the nearest points. Result: the matching `(subject, predicate, object, graph)` and a cosine score. |
+| `subjects`, `objects` | The same, but grouped by `subject_key` or `object_key`, one hit per group, so a subject with many matching literals appears once. |
+| `lexical` | BM25 over the sparse vectors. Needs `"mode": "hybrid"` on the index. |
+| `hybrid` | Both of the above, fused. Needs a hybrid index. |
+
+### Hybrid mode
+
+A hybrid index stores two vectors per point, named `dense` and `lexical`.
+
+- The dense side is the embedding, as before.
+- The lexical side is a **sparse vector**: the text is lowercased and split on non-alphanumeric characters (no stemming, no stop words), each distinct word becomes an index (the first 4 bytes of its SHA-256), and the value is the BM25 term-frequency weight with `k1 = 1.2` and `b = 0.75`, using the corpus's average length.
+- Qdrant supplies the other half of BM25, the inverse document frequency, because the sparse vector is declared with `modifier: idf`.
+- A query is turned into a sparse vector with every distinct word weighted 1, so repeating a word doesn't dominate.
+
+For `hybrid` search the plugin asks Qdrant for both branches, each fetching `clamp(limit × 4, 20, 200)` candidates, and combines them with **reciprocal rank fusion**: each result scores by its rank in each list, not by its raw score. The returned score therefore reflects rank and is *not* a similarity, so don't compare it with a cosine score or threshold on it.
+
+## Backup and deletion
+
+- **Backup does not include vectors.** After restoring a dataset, run `rebuild` for each index.
+- **Deleting a dataset** calls `purge_dataset`, which removes every collection whose name starts with the dataset's prefix.
+- The Qdrant URL must be a plain `http://` loopback IP origin such as `http://127.0.0.1:16333`; anything else is rejected at startup.
+
+## Operating it
+
+- Check `status` before trusting results, and after any bulk change.
+- A rebuild's time is dominated by embedding; the first start of the CPU embedding sidecar also downloads the model.
+- Changing `mode` or any field of an index changes its configuration digest, so the index reads as stale until rebuilt. Note that adding `mode: "dense"` alone changes nothing, because the default is left out of the digest so existing indexes stay valid.
+
+## Extending it
+
+The embedding model is a provider: <Adr n={5} slug="embedding-provider-extensions" />. A new provider implements the trait in <Src file="crates/rdf-embedding-api/src/lib.rs" /> and is added to the registry in <Src dir="plugins/embedding-providers" />. Indexes pick one by name in `semantic.json`.
+
+## Sources
+
+<Src file="plugins/semantic-search/src/lib.rs" /> · <Src file="crates/rdf-embedding-api/src/lib.rs" /> · <Src dir="plugins/embedding-providers" />

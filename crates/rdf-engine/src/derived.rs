@@ -23,6 +23,25 @@ pub(super) struct PluginContext<'a> {
     pub owner: &'a str,
 }
 impl PluginContext<'_> {
+    fn publication_token_unlocked(&self) -> Result<String> {
+        let mut entries = self
+            .database
+            .dataset
+            .store()
+            .iter()
+            .map(|q| q.map(|q| q.to_string()))
+            .collect::<Result<Vec<_>, _>>()?;
+        entries.extend(
+            self.database
+                .dataset
+                .store()
+                .named_graphs()
+                .map(|g| g.map(|g| format!("graph {g}")))
+                .collect::<Result<Vec<_>, _>>()?,
+        );
+        Ok(hash(&format!("{}\n{}", self.database.dataset.identity(), lines(entries))))
+    }
+
     fn target(&self, name: &str) -> Result<NamedNode> {
         ensure!(
             !name.is_empty()
@@ -76,6 +95,74 @@ impl PluginContext<'_> {
     }
 }
 impl ReadContext for PluginContext<'_> {
+    fn query_snapshot_json(&self, snapshot: &GraphSnapshot, query: &str) -> Result<Value> {
+        use rdf_store::oxigraph::sparql::{CancellationToken, SparqlEvaluator};
+        let data = Dataset::memory()?;
+        data.store().extend(
+            RdfParser::from_format(RdfFormat::NTriples)
+                .for_reader(snapshot.ntriples.as_bytes())
+                .collect::<Result<Vec<_>, _>>()?,
+        )?;
+        let query = Dataset::prepare_query(query)?;
+        ensure!(
+            matches!(
+                &query,
+                spargebra::Query::Select { dataset: None, .. }
+                    | spargebra::Query::Ask { dataset: None, .. }
+            ),
+            "view accepts SELECT/ASK without FROM; the selected union is the default graph"
+        );
+        let pattern = match &query {
+            spargebra::Query::Select { pattern, .. } | spargebra::Query::Ask { pattern, .. } => {
+                pattern
+            }
+            _ => unreachable!("validated query"),
+        };
+        rdf_store::work_budget::check(
+            data.store(),
+            pattern,
+            &std::collections::HashMap::new(),
+            1_000_000,
+        )?;
+        let cancel = CancellationToken::new();
+        let timer = cancel.clone();
+        let (_done, receiver) = std::sync::mpsc::channel::<()>();
+        std::thread::spawn(move || {
+            if receiver
+                .recv_timeout(std::time::Duration::from_secs(30))
+                .is_err_and(|e| e == std::sync::mpsc::RecvTimeoutError::Timeout)
+            {
+                timer.cancel();
+            }
+        });
+        let results = SparqlEvaluator::new()
+            .with_cancellation_token(cancel)
+            .for_query(query)
+            .on_store(data.store())
+            .execute()?;
+        struct Limited(Vec<u8>);
+        impl std::io::Write for Limited {
+            fn write(&mut self, data: &[u8]) -> std::io::Result<usize> {
+                if self.0.len() + data.len() > 16 * 1024 * 1024 {
+                    return Err(std::io::Error::other("view results exceed 16 MiB"));
+                }
+                self.0.extend_from_slice(data);
+                Ok(data.len())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        let mut bytes = Limited(Vec::new());
+        write_results(results, QueryResultsFormat::Json, RdfFormat::Turtle, &mut bytes)?;
+        Ok(serde_json::from_slice(&bytes.0)?)
+    }
+
+    fn publication_token(&self) -> Result<String> {
+        let _guard = self.database.dataset.lock_mutation()?;
+        self.publication_token_unlocked()
+    }
+
     fn query_json(&self, query: &str) -> Result<Value> {
         self.database.query_json(query)
     }
@@ -89,6 +176,16 @@ impl ReadContext for PluginContext<'_> {
         source: &GraphSnapshot,
         ntriples: &str,
         metadata: Value,
+    ) -> Result<Value> {
+        self.publish_checked(name, source, ntriples, metadata, None)
+    }
+    fn publish_checked(
+        &self,
+        name: &str,
+        source: &GraphSnapshot,
+        ntriples: &str,
+        metadata: Value,
+        token: Option<&str>,
     ) -> Result<Value> {
         ensure!(
             ntriples.len() <= MAX_BYTES && serde_json::to_vec(&metadata)?.len() <= 65536,
@@ -105,11 +202,19 @@ impl ReadContext for PluginContext<'_> {
         quads.dedup();
         let output_digest = hash(&lines(quads.iter().map(|q| q.to_string()).collect()));
         let _guard = self.database.dataset.lock_mutation()?;
+        if let Some(token) = token {
+            ensure!(
+                self.publication_token_unlocked()? == token,
+                "dataset changed during dependency evaluation; retry rebuild"
+            );
+        }
+
         ensure!(
             self.snapshot_unlocked(&source.graphs)?.token == source.token,
             "source changed during computation; rebuild required"
         );
-        let record = json!({"source_token":source.token,"graphs":source.graphs,"output_digest":output_digest,"metadata":metadata,"triples":quads.len(),"graph":target.as_str()});
+        let generation = uuid::Uuid::new_v4().to_string();
+        let record = json!({"generation":generation,"source_token":source.token,"graphs":source.graphs,"output_digest":output_digest,"metadata":metadata,"triples":quads.len(),"graph":target.as_str()});
         let mut tx = self.database.dataset.store().start_transaction()?;
         tx.clear_graph(&target)?;
         tx.insert_named_graph(&target);

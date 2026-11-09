@@ -1,0 +1,9 @@
+---
+// A link to an architecture decision record. `slug` is the file name without the number prefix
+// and extension, e.g. n=13 slug="plugin-discovery" is docs/adr/0013-plugin-discovery.md.
+interface Props { n: number; slug: string; }
+const { n, slug } = Astro.props;
+const number = String(n).padStart(4, '0');
+const repo = 'https://github.com/VincentK1991/being-in-the-world/blob/main/';
+---
+<a class="src-ref" href={`${repo}docs/adr/${number}-${slug}.md`} title={`docs/adr/${number}-${slug}.md`}>ADR {number}</a>

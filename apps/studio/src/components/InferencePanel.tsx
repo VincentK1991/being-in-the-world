@@ -8,6 +8,8 @@ interface Job {
 }
 interface Clash { message: string; terms?: string[]; rule?: string; premises?: string[] }
 interface Status {
+  generation?: string;
+  metadata?: { consistency?: string; diagnostics?: { datatype_checks?: string; issues?: string[]; unchecked_datatypes?: string[] } };
   state: string; triples?: number; clashes?: Clash[]; inconsistent_since?: number;
   stale_upstream?: string[]; stale_inputs?: string[]; input_error?: string; inputs_checked?: boolean;
 }
@@ -23,6 +25,7 @@ interface Premise {
 }
 interface Derivation { rule: string | number; rule_text?: string; aggregate?: boolean; incomplete?: boolean; premises: Premise[] }
 interface Explanation {
+  generation?: string; explanation_mode?: string;
   job: string; supported?: boolean; stale?: boolean; note?: string; explained?: boolean; repeated?: boolean;
   derivations?: Derivation[]; source_graphs?: string[];
 }
@@ -43,11 +46,11 @@ const STATE_STYLE: Record<string, string> = {
   missing: 'bg-slate-100 text-slate-600 ring-slate-200',
 };
 const STATE_HELP: Record<string, string> = {
-  ready: 'Up to date with its sources.',
+  ready: 'Up to date with its sources; this does not prove consistency or complete OWL support.',
   stale: 'Its sources, inputs or configuration changed since the last rebuild.',
   missing: 'Never built.',
   inconsistent: 'The last rebuild found the current data inconsistent. The previous output is still published.',
-  blocked: 'An upstream job is inconsistent, so this job was not rebuilt.',
+  blocked: 'An upstream job is not ready, so this job was not rebuilt.',
 };
 function StateBadge({ state }: { state: string }) {
   return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${STATE_STYLE[state] ?? STATE_STYLE.missing}`}>{state}</span>;
@@ -96,7 +99,7 @@ function ExplanationView({ explanation }: { explanation: Explanation }) {
   if (explanation.repeated) return <p className="text-xs text-slate-500">Job {explanation.job}: already shown above.</p>;
   if (explanation.explained === false) return <p className="text-xs text-slate-500">Job {explanation.job}: not followed further (depth limit).</p>;
   if (!explanation.supported) return <p className="text-xs text-slate-600">Job <strong>{explanation.job}</strong> deduced it, but its reasoner does not record why. It read {explanation.source_graphs?.join(', ')}.</p>;
-  return <div className="space-y-2">{explanation.derivations?.map((d, i) => <div key={i} className="rounded-lg bg-slate-50 p-3">
+  return <div className="space-y-2"><p className="break-all text-xs text-slate-500">Generation {explanation.generation ?? 'legacy'} · Reconstructed from current data; not a recorded historical proof.</p>{explanation.derivations?.map((d, i) => <div key={i} className="rounded-lg bg-slate-50 p-3">
     <p className="text-sm">Job <strong>{explanation.job}</strong>, rule <code className="rounded bg-white px-1">{typeof d.rule === 'number' ? `#${d.rule + 1}` : d.rule}</code>
       {d.rule_text && <span className="text-slate-500"> · {d.rule_text}</span>}
       {explanation.stale && <span className="ml-2 text-xs text-amber-800">job is stale; recomputed from current data</span>}</p>
@@ -202,6 +205,13 @@ export default function InferencePanel() {
         {status?.input_error && <><dt className="text-slate-500">Input error</dt><dd className="text-red-800">{status.input_error}</dd></>}
         {status?.inputs_checked === false && <><dt className="text-slate-500">Outside inputs</dt><dd className="text-slate-600">Not re-read yet, so a change there would not show. Checking…</dd></>}
       </dl>
+      <p className="text-xs text-slate-500">Ready means current output. No clash found is not proof of consistency; missing facts are not validation failures. Use SHACL for required fields.</p>
+      {status?.generation && <p className="break-all text-xs text-slate-500">Generation: {status.generation}</p>}
+      {status?.metadata?.diagnostics && <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900" aria-label="Inference diagnostics">
+        <p>Datatype checks: {status.metadata.diagnostics.datatype_checks ?? 'provider-defined'}</p>
+        {status.metadata.diagnostics.issues?.map(issue => <p key={issue}>{issue}</p>)}
+        {Boolean(status.metadata.diagnostics.unchecked_datatypes?.length) && <p className="break-all">Unchecked datatypes: {status.metadata.diagnostics.unchecked_datatypes?.join(', ')}</p>}
+      </div>}
       {status?.clashes && <div><h4 className="mb-2 text-sm font-semibold">What clashed</h4><ClashList clashes={status.clashes} /></div>}
 
       <div className="flex flex-wrap items-center gap-2">

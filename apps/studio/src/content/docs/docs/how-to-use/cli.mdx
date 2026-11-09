@@ -1,0 +1,70 @@
+---
+title: The command line
+description: Every rdftool command, with the options that matter and what each prints.
+sidebar:
+  order: 2
+---
+import Src from '../../../../components/docs/Src.astro';
+
+`rdftool` works on a **database root**, a directory that holds datasets (see [Datasets](/docs/how-to-use/datasets/)). Commands that read data take `--source`, which is either a database root, an RDF file (loaded into a throwaway in-memory store), or the URL of a running server. `--dataset NAME` picks a dataset, and the default is `default`.
+
+The command definitions are in <Src file="crates/rdf-cli/src/main.rs" symbol="enum Command" />.
+
+## Loading and reading
+
+```sh
+rdftool ingest --from data.ttl --to ./mydb                 # creates the database if needed
+rdftool query  --source ./mydb 'SELECT ?s WHERE { ?s ?p ?o } LIMIT 10'
+rdftool query  --source ./mydb --query-file report.rq --format csv
+rdftool update --source ./mydb 'INSERT DATA { <urn:a> <urn:b> <urn:c> }'
+rdftool query-pattern --source ./mydb --predicate rdf:type
+rdftool dump   --source ./mydb --format n-quads
+rdftool stats  --source ./mydb
+```
+
+- **Formats.** `SELECT` and `ASK` print JSON by default. `--format json|xml|csv|tsv` changes that. Graph results (`CONSTRUCT`, `DESCRIBE`) print Turtle. `dump` accepts `n-quads`, `n-triples`, `turtle` and `trig`, and refuses to write named graphs into a triples-only format.
+- **Output goes to stdout.** Status messages go to stderr, so you can pipe results.
+- **Ingest is all-or-nothing.** A malformed file rolls back. `--bulk` uses Oxigraph's bulk loader, which is faster but can leave partial progress after a failure. Its `--memory-mb` is a target for the loader, not a hard limit.
+- **Updates need a store.** `update` works on a database root or a server URL, but not on an RDF file source.
+- **`stats`** prints counts of quads, distinct graphs, subjects, predicates and objects as JSON.
+
+## Datasets, backup and migration
+
+```sh
+rdftool datasets --db ./mydb list           # JSON: name, id, identity
+rdftool datasets --db ./mydb create claims
+rdftool datasets --db ./mydb delete claims  # must not be served; also deletes its Qdrant collections
+rdftool backup  --source ./mydb --to ./backup
+rdftool restore --from ./backup --to ./restored
+rdftool migrate --from-redb old.redb --to ./newdb
+```
+
+`backup` copies one dataset. `restore` verifies what it wrote against the backup. Neither touches vector data in Qdrant. `migrate` converts a database from the earlier redb format, and verifies the result.
+
+## Serving
+
+```sh
+rdftool serve   --db ./mydb --bind 127.0.0.1:7878            # one dataset
+rdftool gateway --db ./mydb --bind 127.0.0.1:7878            # many datasets, /d/<name>/
+```
+
+Both accept `--max-body-bytes` (default 16 MiB) and `--concurrency` (default 4, the number of operations that run at once). `serve` takes `--dataset`. `gateway` takes `--default-dataset` and `--tenant-config-dir`. The bind address must be loopback.
+
+## Plugins
+
+```sh
+rdftool plugin --source http://127.0.0.1:7878 --plugin inference \
+  --operation rebuild --input '{"job":"vehicles"}'
+```
+
+Calls a plugin operation. Against a running server, use its URL as `--source`. Against a database root, the process opens the database itself, so it cannot run while a server holds the same one.
+
+Plugin configuration comes from `--semantic-config` and `--inference-config`, or the environment variables `RDF_SEMANTIC_CONFIG` and `RDF_INFERENCE_CONFIG`. The federation and virtual-graph plugins read `RDF_FEDERATION_CONFIG` and `RDF_VIRTUAL_CONFIG`.
+
+## Testing
+
+```sh
+rdftool test-suite --manifest path/to/manifest.ttl [--engine oxigraph|database] [--reasoner owlrl=URL|owlrl-native|...]
+```
+
+Runs a W3C manifest and prints a JSON report. The [Status and limits](/docs/what-it-is/status-and-limits/) page has what the project measures with it.

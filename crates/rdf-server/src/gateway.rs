@@ -108,6 +108,7 @@ impl Gateway {
             ("RDF_VIRTUAL_CONFIG", "virtual.json"),
             ("RDF_FEDERATION_CONFIG", "federation.json"),
             ("RDF_REFRESH_CONFIG", "refresh.json"),
+            ("RDF_SHACL_CONFIG", "shacl.json"),
         ]
         .into_iter()
         .map(|(variable, file)| (variable, dir.join(name).join(file)))

@@ -1,0 +1,93 @@
+---
+title: HTTP API
+description: The endpoints, request formats and error codes of the server and the gateway.
+sidebar:
+  order: 4
+---
+import Src from '../../../../components/docs/Src.astro';
+
+:::danger[Anyone who can reach these endpoints can change your data]
+There is no authentication. The server binds to loopback only. Do not expose it. See [Status and limits](/docs/what-it-is/status-and-limits/).
+:::
+
+A dataset server (`rdftool serve`) exposes the endpoints below. Through the gateway, put `/d/<dataset>` in front of any of them to choose a dataset, and leave it off for the default. The routes are defined in <Src file="crates/rdf-server/src/lib.rs" symbol="router" />.
+
+| Method and path | Purpose |
+|---|---|
+| `GET` or `POST /query` | Run a SPARQL query. `GET /query` with no query returns the Service Description. |
+| `POST /update` | Run a SPARQL update. Answers `204`. |
+| `GET`, `PUT`, `POST`, `DELETE /store` | Read or change one graph (the Graph Store protocol). |
+| `POST /api/import` | Load Turtle, N-Triples, TriG or N-Quads, optionally into a graph. |
+| `GET /api/plugins` | List the plugins, their operations and their SPARQL properties. |
+| `POST /api/plugins/{plugin}/operations/{operation}` | Run a plugin operation with a JSON body. |
+| `GET /api/status` | Quad count, graph list, the engine name and the upload limit. |
+| `GET /health` | Answers `ok`. |
+| `GET /metrics` | A counter of operations served, in Prometheus text format. |
+| `GET`, `POST /api/datasets`, `DELETE /api/datasets/{name}` | Gateway only: manage datasets. |
+
+## Queries and updates
+
+Send the SPARQL text in one of two ways:
+
+```sh
+# 1. The body is the query
+curl http://127.0.0.1:7878/query \
+  -H 'Content-Type: application/sparql-query' -H 'Accept: text/csv' \
+  -d 'SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 5'
+
+# 2. A form field named query (GET puts it in the URL)
+curl http://127.0.0.1:7878/query -d 'query=ASK { ?s ?p ?o }'
+```
+
+For an update, use the content type `application/sparql-update`, or a form field named `update`.
+
+- **Result format** follows the `Accept` header: JSON (the default), XML or CSV for `SELECT` and `ASK`, and Turtle for graph results. If nothing you list is supported, the answer is `406`.
+- **Dataset parameters are not supported.** `default-graph-uri`, `named-graph-uri` and similar protocol parameters return `400`. Use `FROM`, `FROM NAMED` or `GRAPH` in the query.
+- **`SERVICE` and `LOAD` are refused** with `400`. Federated queries go through the federation plugin.
+
+## The Graph Store endpoint
+
+`/store` takes exactly one of `?default` (the default graph) or `?graph=<iri>`:
+
+```sh
+curl 'http://127.0.0.1:7878/store?graph=urn:g:one' -H 'Accept: text/turtle'              # read
+curl -X PUT 'http://127.0.0.1:7878/store?graph=urn:g:one' -H 'Content-Type: text/turtle' \
+     --data-binary @data.ttl                                                              # replace
+curl -X DELETE 'http://127.0.0.1:7878/store?graph=urn:g:one'                              # remove
+```
+
+`POST` adds to the graph, and `PUT` replaces it.
+
+## Import
+
+```sh
+curl 'http://127.0.0.1:7878/api/import?graph=urn:g:one' \
+  -H 'Content-Type: text/turtle' --data-binary @data.ttl
+```
+
+Accepts `text/turtle`, `application/n-triples`, `application/trig` and `application/n-quads`. Anything else is `415`. Omit `graph` to load into the default graph, or into the graphs a TriG or N-Quads file names.
+
+## Plugin operations
+
+```sh
+curl http://127.0.0.1:7878/api/plugins/inference/operations/status \
+  -H 'Content-Type: application/json' -d '{"job":"vehicles"}'
+```
+
+The content type must be `application/json`, or the answer is `415`. An unknown plugin or operation is `404`. A failing operation is `400` with the message. After an operation, the engine runs any refresh rules configured to follow it.
+
+## Limits and error codes
+
+| Code | Meaning |
+|---|---|
+| `400` | Bad request: a syntax error, an unsupported parameter, a refused operation, or a plugin error. |
+| `404` | Unknown plugin, operation, dataset or graph. |
+| `406` | No result format you accept is available. |
+| `413` | The body exceeds `--max-body-bytes` (16 MiB by default). |
+| `415` | Wrong content type. |
+| `502` | Gateway only: the dataset's server is unavailable. |
+| `503` | **Operation capacity exhausted.** All permits are in use. The server runs at most `--concurrency` operations at once (4 by default) and refuses the rest at once. Retry after a moment. |
+
+## Discovering what a dataset offers
+
+`GET /query` with no query returns a SPARQL Service Description in Turtle. It lists the supported formats and every plugin, with its operations, SPARQL properties and configured indexes, jobs and virtual graphs. A federation engine, or a script, can read it to decide what to call. The vocabulary is `urn:rdftool:vocab:`, and terms are added but never renamed. See [Plugin architecture](/docs/internals/plugin-architecture/).

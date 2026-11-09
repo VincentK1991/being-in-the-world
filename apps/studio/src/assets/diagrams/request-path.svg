@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="rp-t rp-d">
+  <title id="rp-t">Request path of a query and an update</title>
+  <desc id="rp-d">A SPARQL query passes through six steps: the HTTP layer takes an operation permit, the query is parsed, the local-only policy rejects network operations, property functions are replaced by value tables, the query runs on the Oxigraph store, and results are serialized. An update takes the mutation lock, rejects property functions and runs on the store.</desc>
+  <defs>
+    <marker id="rp-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--dg-accent,#1f6b50)"/></marker>
+    <style>
+      .dg-box{fill:var(--dg-fill,#eef6f2);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-acc{fill:var(--dg-accent-fill,#d9efe5);stroke:var(--dg-accent,#1f6b50);stroke-width:1.6}
+      .dg-warm{fill:var(--dg-fill-2,#fff7e6);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-t{font:600 13px system-ui,sans-serif;fill:var(--dg-ink,#14352b)}
+      .dg-s{font:400 11.5px system-ui,sans-serif;fill:var(--dg-muted,#5b6f68)}
+      .dg-n{font:700 12px system-ui,sans-serif;fill:var(--dg-accent,#1f6b50)}
+      .dg-ar{stroke:var(--dg-accent,#1f6b50);stroke-width:1.6;fill:none;marker-end:url(#rp-arrow)}
+    </style>
+  </defs>
+  <rect width="900" height="560" fill="var(--dg-bg,#fff)" rx="8"/>
+  <text class="dg-t" x="30" y="30">Query: POST /query</text>
+
+  <rect class="dg-box" x="30" y="44" width="300" height="52" rx="8"/>
+  <text class="dg-n" x="46" y="66">1</text><text class="dg-t" x="66" y="66">HTTP layer</text>
+  <text class="dg-s" x="66" y="84">takes one of 4 permits, or answers 503</text>
+  <text class="dg-s" x="350" y="74">crates/rdf-server: work() runs the job on a blocking thread</text>
+
+  <rect class="dg-box" x="30" y="116" width="300" height="52" rx="8"/>
+  <text class="dg-n" x="46" y="138">2</text><text class="dg-t" x="66" y="138">Parse</text>
+  <text class="dg-s" x="66" y="156">spargebra turns the text into algebra</text>
+  <text class="dg-s" x="350" y="146">syntax errors stop here, with a position</text>
+
+  <rect class="dg-box" x="30" y="188" width="300" height="52" rx="8"/>
+  <text class="dg-n" x="46" y="210">3</text><text class="dg-t" x="66" y="210">Local-only policy</text>
+  <text class="dg-s" x="66" y="228">SERVICE and LOAD are refused</text>
+  <text class="dg-s" x="350" y="218">federation is a plugin, not the core engine</text>
+
+  <rect class="dg-acc" x="30" y="260" width="300" height="66" rx="8"/>
+  <text class="dg-n" x="46" y="282">4</text><text class="dg-t" x="66" y="282">Property functions</text>
+  <text class="dg-s" x="66" y="300">each call runs once; its rows become</text>
+  <text class="dg-s" x="66" y="315">a VALUES table joined into the pattern</text>
+  <text class="dg-s" x="350" y="296">checked first with no side effects, then run</text>
+  <text class="dg-s" x="350" y="311">limits: 64 calls, 10,000 rows, 8 MiB</text>
+
+  <rect class="dg-warm" x="30" y="346" width="300" height="52" rx="8"/>
+  <text class="dg-n" x="46" y="368">5</text><text class="dg-t" x="66" y="368">Execute on Oxigraph</text>
+  <text class="dg-s" x="66" y="386">the evaluator picks an index per pattern</text>
+  <text class="dg-s" x="350" y="376">see Storage for which column family answers what</text>
+
+  <rect class="dg-box" x="30" y="418" width="300" height="52" rx="8"/>
+  <text class="dg-n" x="46" y="440">6</text><text class="dg-t" x="66" y="440">Serialize</text>
+  <text class="dg-s" x="66" y="458">format chosen by the Accept header</text>
+  <text class="dg-s" x="350" y="448">JSON, XML or CSV for results; Turtle for graphs; 406 if none fits</text>
+
+  <path class="dg-ar" d="M180 96V114"/><path class="dg-ar" d="M180 168V186"/><path class="dg-ar" d="M180 240V258"/>
+  <path class="dg-ar" d="M180 326V344"/><path class="dg-ar" d="M180 398V416"/>
+
+  <text class="dg-t" x="30" y="502">Update: POST /update</text>
+  <text class="dg-s" x="30" y="522">permit, then parse; property functions are refused inside updates; the dataset's mutation lock is taken; the update runs on the store.</text>
+  <text class="dg-s" x="30" y="540">Plugin operations (POST /api/plugins/&lt;plugin&gt;/operations/&lt;op&gt;) take a permit too, then run the plugin, then any refresh rules.</text>
+</svg>

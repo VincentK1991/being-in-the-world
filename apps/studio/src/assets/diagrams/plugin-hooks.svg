@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="ph-t ph-d">
+  <title id="ph-t">How a plugin attaches to the engine</title>
+  <desc id="ph-d">A plugin implements the Plugin trait: a manifest, an invoke function for operations, optional property functions and optional facets. The Database registers it, validates it, and exposes it three ways: HTTP operations, SPARQL property functions, and the plugin catalog with the Service Description. A plugin reaches the store only through a ReadContext, which can query, take a snapshot, publish a derived graph, read derived status and record an attempt. Published results are named graphs in the same store.</desc>
+  <defs>
+    <marker id="ph-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--dg-accent,#1f6b50)"/></marker>
+    <style>
+      .dg-box{fill:var(--dg-fill,#eef6f2);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-acc{fill:var(--dg-accent-fill,#d9efe5);stroke:var(--dg-accent,#1f6b50);stroke-width:1.6}
+      .dg-warm{fill:var(--dg-fill-2,#fff7e6);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-t{font:600 13px system-ui,sans-serif;fill:var(--dg-ink,#14352b)}
+      .dg-s{font:400 11.5px system-ui,sans-serif;fill:var(--dg-muted,#5b6f68)}
+      .dg-m{font:500 11.5px ui-monospace,Menlo,Consolas,monospace;fill:var(--dg-ink,#14352b)}
+      .dg-ar{stroke:var(--dg-accent,#1f6b50);stroke-width:1.6;fill:none;marker-end:url(#ph-arrow)}
+    </style>
+  </defs>
+  <rect width="900" height="500" fill="var(--dg-bg,#fff)" rx="8"/>
+
+  <rect class="dg-acc" x="24" y="40" width="250" height="190" rx="8"/>
+  <text class="dg-t" x="38" y="62">A plugin (trait Plugin)</text>
+  <text class="dg-m" x="38" y="88">manifest()</text><text class="dg-s" x="140" y="88">id, version, ops</text>
+  
+  <text class="dg-m" x="38" y="112">invoke(ctx, op, input)</text>
+  <text class="dg-s" x="38" y="130">operations: JSON in, JSON out</text>
+  <text class="dg-m" x="38" y="154">property_functions()</text>
+  <text class="dg-s" x="38" y="172">relations callable from SPARQL</text>
+  <text class="dg-m" x="38" y="196">facets()</text>
+  <text class="dg-s" x="38" y="214">indexes, jobs, virtual graphs it offers</text>
+
+  <rect class="dg-box" x="325" y="40" width="250" height="190" rx="8"/>
+  <text class="dg-t" x="339" y="62">The host (Database)</text>
+  <text class="dg-m" x="339" y="88">register(plugin)</text>
+  <text class="dg-s" x="339" y="106">checks SDK version 3, unique id,</text>
+  <text class="dg-s" x="339" y="121">operations, property IRIs and arity</text>
+  <text class="dg-m" x="339" y="148">invoke(plugin, op, input)</text>
+  <text class="dg-s" x="339" y="166">then runs matching refresh rules</text>
+  <text class="dg-m" x="339" y="190">catalog()</text>
+  <text class="dg-s" x="339" y="208">one row per offering</text>
+
+  <rect class="dg-box" x="626" y="40" width="250" height="190" rx="8"/>
+  <text class="dg-t" x="640" y="62">Three ways in</text>
+  <text class="dg-m" x="640" y="88">HTTP</text>
+  <text class="dg-s" x="640" y="106">POST /api/plugins/{p}/operations/{op}</text>
+  <text class="dg-m" x="640" y="132">SPARQL</text>
+  <text class="dg-s" x="640" y="150">(?out) &lt;urn:rdftool:...&gt; (inputs)</text>
+  <text class="dg-s" x="640" y="165">rewritten to VALUES before execution</text>
+  <text class="dg-m" x="640" y="190">Discovery</text>
+  <text class="dg-s" x="640" y="208">GET /query (Service Description) and</text>
+  <text class="dg-s" x="640" y="222">plugins:available / plugins:provides</text>
+
+  <path class="dg-ar" d="M274 135H323"/>
+  <path class="dg-ar" d="M575 135H624"/>
+
+  <text class="dg-t" x="24" y="282">What a plugin may touch: only a ReadContext</text>
+  <rect class="dg-warm" x="24" y="294" width="560" height="170" rx="8"/>
+  <text class="dg-m" x="40" y="320">query_json(sparql)</text><text class="dg-s" x="240" y="320">read, under the host's query policy</text>
+  <text class="dg-m" x="40" y="346">snapshot(graphs)</text><text class="dg-s" x="240" y="346">selected graphs as N-Triples plus a content token</text>
+  <text class="dg-m" x="40" y="372">publish(name, snapshot, ...)</text><text class="dg-s" x="240" y="372">atomically replace one derived graph</text>
+  <text class="dg-m" x="40" y="398">derived_status(name)</text><text class="dg-s" x="240" y="398">ready, stale or missing, from the token</text>
+  <text class="dg-m" x="40" y="424">record_attempt(name, note)</text><text class="dg-s" x="240" y="424">a note beside the record, e.g. a clash</text>
+  <text class="dg-s" x="40" y="450">Plugins do not open database files or call the host's HTTP API.</text>
+
+  <rect class="dg-box" x="626" y="294" width="250" height="170" rx="8"/>
+  <text class="dg-t" x="640" y="316">Result in the same store</text>
+  <text class="dg-m" x="640" y="342">urn:rdftool:derived:</text>
+  <text class="dg-m" x="640" y="358">  &lt;plugin&gt;:&lt;name&gt;</text>
+  <text class="dg-m" x="640" y="382">urn:rdftool:derived:</text>
+  <text class="dg-m" x="640" y="398">  &lt;plugin&gt;:&lt;name&gt;:metadata</text>
+  <text class="dg-s" x="640" y="424">ordinary named graphs, so SPARQL,</text>
+  <text class="dg-s" x="640" y="439">backup and plugins can read them</text>
+  <path class="dg-ar" d="M584 379H624"/>
+</svg>

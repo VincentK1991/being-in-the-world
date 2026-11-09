@@ -1,0 +1,11 @@
+---
+// Inlines an SVG from src/assets/diagrams so it can use the site's CSS variables (an <img> cannot),
+// which makes it follow light and dark mode. The files stay real .svg files; opened on their own they
+// use the fallback colours written in each file.
+interface Props { name: string; caption: string; }
+const { name, caption } = Astro.props;
+const files = import.meta.glob('../../assets/diagrams/*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const svg = files[`../../assets/diagrams/${name}.svg`];
+if (!svg) throw new Error(`Diagram "${name}" not found in src/assets/diagrams/`);
+---
+<figure class="diagram"><Fragment set:html={svg} /><figcaption>{caption}</figcaption></figure>

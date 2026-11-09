@@ -1,0 +1,86 @@
+---
+title: Request path
+description: What happens between an HTTP request and a result, step by step, and where each limit applies.
+sidebar:
+  order: 1
+---
+import Diagram from '../../../../components/docs/Diagram.astro';
+import Src from '../../../../components/docs/Src.astro';
+
+<Diagram name="request-path" caption="A query's six steps inside one dataset server. An update skips the property rewrite and takes the mutation lock instead." />
+
+This page follows one request through a dataset server. The [Architecture](/docs/what-it-is/architecture/) page shows where the server sits; here we stay inside it.
+
+## 1. The HTTP layer takes a permit
+
+Routes are declared in <Src file="crates/rdf-server/src/lib.rs" symbol="router" />: `/query`, `/update`, `/store`, `/api/import`, `/api/plugins/{plugin}/operations/{operation}`, `/api/status`, `/health` and `/metrics`.
+
+Work that touches the database runs through one function, <Src file="crates/rdf-server/src/lib.rs" symbol="work" />. It tries to take a permit from a semaphore. If none is free, the request is answered at once with **503 "operation capacity exhausted"**; it does not queue. With the permit held, the job runs on a blocking thread, so a slow query never stalls the async runtime. The default is 4 permits and the request body limit is 16 MiB.
+
+The query parameters are strict. `/query` accepts only `query=`, and any other SPARQL Protocol dataset parameter (`default-graph-uri` and the like) is rejected with "protocol dataset parameters are not supported yet". Use `FROM` or `GRAPH` in the query instead.
+
+## 2. The query is parsed
+
+<Src file="crates/rdf-store/src/engine.rs" symbol="prepare_query" /> parses the text with `spargebra` into an algebra tree. Everything after this works on that tree, never on the query text. This matters for the next two steps: a property function cannot be smuggled in by string tricks, because the engine looks at parsed triple patterns.
+
+## 3. The local-only policy runs
+
+<Src file="crates/rdf-store/src/policy.rs" symbol="network" /> walks the algebra and rejects any `SERVICE`, even `SERVICE SILENT`, including ones hidden inside `FILTER EXISTS`, `OPTIONAL`, `MINUS` and aggregates. Updates additionally reject `LOAD`. The policy runs twice: once when the query is parsed and again just before execution (<Src file="crates/rdf-store/src/engine.rs" symbol="query_prepared" />), so a rewritten algebra cannot reintroduce a network call.
+
+This is the reason federation is a plugin and not a SPARQL feature. Federation is done by a plugin instead; see [Using the plugins](/docs/how-to-use/plugins/).
+
+## 4. Property functions become tables
+
+Plugins can register predicates such as `urn:rdftool:search:matches`. In <Src file="crates/rdf-engine/src/properties.rs" symbol="prepare" />, the engine finds triple patterns whose predicate is a registered function, evaluates the plugin **once per call site, before the query runs**, and replaces the pattern with a `VALUES` table of the rows returned.
+
+The rewrite runs twice. The first pass has no context and only validates the whole algebra; the second pass calls the plugins. So an invalid query never causes a trusted callback to run.
+
+Limits, all enforced here:
+
+| Limit | Value |
+|---|---|
+| Calls per query | 64 |
+| Rows per call, in total | 10,000 |
+| Bytes per call, in total | 8 MiB |
+| Input size | 64 KiB |
+| Arity | up to 32 inputs, 1 to 32 outputs |
+
+Inputs must be **constants**: a function can't be fed by another pattern in the same query. Property functions are query-only. In an update, in `GRAPH`, or in `FROM`/`FROM NAMED`, they are refused with "property functions are query-only" (<Src file="crates/rdf-engine/src/properties.rs" symbol="validate_update" />).
+
+Because the rewrite produces ordinary algebra, the Oxigraph optimizer treats the result as any other `VALUES` join. That is the whole trick.
+
+## 5. Oxigraph runs the query
+
+<Src file="crates/rdf-store/src/engine.rs" symbol="query_prepared" /> hands the algebra to Oxigraph's `SparqlEvaluator` over the store. Oxigraph chooses the join order and which index serves each pattern; see [Storage](/docs/internals/storage/#which-index-answers-a-pattern). The dependency is built **without** Oxigraph's HTTP client, so even a bug in the policy could not reach the network.
+
+Reads see a consistent snapshot of the store and do not block on writes.
+
+## 6. Results are serialised
+
+The server walks the `Accept` header in order and uses the first media type it supports. `*/*` gives JSON for `SELECT`/`ASK` and Turtle for graph results; nothing supported gives 406. It writes into a byte buffer first, so that a failure never leaves half a response (<Src file="crates/rdf-store/src/engine.rs" symbol="write_results" />). The result is then sent with the right `content-type`.
+
+A bare `GET /query` with no `query=` returns a **SPARQL Service Description** that lists the dataset's plugin catalog. Federation engines request that before running a `SERVICE` clause against an endpoint.
+
+## Updates
+
+An update takes a different path after parsing:
+
+1. Property functions in the update's `WHERE` are rejected.
+2. The local-only policy runs, and also rejects `LOAD`.
+3. The update takes the **mutation lock** (<Src file="crates/rdf-store/src/engine.rs" symbol="lock_mutation" />), a mutex per dataset, then runs on the store.
+
+The mutex serialises writes within this process. Plugins that publish derived graphs take the same lock, so a derived-graph publication can't interleave with an update. Reads do not take it.
+
+## Operating it
+
+- **503 under load** means all permits are busy. Retry, or raise the limit when you start the server; see [HTTP API](/docs/how-to-use/http-api/).
+- `/metrics` exposes the request count. `/health` returns `ok`.
+- The server has **no per-query timeout**. A runaway query holds a permit until it finishes. Treat that as a known limit; it is listed under [Status and limits](/docs/what-it-is/status-and-limits/).
+
+## Extending it
+
+You add behaviour at step 4 (property functions) or by exposing an operation, which bypasses steps 2 to 6 entirely and calls plugin code directly. See [Plugin architecture](/docs/internals/plugin-architecture/).
+
+## Sources
+
+<Src file="crates/rdf-server/src/lib.rs" /> · <Src file="crates/rdf-engine/src/lib.rs" symbol="Database" /> · <Src file="crates/rdf-engine/src/properties.rs" /> · <Src file="crates/rdf-store/src/policy.rs" /> · <Src file="crates/rdf-store/src/engine.rs" />

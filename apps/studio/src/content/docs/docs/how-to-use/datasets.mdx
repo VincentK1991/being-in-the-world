@@ -1,0 +1,66 @@
+---
+title: Datasets
+description: Isolated stores behind one address, how to create them, and how plugins are configured for each.
+sidebar:
+  order: 5
+---
+import Src from '../../../../components/docs/Src.astro';
+import Adr from '../../../../components/docs/Adr.astro';
+
+A **dataset** is one independent RDF store. Two datasets share no graphs, no plugin state and no process. Use one per project, tenant or business unit.
+
+:::danger[Datasets are not a security boundary]
+Isolation keeps data apart so it cannot mix by accident. It does not stop one client from reading another's dataset, because there is no authentication. Keep the server on loopback. See [Status and limits](/docs/what-it-is/status-and-limits/).
+:::
+
+## How they are laid out
+
+A database root contains `catalog.json`, which maps each dataset name to a generated UUID, and one directory per UUID that holds that dataset's RocksDB store. See [Storage](/docs/internals/storage/) for the details. A dataset name is 1 to 64 letters, digits, `-`, `_` or `.`, and does not start with `.`.
+
+The **gateway** (`rdftool gateway`) serves all of them from one address:
+
+| Request path | Goes to |
+|---|---|
+| `/d/<name>/query`, `/d/<name>/update`, `/d/<name>/api/...` | the dataset `<name>` |
+| `/query`, `/update`, `/api/...` (no prefix) | the default dataset, so simple clients keep working |
+| `/api/datasets` | the gateway itself: list and create datasets |
+
+The first request for a dataset starts its server, which takes a moment. A server that exits is started again on the next request. See <Adr n={8} slug="dataset-isolation-gateway" />.
+
+## Working with datasets
+
+**In Studio**, open Datasets. You can create one, switch the whole app to it with Use, see its content and its plugins, and delete it. The default dataset cannot be deleted.
+
+**From the command line:**
+
+```sh
+rdftool datasets --db ./mydb list
+rdftool datasets --db ./mydb create claims
+rdftool datasets --db ./mydb delete claims
+```
+
+**Over HTTP**, against a gateway:
+
+```sh
+curl http://127.0.0.1:7878/api/datasets                       # list, with quad and graph counts
+curl -X POST http://127.0.0.1:7878/api/datasets -d '{"name":"claims"}'    # 201 with the new entry
+curl -X DELETE http://127.0.0.1:7878/api/datasets/claims      # {"deleted":"claims", ...}
+```
+
+Creating an existing name returns 409, and an invalid name returns 400. Deleting stops that dataset's server, removes its data and catalog entry, and then removes its Qdrant collections. If the Qdrant cleanup fails, the response carries a `cleanup_warning` and the dataset is still gone.
+
+## Giving a dataset its plugins
+
+A plugin is available in a dataset only if that dataset is configured for it. The gateway reads a **tenant directory**, passed as `--tenant-config-dir`, with one folder per dataset:
+
+| File in `<tenant dir>/<dataset>/` | Enables | Passed to the dataset server as |
+|---|---|---|
+| `semantic.json` | semantic search indexes | `--semantic-config` |
+| `inference.json` | inference jobs | `--inference-config` |
+| `virtual.json` | the virtual graph | `RDF_VIRTUAL_CONFIG` |
+| `federation.json` | `SERVICE` federation | `RDF_FEDERATION_CONFIG` |
+| `refresh.json` | rules that run an operation after another | `RDF_REFRESH_CONFIG` |
+
+A file present for a dataset replaces the gateway's global setting for that dataset. Without one, the dataset inherits the gateway's own configuration, and if that is empty it has no such plugin. The bundled example is <Src dir="deploy/local/tenants" />: the `default` dataset has everything, `claims` has search, and `finance` has little.
+
+A dataset can ask which plugins it has, from SPARQL, so a federated query can check before it calls (see [Using the plugins](/docs/how-to-use/plugins/)).

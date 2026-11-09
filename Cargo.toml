@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/rdf-model", "crates/rdf-io", "crates/rdf-store", "crates/rdf-cli", "crates/rdf-server", "crates/rdf-testkit", "crates/rdf-engine", "crates/rdf-plugin-api", "plugins/dataset-summary", "plugins/custom-properties", "plugins/semantic-search", "crates/rdf-embedding-api", "plugins/embedding-providers", "plugins/inference", "plugins/inference-providers", "plugins/federation", "plugins/catalog"]
+members = ["crates/rdf-model", "crates/rdf-io", "crates/rdf-store", "crates/rdf-cli", "crates/rdf-server", "crates/rdf-testkit", "crates/rdf-engine", "crates/rdf-plugin-api", "plugins/dataset-summary", "plugins/custom-properties", "plugins/semantic-search", "crates/rdf-embedding-api", "plugins/embedding-providers", "plugins/inference", "plugins/inference-providers", "plugins/federation", "plugins/catalog", "plugins/shacl"]
 exclude = ["crates/sparql-syntax", "crates/sparql-eval", "crates/sparql-opt", "crates/rdf-reasoner", "crates/rdf-vec"]
 resolver = "2"
 

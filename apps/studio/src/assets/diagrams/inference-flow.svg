@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="if-t if-d">
+  <title id="if-t">One inference rebuild</title>
+  <desc id="if-d">The inference plugin asks the host for a snapshot of the job's source graphs, optionally fetches outside inputs from Ontop or Comunica, merges them, and passes N-Triples to a reasoner provider. The provider returns deductions or a list of clashes. The plugin hands the deductions back to the host, which checks that the sources have not changed and replaces the derived graph and its metadata graph in one transaction.</desc>
+  <defs>
+    <marker id="if-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--dg-accent,#1f6b50)"/></marker>
+    <style>
+      .dg-box{fill:var(--dg-fill,#eef6f2);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-acc{fill:var(--dg-accent-fill,#d9efe5);stroke:var(--dg-accent,#1f6b50);stroke-width:1.6}
+      .dg-warm{fill:var(--dg-fill-2,#fff7e6);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-group{fill:none;stroke:var(--dg-line,#8aa39a);stroke-width:1.3;stroke-dasharray:6 4}
+      .dg-t{font:600 13px system-ui,sans-serif;fill:var(--dg-ink,#14352b)}
+      .dg-s{font:400 11px system-ui,sans-serif;fill:var(--dg-muted,#5b6f68)}
+      .dg-n{font:700 11px system-ui,sans-serif;fill:var(--dg-accent,#1f6b50)}
+      .dg-ar{stroke:var(--dg-accent,#1f6b50);stroke-width:1.6;fill:none;marker-end:url(#if-arrow)}
+    </style>
+  </defs>
+  <rect width="900" height="430" fill="var(--dg-bg,#fff)" rx="8"/>
+
+  <rect class="dg-group" x="20" y="20" width="250" height="360" rx="10"/>
+  <text class="dg-s" x="32" y="40">inference plugin (one job)</text>
+  <rect class="dg-acc" x="40" y="55" width="210" height="64" rx="8"/>
+  <text class="dg-t" x="145" y="78" text-anchor="middle">1. check upstream jobs</text>
+  <text class="dg-s" x="145" y="96" text-anchor="middle">all must be ready, else</text>
+  <text class="dg-s" x="145" y="110" text-anchor="middle">the job is "blocked"</text>
+  <rect class="dg-box" x="40" y="140" width="210" height="64" rx="8"/>
+  <text class="dg-t" x="145" y="163" text-anchor="middle">3. merge snapshot + inputs</text>
+  <text class="dg-s" x="145" y="181" text-anchor="middle">one N-Triples text,</text>
+  <text class="dg-s" x="145" y="195" text-anchor="middle">diagnostics, strict check</text>
+  <rect class="dg-box" x="40" y="225" width="210" height="64" rx="8"/>
+  <text class="dg-t" x="145" y="248" text-anchor="middle">5. receive the answer</text>
+  <text class="dg-s" x="145" y="266" text-anchor="middle">deductions, or Inconsistent</text>
+  <text class="dg-s" x="145" y="280" text-anchor="middle">with clashes</text>
+  <rect class="dg-box" x="40" y="310" width="210" height="56" rx="8"/>
+  <text class="dg-t" x="145" y="333" text-anchor="middle">6. publish_checked</text>
+  <text class="dg-s" x="145" y="351" text-anchor="middle">or record_attempt on a clash</text>
+
+  <rect class="dg-group" x="310" y="20" width="250" height="360" rx="10"/>
+  <text class="dg-s" x="322" y="40">host (rdf-engine)</text>
+  <rect class="dg-box" x="330" y="55" width="210" height="64" rx="8"/>
+  <text class="dg-t" x="435" y="78" text-anchor="middle">2. snapshot(source graphs)</text>
+  <text class="dg-s" x="435" y="96" text-anchor="middle">N-Triples + a token that</text>
+  <text class="dg-s" x="435" y="110" text-anchor="middle">fingerprints their content</text>
+  <rect class="dg-acc" x="330" y="298" width="210" height="76" rx="8"/>
+  <text class="dg-t" x="435" y="318" text-anchor="middle">7. one transaction</text>
+  <text class="dg-s" x="435" y="335" text-anchor="middle">re-check token, replace the graph</text>
+  <text class="dg-s" x="435" y="348" text-anchor="middle">and :metadata, under the write lock</text>
+  <text class="dg-s" x="435" y="363" text-anchor="middle">graph derived:inference:&lt;job&gt;</text>
+
+  <rect class="dg-group" x="610" y="20" width="270" height="360" rx="10"/>
+  <text class="dg-s" x="622" y="40">outside the process</text>
+  <rect class="dg-box" x="630" y="55" width="230" height="64" rx="8"/>
+  <text class="dg-t" x="745" y="78" text-anchor="middle">2b. outside inputs (optional)</text>
+  <text class="dg-s" x="745" y="96" text-anchor="middle">fetched by the plugin, merged in 3;</text>
+  <text class="dg-s" x="745" y="110" text-anchor="middle">never stored, only deduced from</text>
+  <rect class="dg-acc" x="630" y="140" width="230" height="64" rx="8"/>
+  <text class="dg-t" x="745" y="163" text-anchor="middle">4. reasoner provider</text>
+  <text class="dg-s" x="745" y="181" text-anchor="middle">native, sparql-rules (in process)</text>
+  <text class="dg-s" x="745" y="195" text-anchor="middle">owlrl, jena-rules (sidecars)</text>
+
+  <path class="dg-ar" d="M250 87H328"/>
+  <path class="dg-ar" d="M145 119V138"/>
+  <path class="dg-ar" d="M250 172H628"/>
+  <path class="dg-ar" d="M745 204V257H252"/>
+  <path class="dg-ar" d="M145 289V308"/>
+  <path class="dg-ar" d="M250 338H328"/>
+  <text class="dg-s" x="20" y="410">The provider never touches the store. It receives text and returns text; the host owns every read and write.</text>
+</svg>

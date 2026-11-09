@@ -161,7 +161,11 @@ impl Database {
         let mut result = self.invoke_once(plugin, operation, input.clone())?;
         // An operation that ran the same operation for other inputs (a cascade of jobs) lists them in
         // `ran`, so rules written for those inputs fire too.
-        let mut calls = vec![input];
+        let mut calls = if matches!(result["state"].as_str(), Some("blocked" | "inconsistent")) {
+            vec![]
+        } else {
+            vec![input]
+        };
         if let Some(more) = result.get("ran").and_then(Value::as_array) {
             calls.extend(more.iter().cloned());
         }
@@ -172,8 +176,16 @@ impl Database {
             .map(|rule| {
                 let then = &rule.then;
                 let outcome = self.invoke_once(&then.plugin, &then.operation, then.input.clone());
+                let ready = outcome.as_ref().is_ok_and(|v| {
+                    !matches!(v["state"].as_str(), Some("blocked" | "inconsistent"))
+                });
+                let error = match &outcome {
+                    Err(e) => Some(format!("{e:#}")),
+                    Ok(v) if !ready => Some(format!("follow-up did not publish: {}", v["state"])),
+                    _ => None,
+                };
                 json!({"plugin": then.plugin, "operation": then.operation, "input": then.input,
-                    "ok": outcome.is_ok(), "error": outcome.err().map(|e| format!("{e:#}"))})
+                    "ok":ready,"error":error,"result":outcome.ok()})
             })
             .collect();
         if let (false, Some(object)) = (ran.is_empty(), result.as_object_mut()) {

@@ -19,6 +19,25 @@ pub struct Manifest {
 /// Dataset-scoped access. Query policy remains enforced by the host.
 /// Each call has its own engine snapshot; multiple calls are not one transaction.
 pub trait ReadContext {
+    fn query_snapshot_json(&self, _snapshot: &GraphSnapshot, _query: &str) -> Result<Value> {
+        anyhow::bail!("snapshot query unavailable")
+    }
+    /// Conservative local-dataset guard. Not a remote snapshot token.
+    fn publication_token(&self) -> Result<String> {
+        anyhow::bail!("publication guards unavailable")
+    }
+    fn publish_checked(
+        &self,
+        name: &str,
+        source: &GraphSnapshot,
+        ntriples: &str,
+        metadata: Value,
+        token: Option<&str>,
+    ) -> Result<Value> {
+        anyhow::ensure!(token.is_none(), "publication guards unavailable");
+        self.publish(name, source, ntriples, metadata)
+    }
+
     fn query_json(&self, sparql: &str) -> Result<Value>;
     fn snapshot(&self, _graphs: &[String]) -> Result<GraphSnapshot> {
         anyhow::bail!("snapshot capability unavailable")

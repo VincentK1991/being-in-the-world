@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="vi-t vi-d">
+  <title id="vi-t">Building and searching a vector index</title>
+  <desc id="vi-d">A rebuild reads literals with a SPARQL query, embeds them through the embeddings service, writes points into a new Qdrant collection with a manifest point, verifies the count, and then points an alias at the new collection. A search embeds the query text, asks Qdrant through the alias, and maps the points back to RDF terms. Hybrid search fuses a dense branch and a lexical branch with reciprocal rank fusion.</desc>
+  <defs>
+    <marker id="vi-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--dg-accent,#1f6b50)"/></marker>
+    <style>
+      .dg-box{fill:var(--dg-fill,#eef6f2);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-acc{fill:var(--dg-accent-fill,#d9efe5);stroke:var(--dg-accent,#1f6b50);stroke-width:1.6}
+      .dg-warm{fill:var(--dg-fill-2,#fff7e6);stroke:var(--dg-line,#8aa39a);stroke-width:1.2}
+      .dg-t{font:600 13px system-ui,sans-serif;fill:var(--dg-ink,#14352b)}
+      .dg-s{font:400 11.5px system-ui,sans-serif;fill:var(--dg-muted,#5b6f68)}
+      .dg-m{font:500 11.5px ui-monospace,Menlo,Consolas,monospace;fill:var(--dg-ink,#14352b)}
+      .dg-n{font:700 12px system-ui,sans-serif;fill:var(--dg-accent,#1f6b50)}
+      .dg-ar{stroke:var(--dg-accent,#1f6b50);stroke-width:1.6;fill:none;marker-end:url(#vi-arrow)}
+    </style>
+  </defs>
+  <rect width="900" height="520" fill="var(--dg-bg,#fff)" rx="8"/>
+
+  <text class="dg-t" x="24" y="28">Rebuild (operation: rebuild)</text>
+  <rect class="dg-box" x="24" y="40" width="160" height="92" rx="8"/>
+  <text class="dg-n" x="36" y="62">1</text><text class="dg-t" x="54" y="62">Corpus</text>
+  <text class="dg-s" x="36" y="82">SPARQL: literals of the</text><text class="dg-s" x="36" y="97">chosen predicates in the</text><text class="dg-s" x="36" y="112">chosen graph, capped</text>
+  <rect class="dg-box" x="214" y="40" width="160" height="92" rx="8"/>
+  <text class="dg-n" x="226" y="62">2</text><text class="dg-t" x="244" y="62">Embed</text>
+  <text class="dg-s" x="226" y="82">the embeddings service</text><text class="dg-s" x="226" y="97">turns each text into a</text><text class="dg-s" x="226" y="112">vector, in batches</text>
+  <rect class="dg-acc" x="404" y="40" width="250" height="92" rx="8"/>
+  <text class="dg-n" x="416" y="62">3</text><text class="dg-t" x="434" y="62">Stage a new collection</text>
+  <text class="dg-m" x="416" y="82">rdfvs_&lt;dataset&gt;_&lt;index&gt;_&lt;uuid&gt;</text>
+  <text class="dg-s" x="416" y="100">points: vector(s) + payload; point 0</text><text class="dg-s" x="416" y="115">holds the manifest; count verified</text>
+  <rect class="dg-warm" x="684" y="40" width="192" height="92" rx="8"/>
+  <text class="dg-n" x="696" y="62">4</text><text class="dg-t" x="714" y="62">Swap the alias</text>
+  <text class="dg-m" x="696" y="82">rdfvs_&lt;dataset&gt;_&lt;hash&gt;</text>
+  <text class="dg-s" x="696" y="100">delete_alias + create_alias in</text><text class="dg-s" x="696" y="115">one request; old one is kept</text>
+  <path class="dg-ar" d="M184 86H212"/><path class="dg-ar" d="M374 86H402"/><path class="dg-ar" d="M654 86H682"/>
+
+  <text class="dg-t" x="24" y="176">Search (property function or operation)</text>
+  <rect class="dg-box" x="24" y="188" width="160" height="70" rx="8"/>
+  <text class="dg-t" x="36" y="210">Query text</text><text class="dg-s" x="36" y="228">index, text, top-k,</text><text class="dg-s" x="36" y="243">mode</text>
+  <rect class="dg-box" x="214" y="188" width="160" height="70" rx="8"/>
+  <text class="dg-t" x="226" y="210">Embed</text><text class="dg-s" x="226" y="228">dense vector, plus a</text><text class="dg-s" x="226" y="243">BM25 vector for hybrid</text>
+  <rect class="dg-acc" x="404" y="188" width="250" height="70" rx="8"/>
+  <text class="dg-t" x="416" y="210">Qdrant, through the alias</text><text class="dg-s" x="416" y="228">nearest points; subjects and objects</text><text class="dg-s" x="416" y="243">modes group by subject or object</text>
+  <rect class="dg-box" x="684" y="188" width="192" height="70" rx="8"/>
+  <text class="dg-t" x="696" y="210">Rows</text><text class="dg-s" x="696" y="228">points map back to RDF</text><text class="dg-s" x="696" y="243">terms plus a score</text>
+  <path class="dg-ar" d="M184 223H212"/><path class="dg-ar" d="M374 223H402"/><path class="dg-ar" d="M654 223H682"/>
+
+  <text class="dg-t" x="24" y="304">What one point holds</text>
+  <rect class="dg-box" x="24" y="316" width="420" height="170" rx="8"/>
+  <text class="dg-m" x="40" y="342">id</text><text class="dg-s" x="200" y="342">UUID derived from the entry (stable)</text>
+  <text class="dg-m" x="40" y="368">dense vector</text><text class="dg-s" x="200" y="368">the embedding (model's dimension)</text>
+  <text class="dg-m" x="40" y="394">lexical (hybrid only)</text><text class="dg-s" x="200" y="394">sparse BM25 weights (IDF in Qdrant)</text>
+  <text class="dg-m" x="40" y="420">payload.entry</text><text class="dg-s" x="200" y="420">subject, predicate, object, graph</text>
+  <text class="dg-m" x="40" y="446">payload.*_key</text><text class="dg-s" x="200" y="446">subject_key, object_key, for grouping</text>
+  <text class="dg-s" x="40" y="472">Vectors and payloads are stored on disk.</text>
+
+  <rect class="dg-box" x="474" y="316" width="402" height="170" rx="8"/>
+  <text class="dg-t" x="490" y="340">Hybrid search</text>
+  <text class="dg-s" x="490" y="362">branch A: dense nearest neighbours</text>
+  <text class="dg-s" x="490" y="380">branch B: lexical (BM25) matches</text>
+  <text class="dg-s" x="490" y="398">each fetches max(20, min(200, 4 x top-k))</text>
+  <text class="dg-s" x="490" y="422">fused by reciprocal rank fusion (Qdrant), so</text>
+  <text class="dg-s" x="490" y="438">the score reflects rank, not similarity</text>
+  <text class="dg-s" x="490" y="462">dense-only indexes use cosine similarity</text>
+</svg>

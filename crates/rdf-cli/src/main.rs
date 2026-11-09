@@ -267,6 +267,10 @@ fn application_database(
         let file = File::open(&path).context("open refresh configuration")?;
         database.refresh_rules(serde_json::from_reader(file).context("invalid refresh rules")?)?;
     }
+    if let Some(path) = std::env::var_os("RDF_SHACL_CONFIG").map(PathBuf::from) {
+        let file = File::open(path).context("open SHACL configuration")?;
+        database.register(rdf_plugin_shacl::Shacl::new(serde_json::from_reader(file)?)?)?;
+    }
     // Last, so the catalog sees every plugin registered above.
     database.register(rdf_plugin_catalog::PluginCatalog::new(database.catalog()))?;
     Ok(database)

@@ -12,3 +12,6 @@ sidecars/federation/ontop/mapping.ttl
 sidecars/federation/ontop/ontology.ttl
 sidecars/federation/ontop/postgresql.jar
 sidecars/federation/comunica/node_modules/
+
+# interview-me drift-check cache (regenerable)
+docs/specs/.*.verify-cache.json

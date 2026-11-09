@@ -1,0 +1,131 @@
+---
+title: Storage
+description: How a dataset is laid out on disk, how Oxigraph stores terms and quads in RocksDB, and which index answers which query pattern.
+sidebar:
+  order: 2
+verified:
+  commit: e94d66a
+  oxigraph: "0.5.13"
+  refs:
+    - crates/rdf-store/src/engine.rs
+---
+import Diagram from '../../../../components/docs/Diagram.astro';
+import Src from '../../../../components/docs/Src.astro';
+import Adr from '../../../../components/docs/Adr.astro';
+
+There are two layers. **Our layer** decides which directory belongs to which dataset and keeps that mapping safe. **Oxigraph's layer** decides how triples are laid out inside a directory. The second layer is Oxigraph's code, pinned at `=0.5.13`; the facts below come from reading that version (`src/storage/rocksdb.rs`), not from its documentation. If you upgrade Oxigraph, re-check this page. See <Adr n={1} slug="oxigraph-core" />.
+
+<Diagram name="storage-layout" caption="A database root, and inside each dataset directory the eleven column families Oxigraph creates." />
+
+## Our layer: the database root
+
+A database is a directory. Its contents:
+
+| Path | What it is |
+|---|---|
+| `catalog.json` | Version 1. Maps each dataset name to a UUID. |
+| `catalog.lock` | An empty file used only as an exclusive file lock. |
+| `<uuid>/` | One Oxigraph RocksDB store per dataset. |
+| `catalog-<uuid>.tmp` | A temporary file that exists only while the catalog is being replaced. |
+
+Names are for people and URLs (1 to 64 characters of letters, digits, `-`, `_`, `.`, not starting with a dot; see <Src file="crates/rdf-store/src/engine.rs" symbol="valid_dataset_name" />). Directories are named by UUID, so renaming is a catalog edit and the data never moves.
+
+**Opening a dataset** (<Src file="crates/rdf-store/src/engine.rs" symbol="open" />) works like this:
+
+1. Take an exclusive lock on `catalog.lock`.
+2. Read `catalog.json`. A missing catalog is an error unless creation was asked for.
+3. If the name is catalogued but its directory is missing, **refuse**. It never recreates a directory silently, because that would look like data loss that fixed itself.
+4. Open the RocksDB store. RocksDB takes its own lock inside the directory, so a second process opening the same dataset fails with "another process may own its lock".
+5. If the dataset is new, write the catalog by writing a temporary file, calling `fsync`, renaming it over `catalog.json`, then syncing the directory. A crash leaves either the old catalog or the new one.
+
+The dataset's `identity` is `<canonical root path>:<uuid>`. Plugins use it as a namespace for state they keep elsewhere, such as vector collection names.
+
+**One process owns a dataset.** That is the rule that makes the gateway design work; see [Request path](/docs/internals/request-path/) and the gateway section of [Datasets](/docs/how-to-use/datasets/).
+
+## Oxigraph's layer: terms
+
+Oxigraph does not store IRIs in its indexes. It stores a fixed-width **encoded term** in each position.
+
+- An encoded term is **17 bytes**: 1 byte for the type, 16 bytes of payload.
+- Small values live in the payload itself. A string of **15 bytes or fewer** is stored inline, and so are numbers, booleans and similar typed values.
+- Everything else is stored by **hash**: the payload is a 128-bit SipHash (SipHash-2-4) of the string, and the string itself goes in the `id2str` column family, keyed by that hash.
+
+Consequences you can use:
+
+- Index entries are the same size whatever the IRI length, so scans are cache-friendly and comparisons are byte comparisons.
+- Resolving a hash back to text is a lookup in `id2str`, and it happens only when results are serialised or a function needs the text. A join on IRIs never touches `id2str`.
+- IRIs are always hashed, even short ones, because the type byte distinguishes IRI from literal.
+- A hash collision would conflate two strings. With 128 bits that is not a practical concern, but the design does not detect it.
+- **Deleting does not shrink `id2str`.** Removing triples removes index entries, not the term text. Oxigraph's own `clear()` carries a `TODO: clear id2str?` comment. Expect the directory to keep strings that no quad refers to.
+
+## Oxigraph's layer: the eleven column families
+
+RocksDB groups keys into column families. Oxigraph creates eleven for data, and RocksDB adds its own `default`.
+
+| Family | Key order | Holds |
+|---|---|---|
+| `id2str` | hash → text | Strings longer than 15 bytes, and all IRIs |
+| `dspo`, `dpos`, `dosp` | subject-predicate-object, predicate-object-subject, object-subject-predicate | Triples in the **default graph** |
+| `spog`, `posg`, `ospg` | the same three orders, then graph | Quads in **named graphs** |
+| `gspo`, `gpos`, `gosp` | graph first, then the same orders | Quads in **named graphs** |
+| `graphs` | graph name | The list of named graphs |
+
+So a triple in the default graph is written three times, and a quad in a named graph six times. The cost is write amplification and disk space; the benefit is that any pattern with any combination of bound terms has an index whose **prefix** matches it, and a prefix scan is the cheapest thing RocksDB does.
+
+The `graphs` family exists because a graph can exist with no triples in it. That is why the derived-graph code calls `insert_named_graph` explicitly, so that a job whose output is empty still has a graph (<Src file="crates/rdf-engine/src/derived.rs" symbol="publish_checked" />).
+
+## Which index answers a pattern
+
+When you write a triple pattern, Oxigraph looks at which positions are bound and picks an index whose key *begins* with them. This is the logic in `quads_for_pattern` (verified for 0.5.13):
+
+| Bound in the pattern | Default graph | Named graphs |
+|---|---|---|
+| nothing | scan `dspo` | scan `gspo` |
+| subject | `dspo` | `spog` |
+| subject, predicate | `dspo` | `spog` |
+| subject, predicate, object | `dspo` | `spog` |
+| subject, object | `dosp` | `ospg` |
+| predicate | `dpos` | `posg` |
+| predicate, object | `dpos` | `posg` |
+| object | `dosp` | `ospg` |
+| graph only | `dspo` (all) | `gspo` |
+| graph + subject (+ predicate) | `dspo` | `gspo` |
+| graph + subject + object | `dosp` | `gosp` |
+| graph + predicate (+ object) | `dpos` | `gpos` |
+| graph + object | `dosp` | `gosp` |
+
+Two things follow.
+
+1. **When no graph is given, both groups are scanned and chained**: the default-graph family first, then the named-graph family. A query without `GRAPH` over a store with a lot of named-graph data therefore does twice the index work. The derived graphs of inference jobs live in named graphs, so they count.
+2. **There is no index with the predicate in the middle**, such as `?s <p> ?o` ordered by subject then object. A pattern with a bound predicate scans `dpos`/`posg` and gets rows grouped by predicate, then object. That is the common case and it is fast; just don't expect rows in subject order.
+
+The join order across patterns is Oxigraph's. We don't override it. The optimizer sees our property-function tables as `VALUES`, which it usually places first.
+
+## Writing
+
+All writes go through <Src file="crates/rdf-store/src/engine.rs" symbol="lock_mutation" />, a per-dataset mutex, whether they come from an update, an import, or a plugin publishing a derived graph. Oxigraph itself supports concurrent readers during a write.
+
+- `ingest` loads inside one transaction. A parse error anywhere means nothing is written.
+- `ingest_bulk` uses Oxigraph's bulk loader with a memory budget and threads. It is faster, but it **can commit partial progress**, so callers must ask for it.
+- A derived-graph publication is one transaction: clear the graph, insert the triples, write the metadata record, commit.
+
+## Backup, restore, migrate
+
+- **Backup** uses RocksDB's checkpoint (`Store::backup`). The destination must not exist. A backup holds one store, not the catalog, and it does **not** include vectors, which live in Qdrant.
+- **Restore** opens the backup read-only, loads it into a new catalogued dataset in a staging directory, compares both sides as canonical sorted quads, and only then renames the staging directory into place.
+- **Migrate** (from the older single-file `redb` format) does the same compare-then-rename for every dataset.
+
+## Operating it
+
+- Do not copy a live dataset directory. Use backup.
+- Never edit `catalog.json` by hand while a server is running. The gateway reads it without the lock for listing.
+- A dataset that will not open with "another process may own its lock" has a server running on it. Stop the server or use its HTTP API.
+- Disk space includes six copies of each named-graph quad. Plan for it.
+
+## Extending it
+
+Storage is not a plugin point. A plugin never opens files; it reaches the store only through its `ReadContext`. See [Plugin architecture](/docs/internals/plugin-architecture/).
+
+## Sources
+
+<Src file="crates/rdf-store/src/engine.rs" /> · <Src file="crates/rdf-store/src/lib.rs" /> · Oxigraph 0.5.13 `src/storage/rocksdb.rs`, `src/storage/binary_encoder.rs`, `src/storage/numeric_encoder.rs` (not in this repository).

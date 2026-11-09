@@ -1,0 +1,44 @@
+---
+title: Architecture
+description: The parts of the system and how a request moves through them.
+sidebar:
+  order: 2
+---
+import Diagram from '../../../../components/docs/Diagram.astro';
+import Src from '../../../../components/docs/Src.astro';
+
+<Diagram name="architecture" caption="The whole system. Solid boxes are processes or containers. The dashed box is one dataset server; there is one per dataset." />
+
+## The layers, front to back
+
+**Browser, curl or the CLI.** Anything that speaks HTTP. The CLI (`rdftool`) can also open a database directory directly, with no server.
+
+**nginx (port 4321).** Serves Studio and these docs as static files, and proxies `/api`, `/d/`, `/query`, `/update`, `/store`, `/health` and `/metrics` to the backend. It exists only in the Docker stack. Without it, you talk to the server directly. See <Src file="deploy/local/nginx.conf" />.
+
+**Gateway (port 7878).** One process, started with `rdftool gateway`. It keeps a catalog of datasets, starts a dataset server for a dataset the first time someone uses it, and forwards `/d/<name>/...` to it. Requests with no dataset prefix go to the default dataset, so simple clients keep working. See <Src file="crates/rdf-server/src/gateway.rs" symbol="ensure_running" />.
+
+**Dataset server.** An ordinary single-dataset server, started with `rdftool serve`. It has three layers:
+
+1. The **HTTP layer** (Axum) takes a permit for each operation, up to 4 at once by default, and answers 503 when none is free. See <Src file="crates/rdf-server/src/lib.rs" symbol="router" />.
+2. The **engine** (`Database`) parses SPARQL, applies the local-only policy, rewrites plugin property functions into data, runs refresh rules, and hosts the plugins. See <Src file="crates/rdf-engine/src/lib.rs" symbol="Database" />.
+3. The **store** is Oxigraph on RocksDB, in a directory that belongs to this dataset alone. See <Src file="crates/rdf-store/src/engine.rs" symbol="Dataset" />.
+
+**Plugins.** Rust code compiled into the dataset server. They add operations (`POST /api/plugins/<plugin>/operations/<op>`), SPARQL property functions, and discovery entries. Plugins that need other software call a sidecar over HTTP.
+
+**Sidecars.** Separate containers, each owning one specialised job:
+
+| Sidecar | Owns |
+|---|---|
+| Qdrant and the embeddings service | Vectors and the model that makes them |
+| owlrl and Jena | Reasoning engines and SHACL validation |
+| Ontop and Postgres | The SQL-to-RDF mapping and its source data |
+| Comunica | `SERVICE` federation across endpoints |
+
+The sidecars bind to loopback ports on the host. The backend container reaches them through small relays, so the engine's rule of only talking to loopback holds. The [Components](/docs/what-it-is/components/) page has the port table.
+
+## Two things worth knowing early
+
+- **One process per dataset.** This is how isolation is done: separate stores, separate plugin configuration, separate failures. It costs memory per dataset that has been used.
+- **Plugins are configured per dataset.** The gateway reads `<dataset>/semantic.json`, `inference.json`, `virtual.json` and `federation.json` from a tenant directory. A dataset with none of those has none of those plugins. See <Src file="deploy/local/tenants/default/inference.json" />.
+
+For how a single query moves through these layers, read [Request path](/docs/internals/request-path/).

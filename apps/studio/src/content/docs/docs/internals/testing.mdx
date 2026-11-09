@@ -1,0 +1,122 @@
+---
+title: Testing and conformance
+description: Every layer of verification in the project, what each proves, what runs where, and how the conformance baselines work.
+sidebar:
+  order: 8
+verified:
+  commit: e94d66a
+  refs:
+    - scripts/conformance/baseline.py
+    - justfile
+---
+import Src from '../../../../components/docs/Src.astro';
+import Adr from '../../../../components/docs/Adr.astro';
+
+The project is tested in layers, from fast and offline to slow and live. Each layer answers a different question, and each runs in a different place.
+
+| Layer | Answers | Needs | Runs |
+|---|---|---|---|
+| Unit and integration tests | Does this piece behave? | Nothing | Every push |
+| Property tests | Does it hold for inputs nobody wrote by hand? | Nothing | Every push |
+| Snapshot and CLI tests | Did the visible output change? | Built binary | Every push |
+| Browser smoke test | Does Studio load and work? | Browser | Every push |
+| Documentation checks | Do the docs and config agree with the code? | Python | Every push |
+| W3C conformance | Is it close to the standard, and where is it not? | Test suites | `just conformance`; nightly with reasoners |
+| Live-stack tests | Does the real deployment work end to end? | Docker, sidecars | Nightly |
+| Differential and benchmark runs | Do we agree with Jena, and how fast are we? | Jena, time | Weekly |
+
+## Rust tests
+
+About 190 test functions across the workspace, run with `cargo nextest run --workspace --all-targets` (`just test`). Where they live:
+
+- **Parsers and model** (`rdf-io`, `rdf-model`): conformance tests that read W3C manifests for N-Triples, N-Quads, Turtle and TriG, plus language-tag cases, each paired with a **property test**.
+- **Store** (`rdf-store`): engine and catalog behaviour, an in-memory store, a legacy `redb` store kept for migration, and `comparison.rs`, which compares query results while preserving multiplicity, variable scope and blank-node identity.
+- **Engine** (`rdf-engine/tests`): property-function rewrite rules and refresh rules.
+- **CLI and server** (`rdf-cli/tests`): a live HTTP round trip with reopen, the gateway's dataset isolation, creation and deletion, and CLI output snapshots.
+- **Plugins:** each plugin has its own tests. Inference tests use a **stand-in reasoner** (a `Taxonomy` that does one subclass step) so chains, cascades, inconsistency and explanation freshness are checked offline, without any sidecar. The SHACL contract tests use a fake `Validator` to check that report-only keeps the data, thresholds are independent of `sh:conforms`, a concurrent source change does not publish, and reports survive a reopen.
+
+A handful of tests are marked `#[ignore]` because they need a live sidecar (`plugins/inference/tests/live.rs`, `plugins/shacl/tests/live.rs`, and others). They run in the live-stack job or by hand, for example `just shacl-test`.
+
+**Property tests** (`proptest`) are used where a rule must hold for all inputs: a parse and serialize round trip, and store invariants.
+
+**Lints are part of the tests.** CI runs `cargo fmt --check`, `cargo clippy -- -D warnings` with `unwrap_used` denied, and `cargo deny check` for dependency policy.
+
+## Browser tests
+
+`scripts/ui/smoke.mjs` (run by `npm test` in `scripts/ui`) loads Studio against a built backend. Deployed-stack scripts drive the real container and are used by the nightly job: <Src file="scripts/ui/inference-deployed.mjs" />, <Src file="scripts/ui/shacl-deployed.mjs" />, <Src file="scripts/ui/docs-deployed.mjs" />, plus graph and deployment checks. Each asserts what a person would see, and takes screenshots into `target/ui`.
+
+## Documentation checks
+
+- `just docs-check` (`scripts/docs/check_paths.py`) fails if a page cites a file, symbol, ADR or diagram that doesn't exist.
+- The Starlight build validates every internal link.
+- `just allowlist-check` fails if the Comunica allowlist has drifted from the datasets' `federation.json` files (see [Federation](/docs/internals/federation/#two-allowlists)).
+
+## W3C conformance
+
+`just conformance` runs the W3C suites and compares the result to a **committed baseline**. The suites are pinned in <Src file="scripts/conformance.sh" /> (`rdf-tests` at a fixed revision and the OWL 2 RL test export, verified by checksum).
+
+| Suite | Cases | Passing |
+|---|---|---|
+| RDF syntaxes (N-Triples, N-Quads, Turtle, TriG, RDF/XML) | 993 | 991 |
+| SPARQL 1.0 and 1.1, Oxigraph alone | 1,156 | 952 (+22 equal by value) |
+| SPARQL 1.0 and 1.1, through our engine | 1,156 | 949 (+22 equal by value) |
+| Entailment, owlrl `owlrl-core-v1` / `rdfs-v1` | 244 | 59 |
+| Entailment, owlrl `owlrl-full-v1` / `rdfs-v2` | 244 | 155 |
+| Entailment, native `owl2rl-v1` | 244 | 134 |
+| Entailment, Jena RDFS rules | 244 | 46 |
+
+Why two SPARQL runs: the first measures Oxigraph, the second measures what we put in front of it (the parser, local-only policy, property-function rewrite). They differ by three cases that our policy refuses on purpose. The entailment runs go through the same HTTP adapters that inference jobs use. The reasons behind each gap are in `docs/conformance.md` and `docs/owl-coverage.md`, and the decision is <Adr n={18} slug="conformance-baselines" />.
+
+### Baselines are ratchets
+
+`tests/conformance/*.json` lists every case that does not pass, with its status and a cause (for example `oxigraph-canonical-lexical-forms`, `needs-http-runner`, `policy-local-only`, `datatype-entailment-not-in-profile`). <Src file="scripts/conformance/baseline.py" /> fails in **both directions**:
+
+- A case that was passing now fails: a regression.
+- A case listed as failing now passes: the baseline is out of date, so improve it on purpose.
+
+That means the suite can only get better deliberately. `just conformance-update <suite> --engine …` rewrites a baseline and keeps causes you already wrote. New entries are classified by rule, or marked `unclassified`, which is a prompt to explain them.
+
+### Comparing results
+
+Query results are compared with `rdf_store::comparison`, which respects what the specifications say: bag semantics (multiplicity), blank nodes up to isomorphism, and `REDUCED` as a set. Results that are equal by value but differ in lexical form (`"01"` versus `1`) are reported as `value-only` rather than as passes or failures.
+
+## Live-stack tests
+
+`scripts/ci/live-stack.sh` brings everything up from nothing (federation sidecars with the ACME Postgres seed, the reasoners, Qdrant with CPU embeddings, the backend and Studio), seeds it, and runs:
+
+| Step | What it checks |
+|---|---|
+| `scripts/test/rule_tests.py` | Every inference job's own rule tests, including a test that expects a clash |
+| `scripts/test/federation_e2e.py` | The virtual graph, cross-dataset `SERVICE` federation, and inference over both |
+| `scripts/ui/inference-deployed.mjs` | The inference panel: rebuild, rule tests, "Why?", a real clash and its recovery, a cascade |
+| `scripts/ui/docs-deployed.mjs` | This documentation, served by the real image |
+| Conformance with reasoners | The entailment baselines, which need the sidecars |
+
+The workflow (`.github/workflows/live-stack.yml`) runs nightly and on demand, with a 90 minute limit. Container logs are collected whatever happens.
+
+## Rule tests for inference jobs
+
+A job can declare tests of the form *given this data, produce exactly this*. They run through the job's own reasoner and nothing in the store changes. They are covered in [Inference](/docs/internals/inference/#rule-tests). `just rule-tests` runs every job's tests against a live stack and fails if there are none.
+
+## Differential tests and benchmarks
+
+Weekly (`.github/workflows/extended-validation.yml`):
+
+- `scripts/jena-differential.sh` downloads Apache Jena 4.10.0 (checking its SHA-512), runs the queries in `tests/oracle` with Jena's `arq`, and compares each answer to ours through `compare_oracle`. This is an independent implementation as the oracle.
+- The persistent-store benchmark runs at 100,000 and 1,000,000 triples and is uploaded as an artifact.
+- The full conformance run repeats.
+
+## Where to add a test
+
+| You changed | Add |
+|---|---|
+| A parser or the model | A conformance case or a property test beside the existing ones |
+| The engine or the property rewrite | A test in `rdf-engine/tests` |
+| A plugin | A test against an in-memory `Database` with a stand-in for any sidecar, plus an `#[ignore]` live test |
+| A reasoner | A rule test on the job; if behaviour changes, bump the identity |
+| Something the standard defines | Run the suite and update the baseline deliberately |
+| A page in these docs | Nothing extra. `docs-check` and the link validator run in CI |
+
+## Sources
+
+<Src file="justfile" /> · <Src file="scripts/conformance.sh" /> · <Src file="scripts/conformance/baseline.py" /> · <Src file="scripts/ci/live-stack.sh" /> · <Src file="crates/rdf-store/src/comparison.rs" /> · <Src file="tests/conformance/sparql-database.json" /> · <Src dir="tests/oracle" /> · <Src file=".github/workflows/live-stack.yml" /> · <Src file=".github/workflows/extended-validation.yml" />

@@ -1,5 +1,9 @@
 # Developing database plugins
 
+[SHACL validation](shacl/README.md) uses SDK v3 snapshots and owned derived graphs
+to publish standard validation reports with explicit severity gates. It does not
+intercept database writes.
+
 [Semantic search](semantic-search/README.md) demonstrates a stateful plugin whose
 derived vector index lives in a Qdrant sidecar, with local CPU/CUDA embeddings.
 It uses the same property SDK; explicit management operations rebuild its owned

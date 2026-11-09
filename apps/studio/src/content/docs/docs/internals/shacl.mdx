@@ -1,0 +1,105 @@
+---
+title: SHACL validation
+description: How the SHACL plugin validates graphs through Jena, how severities and gates work, and what it deliberately does not do.
+sidebar:
+  order: 7
+verified:
+  commit: e94d66a
+  refs:
+    - plugins/shacl/src/lib.rs
+---
+import Src from '../../../../components/docs/Src.astro';
+import Adr from '../../../../components/docs/Adr.astro';
+
+SHACL is a W3C language for describing what valid RDF looks like: shapes that say a claim must have exactly one policy, a reserve must not be negative, and so on. The SHACL plugin (<Src dir="plugins/shacl" />) validates selected graphs against shapes and stores the standard validation report as another graph. The decision record is <Adr n={19} slug="shacl-validation" />.
+
+Validation and inference are independent. Inference *derives* facts; SHACL *checks* them. They meet only if you choose it: include an inference job's output graph as a data graph, and check that job's freshness yourself.
+
+## The same pattern as inference
+
+It uses the SDK exactly as [Plugin architecture](/docs/internals/plugin-architecture/) describes, with a different provider:
+
+- The **plugin** takes snapshots of the data and shapes graphs, calls a validator, checks the answer and applies the policy.
+- The **host** does the reads and the one atomic write (`publish`) of the report to `urn:rdftool:derived:shacl:<job>`, with a `:metadata` sibling.
+- The **validator** is Apache Jena 6.2.0's `jena-shacl`, running in the same Jena sidecar as the Jena rules (port `18083`): `POST /validate` with `{data, shapes}`. The sidecar runs each request in a Java subprocess with a 384 MB heap and a 60 second limit. The plugin's client waits 70 seconds and takes loopback addresses only. The plugin pins the engine version it expects and rejects a different one.
+
+The plugin talks to the validator through a small trait, `Validator`, so tests can substitute a fake and run offline.
+
+## A job
+
+Configured in `shacl.json`, one entry per job:
+
+| Field | Meaning |
+|---|---|
+| `name` | 1 to 64 characters of letters, digits, `-`, `_`. Names the report graph |
+| `data_graphs` | Graphs to validate. `"default"` selects the default graph |
+| `shapes_graphs` | Graphs holding the shapes, as ordinary Turtle you upload |
+| `fail_on` | Gate threshold: `violation` (default), `warning` or `info` |
+
+Up to 64 jobs and 64 graphs per job. A graph can't be both data and shapes, and a previous validation report can't be a source. The two roles are merged **separately**: all data graphs become one data graph, all shapes graphs one shapes graph.
+
+## What a run does
+
+<Src file="plugins/shacl/src/lib.rs" symbol="run" />:
+
+1. Take a combined snapshot of all the graphs, then separate snapshots for data and shapes, then take the combined one again. The two combined tokens must be equal, or the run stops with "validation sources changed; retry". (SDK snapshots merge graphs, so this is how it gets role-specific text while still proving nothing changed in between.)
+2. An empty shapes graph is an error, not a pass: "upload shapes before validating".
+3. Send data and shapes to Jena. Take back a report: whether it conforms, the findings, and the report as N-Triples.
+4. Sanity-check it: at most 1,000 findings and 16 MiB, every severity one of `Violation`, `Warning` or `Info`, and `conforms` agreeing with whether there are findings.
+5. Count findings by severity and decide **`gate_passed`** against `fail_on`.
+6. **Publish the report** with a summary (counts, gate result, the job's configuration digest, engine version and the profile `shacl-core-v1`). Only the latest report is kept.
+7. In `check` mode, if the gate failed, return an error that names the report graph and says no user data was changed.
+
+## Severity versus policy
+
+The standard has two separate ideas, and the plugin keeps them apart.
+
+- **Severity** belongs to a constraint. You set `sh:severity` on a shape (`sh:Violation`, `sh:Warning`, `sh:Info`); leaving it out means Violation.
+- **Policy** belongs to the job. `fail_on` says how bad a finding must be before the gate stops something.
+
+| `fail_on` | The gate fails on |
+|---|---|
+| `violation` | Violations |
+| `warning` | Warnings and Violations |
+| `info` | Any finding |
+
+The report's own `sh:conforms` is never rewritten to fit the policy. A report with only warnings is still non-conforming, and still passes a `violation` gate.
+
+## Operations
+
+| Operation | Does |
+|---|---|
+| `jobs` | The configured jobs, the profile, and `automatic_write_enforcement: false` |
+| `validate` | Run, publish the report, return findings. **Findings do not fail it** (report-only) |
+| `check` | The same, then fail if the gate is not passed. HTTP 400 over the API, non-zero exit from the CLI. The report is kept either way |
+| `status` | `missing`, `ready` or `stale`, with the last summary |
+
+A provider error (Jena down, malformed shapes, oversized output) is an execution error, not a finding. Both `validate` and `check` fail with the provider's message, and the **last complete report stays untouched**. A broken validator can never look like clean data.
+
+`status` is `stale` when the data, the shapes, the report graph or the job's configuration changed since the report. The first three come free from the host's source token and output digest; the plugin adds the job-configuration digest.
+
+## What it does not do
+
+This is a deliberate boundary, stated in the ADR:
+
+- **It does not intercept writes.** Uploads, SPARQL updates, Graph Store requests, inference publication and bulk loads are not checked. `check` gates a *step in your workflow*, such as CI or promotion, after the fact.
+- **A check followed by a write is not atomic.** Someone can change the data between the two.
+- **No custom evaluator and no SHACL-SPARQL claims.** The profile is SHACL Core as Jena implements it, labelled `shacl-core-v1`.
+- **Rejecting invalid writes** would need a general pre-commit hook in the host. That does not exist yet, and a plugin cannot supply it today.
+
+If you need quarantine-then-promote, validate a staging graph and copy it over yourself; there is no atomic promote operation.
+
+## Operating it
+
+- Upload shapes like any Turtle: Graph Store, Studio's SHACL panel (which replaces the selected graph atomically), or the workspace import.
+- A job stuck at `stale` after a successful run means something it reads changed. Run `validate` again.
+- Use `check` in a script and look at the exit code or the 400; use `validate` for dashboards.
+- The report is ordinary RDF: query `urn:rdftool:derived:shacl:<job>` with SPARQL to see findings by shape or focus node.
+
+## Extending it
+
+A different validator is a new implementation of the `Validator` trait, constructed with `Shacl::with_validator`. Keep the same report shape and the same rule that provider failures are errors.
+
+## Sources
+
+<Src file="plugins/shacl/src/lib.rs" /> · <Src file="plugins/shacl/README.md" /> · <Src file="sidecars/jena-rules/server.py" /> · <Src file="sidecars/jena-rules/src/main/java/ShaclWorker.java" /> · <Src file="deploy/local/tenants/default/shacl.json" />

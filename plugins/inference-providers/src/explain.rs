@@ -6,7 +6,7 @@ use rdf_store::{
     engine::Dataset,
     oxigraph::{
         model::{GraphName, NamedOrBlankNode, Quad, Term, Triple},
-        sparql::{QueryResults, SparqlEvaluator},
+        sparql::{CancellationToken, QueryResults, SparqlEvaluator},
     },
 };
 use serde_json::{Value, json};
@@ -59,7 +59,14 @@ fn unify(template: &TriplePattern, target: &Triple) -> Option<Binding> {
     ok.then_some(binding)
 }
 /// Solutions of `pattern` that agree with `fixed`.
-fn solutions(store: &Dataset, pattern: &G, fixed: &Binding, cap: usize) -> Result<Vec<Binding>> {
+fn solutions(
+    store: &Dataset,
+    pattern: &G,
+    fixed: &Binding,
+    cap: usize,
+    cancel: &CancellationToken,
+) -> Result<Vec<Binding>> {
+    rdf_store::work_budget::check(store.store(), pattern, fixed, 1_000_000)?;
     let mut variables = Vec::new();
     let mut row = Vec::new();
     for (variable, term) in fixed {
@@ -72,8 +79,11 @@ fn solutions(store: &Dataset, pattern: &G, fixed: &Binding, cap: usize) -> Resul
         right: Box::new(pattern.clone()),
     };
     let query = Query::Select { dataset: None, pattern: joined, base_iri: None };
-    let QueryResults::Solutions(iterator) =
-        SparqlEvaluator::new().for_query(query).on_store(store.store()).execute()?
+    let QueryResults::Solutions(iterator) = SparqlEvaluator::new()
+        .with_cancellation_token(cancel.clone())
+        .for_query(query)
+        .on_store(store.store())
+        .execute()?
     else {
         anyhow::bail!("expected solutions");
     };
@@ -116,6 +126,7 @@ fn premises(
     found: &mut BTreeSet<String>,
     aggregate: &mut bool,
     incomplete: &mut bool,
+    cancel: &CancellationToken,
 ) -> Result<()> {
     if found.len() >= MAX_PREMISES {
         *incomplete = true;
@@ -137,24 +148,28 @@ fn premises(
                 }
             }
         }
-        G::Join { left, right }
-        | G::LeftJoin { left, right, .. }
-        | G::Union { left, right }
-        | G::Minus { left, right }
-        | G::Lateral { left, right } => {
-            premises(store, left, binding, found, aggregate, incomplete)?;
+        // The algebra walker has no branch-level execution trace. Never claim
+        // premises from optional, alternative, negative or correlated branches.
+        G::LeftJoin { .. } | G::Union { .. } | G::Minus { .. } | G::Lateral { .. } => {
+            *incomplete = true;
+        }
+        G::Join { left, right } => {
+            premises(store, left, binding, found, aggregate, incomplete, cancel)?;
             if !matches!(pattern, G::Minus { .. }) {
-                premises(store, right, binding, found, aggregate, incomplete)?;
+                premises(store, right, binding, found, aggregate, incomplete, cancel)?;
             }
         }
-        G::Filter { inner, .. }
-        | G::Extend { inner, .. }
+        G::Filter { inner, .. } => {
+            *incomplete = true;
+            premises(store, inner, binding, found, aggregate, incomplete, cancel)?;
+        }
+        G::Extend { inner, .. }
         | G::Project { inner, .. }
         | G::Distinct { inner }
         | G::Reduced { inner }
         | G::Slice { inner, .. }
         | G::OrderBy { inner, .. } => {
-            premises(store, inner, binding, found, aggregate, incomplete)?;
+            premises(store, inner, binding, found, aggregate, incomplete, cancel)?;
         }
         G::Group { inner, variables, .. } => {
             *aggregate = true;
@@ -162,10 +177,10 @@ fn premises(
                 .iter()
                 .filter_map(|v| binding.get(v).map(|t| (v.clone(), t.clone())))
                 .collect();
-            let members = solutions(store, inner, &keys, MAX_PREMISES)?;
+            let members = solutions(store, inner, &keys, MAX_PREMISES, cancel)?;
             *incomplete |= members.len() >= MAX_PREMISES;
             for member in members {
-                premises(store, inner, &member, found, aggregate, incomplete)?;
+                premises(store, inner, &member, found, aggregate, incomplete, cancel)?;
             }
         }
         // Paths, graph blocks and inline data have no single triple to point at.
@@ -182,18 +197,27 @@ pub fn explain(
     rules: &[Query],
     texts: &[String],
     target: &Triple,
+    cancel: &CancellationToken,
 ) -> Result<Vec<Value>> {
     ensure!(rules.len() == texts.len(), "rules and rule texts differ");
     let mut found = Vec::new();
     for (index, (rule, text)) in rules.iter().zip(texts).enumerate() {
         let Query::Construct { template, pattern, .. } = rule else { continue };
         for binding in template.iter().filter_map(|t| unify(t, target)) {
-            for solution in solutions(store, pattern, &binding, MAX_SOLUTIONS)
+            for solution in solutions(store, pattern, &binding, MAX_SOLUTIONS, cancel)
                 .with_context(|| format!("solving rule {index}"))?
             {
                 let mut support = BTreeSet::new();
                 let (mut aggregate, mut incomplete) = (false, false);
-                premises(store, pattern, &solution, &mut support, &mut aggregate, &mut incomplete)?;
+                premises(
+                    store,
+                    pattern,
+                    &solution,
+                    &mut support,
+                    &mut aggregate,
+                    &mut incomplete,
+                    cancel,
+                )?;
                 let values: BTreeMap<String, String> = solution
                     .iter()
                     .filter(|(variable, _)| {

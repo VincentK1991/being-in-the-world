@@ -1,0 +1,138 @@
+---
+title: Plugin architecture
+description: What a plugin is, how it is registered and validated, the three ways it surfaces, what it can touch, and how to write one.
+sidebar:
+  order: 3
+verified:
+  commit: e94d66a
+  refs:
+    - crates/rdf-plugin-api/src/lib.rs
+    - crates/rdf-engine/src/lib.rs
+---
+import Diagram from '../../../../components/docs/Diagram.astro';
+import Src from '../../../../components/docs/Src.astro';
+import Adr from '../../../../components/docs/Adr.astro';
+
+<Diagram name="plugin-hooks" caption="A plugin's four parts, the three ways the host exposes it, and the narrow context it gets back." />
+
+A plugin is **Rust code compiled into the dataset server**. There is no dynamic loading, no sandbox and no marketplace. "Plugin architecture" here means a small, deliberate interface (the SDK) that keeps plugin code from depending on HTTP, Oxigraph or the file system. The design is in <Adr n={2} slug="engine-plugins-and-studio" />.
+
+:::caution[Plugins are trusted code]
+The SDK says so in its own comments: native plugins are trusted application code, not sandboxed. A plugin can do anything the server process can do. The interface limits what a plugin *should* do, and the host enforces size and row limits, but it is not a security boundary.
+:::
+
+## The SDK: `rdf-plugin-api`
+
+The crate is <Src file="crates/rdf-plugin-api/src/lib.rs" />, SDK version **3** (`SDK_VERSION`). It depends only on `anyhow`, `serde` and `serde_json`. A plugin implements one trait, <Src file="crates/rdf-plugin-api/src/lib.rs" symbol="Plugin" />:
+
+| Method | Required | Purpose |
+|---|---|---|
+| `manifest()` | yes | Plugin ID, version, SDK version, operation names |
+| `invoke(context, operation, input)` | yes | Run an operation; JSON in, JSON out |
+| `property_functions()` | no | SPARQL predicates the plugin provides |
+| `facets()` | no | The things this plugin offers on this dataset (indexes, jobs, shapes), for discovery |
+
+Everything a plugin does to data goes through a <Src file="crates/rdf-plugin-api/src/lib.rs" symbol="ReadContext" />:
+
+| Method | What it does |
+|---|---|
+| `query_json(sparql)` | Run a SELECT or ASK on this dataset; local-only policy applies |
+| `snapshot(graphs)` | Read 1 to 64 named graphs as N-Triples with a **token** that fingerprints their content |
+| `publish(name, source, ntriples, metadata)` | Replace one derived graph, if the source still matches the snapshot |
+| `publish_checked(..., token)` | The same, and also fail if *anything* in the dataset changed since the token |
+| `publication_token()` | A fingerprint of the whole dataset |
+| `derived_status(name)` | The stored record for a derived graph |
+| `record_attempt(name, note)` | Attach a note about a failed attempt (for example an inconsistent input) without touching the graph |
+
+Each call has its own snapshot. **Two calls are not one transaction**, and the trait documentation says so.
+
+The context is deliberately read-only. A plugin can't `INSERT` into your graphs. It can only write to a graph it owns, through `publish`.
+
+## Registration
+
+Plugins are registered at startup, in one place: <Src file="crates/rdf-cli/src/main.rs" symbol="application_database" />. A dataset gets a plugin only if its configuration is there:
+
+| Plugin | Registered when |
+|---|---|
+| `dataset-summary`, `custom-properties` | always |
+| `semantic-search` | a semantic config file is given (`--semantic-config`, or `<tenant>/<dataset>/semantic.json`) |
+| `inference` | an inference config is given |
+| `virtual-graph`, `federation` | `RDF_VIRTUAL_CONFIG` / `RDF_FEDERATION_CONFIG` are set; the gateway sets them from `virtual.json` / `federation.json` |
+| `shacl` | `RDF_SHACL_CONFIG` is set (`shacl.json`) |
+| refresh rules | `RDF_REFRESH_CONFIG` (`refresh.json`) |
+| `plugin-catalog` | always, and **last**, so that it sees everything above |
+
+In-memory datasets (a transient RDF-file source) refuse semantic search and inference, because both keep state outside the store keyed to a persistent identity.
+
+<Src file="crates/rdf-engine/src/lib.rs" symbol="register" /> validates each plugin and fails the whole startup if any check fails:
+
+- ID is non-empty, and only lowercase letters, digits and `-`.
+- `sdk_version` equals the host's. There is no compatibility range: a v2 plugin does not load on a v3 host.
+- A version string exists.
+- There is at least one operation or one property function, and every operation name follows the ID rule and is unique.
+- No other plugin has the same ID.
+- Each property function's IRI parses, is unique across all plugins, and has up to 32 inputs and 1 to 32 outputs.
+
+The registry is built before the database is shared between threads. There is no runtime install or uninstall; change the configuration and restart the dataset server .
+
+## Surface 1: operations
+
+`POST /api/plugins/<plugin>/operations/<operation>` with `Content-Type: application/json`. The server checks the media type (415), checks the plugin and operation exist (404), parses the JSON (400), takes an operation permit, and calls <Src file="crates/rdf-engine/src/lib.rs" symbol="invoke" />. A plugin error becomes a 400 with the message.
+
+### Refresh rules
+
+`invoke` is also where **refresh rules** run. A rule says "after operation A with these inputs, run operation B". After A succeeds, matching rules fire, each result goes into a `refreshed` list on the response, and a failure of B is reported there **without failing A**. If A reports other inputs it ran too (a cascade of inference jobs lists them in `ran`), rules written for those inputs fire as well.
+
+Rules may not chain: `refresh_rules` rejects a rule whose `then` could trigger another rule's `after`. One operation never starts a chain. The reasoning is in <Adr n={11} slug="composing-plugins" />.
+
+## Surface 2: property functions
+
+A plugin that returns `PropertyFunction` objects gets SPARQL predicates. The request path rewrites them to `VALUES` tables before Oxigraph runs the query; see [Request path, step 4](/docs/internals/request-path/#4-property-functions-become-tables) for the limits. A function implements `descriptor()` (IRI, description, arities) and `evaluate(context, inputs, sink)`. It emits rows into a `RowSink`, and the host counts rows and bytes as they arrive and stops the query if a limit is crossed.
+
+A function runs **once per call site, before the query**, with constant inputs. It is not a per-row function, and it can't be fed from other patterns. See <Adr n={3} slug="custom-property-functions" />.
+
+The context a property function receives reads the same dataset. It must not call the host's own HTTP API.
+
+## Surface 3: the catalog
+
+`Database::catalog` builds one row per offering: the plugin itself, each operation, each property function, and each facet. The catalog plugin freezes that list at startup and serves it two ways:
+
+- As a property function, `urn:rdftool:plugins:provides` (used in the example in [Using the plugins](/docs/how-to-use/plugins/)).
+- In the Service Description that `GET /query` returns, which is how a remote federation client learns what an endpoint can do. See <Adr n={13} slug="plugin-discovery" />.
+
+A **facet** is the plugin's way to say what it is configured with: kind `index` with name `descriptions`, kind `job` with name `acme`. The kinds are free-form.
+
+## Derived graphs
+
+Anything a plugin computes and wants to keep is a **derived graph**, a named graph in the same store:
+
+- Name: `urn:rdftool:derived:<plugin-id>:<name>`, where `<name>` is 1 to 64 characters of letters, digits, `-` and `_`.
+- A sibling graph, the same name plus `:metadata`, holds one JSON record: the source token, the source graphs, a digest of the output, the plugin's own metadata, the triple count.
+- `urn:rdftool:attempt` is a predicate in that metadata graph that carries the note from `record_attempt`.
+
+<Src file="crates/rdf-engine/src/derived.rs" symbol="publish_checked" /> checks the size limits (16 MiB of N-Triples, 64 KiB of metadata), takes the dataset's mutation lock, **recomputes the source token and rejects the publish if the sources changed since the snapshot**, and then does everything in one transaction. Blank-node labels from the snapshot are kept as they are.
+
+A derived graph can be the source of another plugin's derived graph. That is how chained inference jobs work (<Adr n={15} slug="chained-inference-jobs" />). Its `:metadata` graph can't be a source.
+
+Staleness is therefore a computed property, not a flag. A job is *stale* when the token of its current sources no longer equals the token stored in its record. Nothing has to notice the change.
+
+## Writing a plugin
+
+1. Create a crate under `plugins/`, add it to the workspace, and depend only on `rdf-plugin-api`, `anyhow`, `serde_json` and whatever your own work needs.
+2. Implement `Plugin`. Validate every JSON input and reject unknown keys (the semantic-search plugin does this explicitly).
+3. Reach the data only through the context. Never open files or call the host's HTTP API.
+4. Register it in `application_database`, gated on a config file so datasets opt in.
+5. Return `facets()` for anything configured, so it shows up in discovery.
+6. Test it against an in-memory `rdf_engine::Database`, including two isolated datasets, empty data and bad input. <Src file="plugins/README.md" /> is the developer contract.
+
+The working references, smallest first: <Src dir="plugins/dataset-summary" />, <Src dir="plugins/custom-properties" />, <Src dir="plugins/semantic-search" />.
+
+## Operating it
+
+- `GET /api/plugins` lists plugin manifests for a dataset. A plugin you expect that is not there was not configured for that dataset.
+- A bad configuration stops the server from starting. Check the gateway log, not the HTTP response.
+- Plugin state outside the store (vector collections) is not part of backup; see [Vector index](/docs/internals/vector-index/).
+
+## Sources
+
+<Src file="crates/rdf-plugin-api/src/lib.rs" /> · <Src file="crates/rdf-engine/src/lib.rs" /> · <Src file="crates/rdf-engine/src/derived.rs" /> · <Src file="crates/rdf-engine/src/properties.rs" /> · <Src file="crates/rdf-cli/src/main.rs" symbol="application_database" /> · <Src file="plugins/catalog/src/lib.rs" />

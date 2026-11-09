@@ -13,6 +13,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use std::{collections::BTreeSet, sync::Arc, time::Duration};
 
+mod diagnostics;
 mod explain;
 pub mod owl2rl;
 
@@ -56,10 +57,13 @@ impl ReasonerFactory for NativeFactory {
     }
 }
 impl Reasoner for NativeOwlRl {
+    fn diagnostics(&self, _: &str, data: &str) -> Result<Value> {
+        diagnostics::inspect(data)
+    }
     fn identity(&self) -> Result<Value> {
         Ok(json!({"engine": "rdftool-owl2rl", "adapter": env!("CARGO_PKG_VERSION"), "protocol": 2,
                   "profiles": [Self::PROFILE], "rules": "OWL 2 RL/RDF tables 4-7 and 9; no datatype rules",
-                  "axiomatic_triples": "scoped", "output_policy": 2, "justifications": true}))
+                  "axiomatic_triples": "scoped", "output_policy": 2, "rules_revision": 4, "justifications": true, "datatype_checks":"partial", "profile_complete":false, "proof_policy":"first-justification"}))
     }
     fn infer(&self, profile: &str, ntriples: &str) -> Result<(String, Value)> {
         ensure!(profile == Self::PROFILE, "unsupported OWL 2 RL profile");
@@ -149,7 +153,19 @@ impl Reasoner for SparqlRules {
         ensure!(quads.next().is_none(), "explain one triple at a time");
         let triple =
             rdf_store::oxigraph::model::Triple::new(quad.subject, quad.predicate, quad.object);
-        explain::explain(&load(ntriples)?, &parsed, rules, &triple).map(Some)
+        let cancel = CancellationToken::new();
+        let token = cancel.clone();
+        let (_done, receiver) = std::sync::mpsc::channel::<()>();
+        let duration = Duration::from_secs(self.0.cancel_after_seconds);
+        std::thread::spawn(move || {
+            if matches!(
+                receiver.recv_timeout(duration),
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout)
+            ) {
+                token.cancel();
+            }
+        });
+        explain::explain(&load(ntriples)?, &parsed, rules, &triple, &cancel).map(Some)
     }
     fn infer_rules(
         &self,
